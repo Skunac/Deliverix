@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "992287119524",
+    "project_id": "rapid-royal",
+    "storage_bucket": "rapid-royal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992287119524:android:8716a9c7ece17857462e31",
+        "android_client_info": {
+          "package_name": "com.fstcklocal.rapidroyal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992287119524-ri2o0o829orfsqlu75vecjosjfngn1pi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC34465t-9WgOYFH5kO8b7XTWusm2FEKik"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992287119524-ri2o0o829orfsqlu75vecjosjfngn1pi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "992287119524-788736caa5f04rhp368cpn1eq9luo71o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fstcklocal.rapidroyal"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
