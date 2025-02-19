@@ -45,12 +45,7 @@ function Index() {
 
     return (
         <View
-            style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 20
-            }}
+            className={`flex-1 justify-center items-center gap-4 bg-gray-100 p-4`}
         >
             <Button
                 title="Add Test Document"
@@ -63,13 +58,13 @@ function Index() {
             />
 
             {testData && (
-                <Text style={{ marginTop: 10 }}>
+                <Text className={`text-center text-green-600`}>
                     {testData}
                 </Text>
             )}
 
             {error && (
-                <Text style={{ color: 'red', marginTop: 10 }}>
+                <Text className={`text-center text-red-600`}>
                     {error}
                 </Text>
             )}
