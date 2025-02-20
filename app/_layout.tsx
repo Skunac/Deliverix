@@ -5,7 +5,9 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from "react-native";
 import "@/global.css";
+import "@/config/i18nConfig";
 import { AuthProvider } from "@/contexts/authContext";
+import {LanguageProvider} from "@/contexts/languageContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -27,8 +29,10 @@ export default function RootLayout() {
     }
 
     return (
-        <AuthProvider>
-            <Stack screenOptions={{ headerShown: false }} />
-        </AuthProvider>
+        <LanguageProvider>
+            <AuthProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+            </AuthProvider>
+        </LanguageProvider>
     );
 }

@@ -3,11 +3,13 @@ import { useState } from "react";
 import { testCollection } from "@/services/firebase/firestore";
 import { useAuth } from "@/contexts/authContext";
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function Index() {
     const { user } = useAuth();
     const [testData, setTestData] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslation();
 
     const addTestDocument = async () => {
         try {
@@ -38,33 +40,33 @@ export default function Index() {
         <ScrollView className="flex-1 bg-gray-50">
             {/* Header */}
             <View className="bg-white p-6 shadow-sm">
-                <Text className="text-3xl font-bold">Welcome!</Text>
-                <Text className="text-gray-500 mt-1">Firebase Demo App</Text>
+                <Text className="text-3xl font-bold">{t('home.title')}</Text>
+                <Text className="text-gray-500 mt-1">{t('home.subtitle')}</Text>
             </View>
 
             {/* Auth Status Card */}
             <View className="m-4 p-4 bg-white rounded-xl shadow-sm">
                 <View className="flex-row items-center mb-4">
                     <Ionicons name="person-circle" size={24} color="#3b82f6" />
-                    <Text className="text-lg font-bold ml-2">Account Status</Text>
+                    <Text className="text-lg font-bold ml-2">{t('home.accountStatus')}</Text>
                 </View>
 
                 {user ? (
                     <View className="bg-green-50 p-3 rounded-lg">
                         <Text className="text-green-700 font-medium">
-                            Logged in as: {user.email}
+                            {t('home.loggedInAs', { email: user.email })}
                         </Text>
                         <Text className="text-green-600 text-sm mt-1">
-                            User ID: {user.uid.substring(0, 8)}...
+                            {t('home.userId', { id: user.uid.substring(0, 8) + '...' })}
                         </Text>
                     </View>
                 ) : (
                     <View className="bg-yellow-50 p-3 rounded-lg">
                         <Text className="text-yellow-700 font-medium">
-                            Not logged in
+                            {t('home.notLoggedIn')}
                         </Text>
                         <Text className="text-yellow-600 text-sm mt-1">
-                            Use the Firebase Test tab to sign in
+                            {t('home.useFirebaseTest')}
                         </Text>
                     </View>
                 )}
@@ -74,7 +76,7 @@ export default function Index() {
             <View className="m-4 p-4 bg-white rounded-xl shadow-sm">
                 <View className="flex-row items-center mb-4">
                     <Ionicons name="cloud" size={24} color="#3b82f6" />
-                    <Text className="text-lg font-bold ml-2">Firestore Test</Text>
+                    <Text className="text-lg font-bold ml-2">{t('home.firestoreTest')}</Text>
                 </View>
 
                 <View className="flex-row justify-between mb-4">
@@ -83,7 +85,7 @@ export default function Index() {
                         onPress={addTestDocument}
                     >
                         <Ionicons name="add-circle-outline" size={18} color="white" />
-                        <Text className="text-white font-medium ml-1">Add Document</Text>
+                        <Text className="text-white font-medium ml-1">{t('home.addDocument')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -91,7 +93,7 @@ export default function Index() {
                         onPress={fetchTestData}
                     >
                         <Ionicons name="download-outline" size={18} color="white" />
-                        <Text className="text-white font-medium ml-1">Fetch Latest</Text>
+                        <Text className="text-white font-medium ml-1">{t('home.fetchLatest')}</Text>
                     </TouchableOpacity>
                 </View>
 

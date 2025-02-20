@@ -1,9 +1,13 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/contexts/languageContext';
 
 export default function TabsLayout() {
     const colorScheme = useColorScheme();
+    const { t } = useTranslation();
+    const { isRTL } = useLanguage();
 
     return (
         <Tabs
@@ -12,6 +16,7 @@ export default function TabsLayout() {
                 tabBarInactiveTintColor: '#64748b',
                 tabBarStyle: {
                     backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
+                    direction: isRTL ? 'rtl' : 'ltr'
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
@@ -23,7 +28,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Home',
+                    title: t('common.home'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="home" size={size} color={color} />
                     ),
@@ -32,7 +37,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: 'Profile',
+                    title: t('common.profile'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person" size={size} color={color} />
                     ),
@@ -41,7 +46,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="messages"
                 options={{
-                    title: 'Messages',
+                    title: t('common.messages'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="chatbubbles" size={size} color={color} />
                     ),
@@ -50,7 +55,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="settings"
                 options={{
-                    title: 'Settings',
+                    title: t('common.settings'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="settings" size={size} color={color} />
                     ),
@@ -59,7 +64,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="firebase-test"
                 options={{
-                    title: 'Firebase Test',
+                    title: t('common.firebaseTest'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="flame" size={size} color={color} />
                     ),

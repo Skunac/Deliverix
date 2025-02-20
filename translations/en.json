@@ -1,0 +1,89 @@
+{
+  "common": {
+    "welcome": "Welcome!",
+    "home": "Home",
+    "messages": "Messages",
+    "profile": "Profile",
+    "settings": "Settings",
+    "firebaseTest": "Firebase Test",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "success": "Success",
+    "error": "Error"
+  },
+  "home": {
+    "title": "Welcome!",
+    "subtitle": "Firebase Demo App",
+    "accountStatus": "Account Status",
+    "loggedInAs": "Logged in as: {{email}}",
+    "userId": "User ID: {{id}}",
+    "notLoggedIn": "Not logged in",
+    "useFirebaseTest": "Use the Firebase Test tab to sign in",
+    "firestoreTest": "Firestore Test",
+    "addDocument": "Add Document",
+    "fetchLatest": "Fetch Latest"
+  },
+  "profile": {
+    "title": "User Profile",
+    "notSignedIn": "Not signed in",
+    "profileInformation": "Profile Information",
+    "displayName": "Display Name",
+    "emailAddress": "Email Address",
+    "accountStatus": "Account Status",
+    "userId": "User ID",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "notSet": "Not set",
+    "notAvailable": "Not available"
+  },
+  "messages": {
+    "title": "Messages",
+    "signInRequired": "Please sign in to access your messages",
+    "placeholder": "This is a placeholder for the messages screen. Your messages will appear here once implemented."
+  },
+  "settings": {
+    "title": "Settings",
+    "customize": "Customize your app experience",
+    "appearance": "Appearance",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Use dark theme throughout the app",
+    "notifications": "Notifications",
+    "pushNotifications": "Push Notifications",
+    "pushNotificationsDesc": "Receive push notifications",
+    "account": "Account",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account",
+    "language": "Language",
+    "signInRequired": "Please sign in to access settings"
+  },
+  "auth": {
+    "authStatus": "Auth Status",
+    "authenticated": "✓ Authenticated",
+    "notAuthenticated": "Not authenticated",
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display Name",
+    "register": "Register",
+    "login": "Login",
+    "logout": "Logout",
+    "authTest": "Auth Test"
+  },
+  "firestore": {
+    "testMessage": "Test message",
+    "createDocument": "Create Document",
+    "fetchLatest": "Fetch Latest",
+    "queryDocuments": "Query Documents (Last 5)",
+    "clearResults": "Clear Results",
+    "results": "Results"
+  },
+  "errors": {
+    "somethingWrong": "Something went wrong",
+    "tryAgain": "Please try again later",
+    "networkError": "Network error",
+    "authFailed": "Authentication failed"
+  }
+}

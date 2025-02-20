@@ -1,0 +1,89 @@
+{
+  "common": {
+    "welcome": "Bienvenue !",
+    "home": "Accueil",
+    "messages": "Messages",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "firebaseTest": "Test Firebase",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "success": "Succès",
+    "error": "Erreur"
+  },
+  "home": {
+    "title": "Bienvenue !",
+    "subtitle": "Application Démo Firebase",
+    "accountStatus": "État du compte",
+    "loggedInAs": "Connecté en tant que : {{email}}",
+    "userId": "ID utilisateur : {{id}}",
+    "notLoggedIn": "Non connecté",
+    "useFirebaseTest": "Utilisez l'onglet Test Firebase pour vous connecter",
+    "firestoreTest": "Test Firestore",
+    "addDocument": "Ajouter un document",
+    "fetchLatest": "Récupérer le dernier"
+  },
+  "profile": {
+    "title": "Profil utilisateur",
+    "notSignedIn": "Non connecté",
+    "profileInformation": "Informations du profil",
+    "displayName": "Nom d'affichage",
+    "emailAddress": "Adresse e-mail",
+    "accountStatus": "État du compte",
+    "userId": "ID utilisateur",
+    "verified": "Vérifié",
+    "unverified": "Non vérifié",
+    "notSet": "Non défini",
+    "notAvailable": "Non disponible"
+  },
+  "messages": {
+    "title": "Messages",
+    "signInRequired": "Veuillez vous connecter pour accéder à vos messages",
+    "placeholder": "Ceci est un espace réservé pour l'écran des messages. Vos messages apparaîtront ici une fois implémentés."
+  },
+  "settings": {
+    "title": "Paramètres",
+    "customize": "Personnalisez votre expérience d'application",
+    "appearance": "Apparence",
+    "darkMode": "Mode sombre",
+    "darkModeDesc": "Utiliser le thème sombre dans toute l'application",
+    "notifications": "Notifications",
+    "pushNotifications": "Notifications push",
+    "pushNotificationsDesc": "Recevoir des notifications push",
+    "account": "Compte",
+    "changePassword": "Changer le mot de passe",
+    "deleteAccount": "Supprimer le compte",
+    "language": "Langue",
+    "signInRequired": "Veuillez vous connecter pour accéder aux paramètres"
+  },
+  "auth": {
+    "authStatus": "État d'authentification",
+    "authenticated": "✓ Authentifié",
+    "notAuthenticated": "Non authentifié",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "displayName": "Nom d'affichage",
+    "register": "S'inscrire",
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "authTest": "Test d'authentification"
+  },
+  "firestore": {
+    "testMessage": "Message test",
+    "createDocument": "Créer un document",
+    "fetchLatest": "Récupérer le dernier",
+    "queryDocuments": "Requête de documents (5 derniers)",
+    "clearResults": "Effacer les résultats",
+    "results": "Résultats"
+  },
+  "errors": {
+    "somethingWrong": "Quelque chose s'est mal passé",
+    "tryAgain": "Veuillez réessayer plus tard",
+    "networkError": "Erreur réseau",
+    "authFailed": "L'authentification a échoué"
+  }
+}

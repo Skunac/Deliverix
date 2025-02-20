@@ -3,8 +3,12 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-nativ
 import { testCollection, firestoreService, Collections } from '@/services/firebase/firestore';
 import { router } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
+import { useTranslation } from 'react-i18next';
 
 export default function FirebaseTestPage() {
+    // Translation hook
+    const { t } = useTranslation();
+
     // Auth state
     const { user, login, register, logout, error: authError } = useAuth();
 
@@ -132,25 +136,25 @@ export default function FirebaseTestPage() {
         <ScrollView className="flex-1 bg-gray-50 p-4">
             {/* Auth Status */}
             <View className="mb-6 p-4 bg-white rounded-lg shadow-sm">
-                <Text className="text-lg font-bold mb-2">Auth Status</Text>
+                <Text className="text-lg font-bold mb-2">{t('auth.authStatus')}</Text>
                 {user ? (
                     <View>
-                        <Text className="text-green-600">✓ Authenticated</Text>
+                        <Text className="text-green-600">{t('auth.authenticated')}</Text>
                         <Text>User ID: {user.uid}</Text>
                         <Text>Email: {user.email}</Text>
-                        <Text>Display Name: {user.displayName || 'Not set'}</Text>
+                        <Text>Display Name: {user.displayName || t('profile.notSet')}</Text>
                     </View>
                 ) : (
-                    <Text className="text-yellow-600">Not authenticated</Text>
+                    <Text className="text-yellow-600">{t('auth.notAuthenticated')}</Text>
                 )}
             </View>
 
             {/* Auth Form */}
             <View className="mb-6 p-4 bg-white rounded-lg shadow-sm">
-                <Text className="text-lg font-bold mb-2">Auth Test</Text>
+                <Text className="text-lg font-bold mb-2">{t('auth.authTest')}</Text>
                 <TextInput
                     className="border border-gray-300 rounded-md p-2 mb-2"
-                    placeholder="Email"
+                    placeholder={t('auth.email')}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -158,14 +162,14 @@ export default function FirebaseTestPage() {
                 />
                 <TextInput
                     className="border border-gray-300 rounded-md p-2 mb-2"
-                    placeholder="Password"
+                    placeholder={t('auth.password')}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                 />
                 <TextInput
                     className="border border-gray-300 rounded-md p-2 mb-4"
-                    placeholder="Display Name"
+                    placeholder={t('auth.displayName')}
                     value={displayName}
                     onChangeText={setDisplayName}
                 />
@@ -175,13 +179,13 @@ export default function FirebaseTestPage() {
                         className="bg-blue-500 px-4 py-2 rounded-md flex-1 mr-2"
                         onPress={testRegister}
                     >
-                        <Text className="text-white text-center">Register</Text>
+                        <Text className="text-white text-center">{t('auth.register')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         className="bg-green-500 px-4 py-2 rounded-md flex-1"
                         onPress={testLogin}
                     >
-                        <Text className="text-white text-center">Login</Text>
+                        <Text className="text-white text-center">{t('auth.login')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -189,16 +193,16 @@ export default function FirebaseTestPage() {
                     className="bg-red-500 px-4 py-2 rounded-md"
                     onPress={testLogout}
                 >
-                    <Text className="text-white text-center">Logout</Text>
+                    <Text className="text-white text-center">{t('auth.logout')}</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Firestore Test */}
             <View className="mb-6 p-4 bg-white rounded-lg shadow-sm">
-                <Text className="text-lg font-bold mb-2">Firestore Test</Text>
+                <Text className="text-lg font-bold mb-2">{t('home.firestoreTest')}</Text>
                 <TextInput
                     className="border border-gray-300 rounded-md p-2 mb-4"
-                    placeholder="Test message"
+                    placeholder={t('firestore.testMessage')}
                     value={testMessage}
                     onChangeText={setTestMessage}
                 />
@@ -208,13 +212,13 @@ export default function FirebaseTestPage() {
                         className="bg-blue-500 px-4 py-2 rounded-md flex-1 mr-2"
                         onPress={testCreateDocument}
                     >
-                        <Text className="text-white text-center">Create Document</Text>
+                        <Text className="text-white text-center">{t('firestore.createDocument')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         className="bg-purple-500 px-4 py-2 rounded-md flex-1"
                         onPress={testFetchLatest}
                     >
-                        <Text className="text-white text-center">Fetch Latest</Text>
+                        <Text className="text-white text-center">{t('firestore.fetchLatest')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -222,20 +226,20 @@ export default function FirebaseTestPage() {
                     className="bg-indigo-500 px-4 py-2 rounded-md mb-2"
                     onPress={testQueryDocuments}
                 >
-                    <Text className="text-white text-center">Query Documents (Last 5)</Text>
+                    <Text className="text-white text-center">{t('firestore.queryDocuments')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     className="bg-gray-500 px-4 py-2 rounded-md"
                     onPress={clearResults}
                 >
-                    <Text className="text-white text-center">Clear Results</Text>
+                    <Text className="text-white text-center">{t('firestore.clearResults')}</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Results */}
             <View className="p-4 bg-white rounded-lg shadow-sm">
-                <Text className="text-lg font-bold mb-2">Results</Text>
+                <Text className="text-lg font-bold mb-2">{t('firestore.results')}</Text>
 
                 {authError && (
                     <View className="mb-4 p-3 bg-red-100 rounded-md">
@@ -262,7 +266,7 @@ export default function FirebaseTestPage() {
                     className="bg-gray-200 px-6 py-3 rounded-md"
                     onPress={() => router.push('/(tabs)')}
                 >
-                    <Text>Back to Home</Text>
+                    <Text>{t('common.home')}</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
