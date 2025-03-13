@@ -1,19 +1,19 @@
 import { Text, View, TouchableOpacity, ScrollView } from "react-native";
 import { useState } from "react";
-import { testCollection } from "@/services/firebase/firestore";
-import { useAuth } from "@/contexts/authContext";
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { testService } from "@/src/services/test.service";
+import {useAuthContext} from "@/contexts/authContext";
 
 export default function Index() {
-    const { user } = useAuth();
+    const { user } = useAuthContext();
     const [testData, setTestData] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { t } = useTranslation();
 
     const addTestDocument = async () => {
         try {
-            const docId = await testCollection.add("Hello from React Native!");
+            const docId = await testService.addTestMessage("Hello from React Native!");
             setTestData('Document written with ID: ' + docId);
             setError(null);
         } catch (e) {
@@ -23,7 +23,7 @@ export default function Index() {
 
     const fetchTestData = async () => {
         try {
-            const doc = await testCollection.getLatest();
+            const doc = await testService.getLatestTestMessage();
 
             if (doc) {
                 setTestData(`Latest message: ${doc.message}`);
@@ -57,7 +57,7 @@ export default function Index() {
                             {t('home.loggedInAs', { email: user.email })}
                         </Text>
                         <Text className="text-green-600 text-sm mt-1">
-                            {t('home.userId', { id: user.uid.substring(0, 8) + '...' })}
+                            {t('home.userId', { id: (user.uid || user.id).substring(0, 8) + '...' })}
                         </Text>
                     </View>
                 ) : (
@@ -70,6 +70,11 @@ export default function Index() {
                         </Text>
                     </View>
                 )}
+            </View>
+
+            <View className="m-4 bg-white rounded-xl shadow-sm">
+                <Text className="font-cabin">This text should use Cabin font</Text>
+                <Text className="font-space-mono">This text should use Space Mono font</Text>
             </View>
 
             {/* Firestore Test Card */}

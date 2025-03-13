@@ -88,4 +88,6 @@ ios/Podfile.lock
 app-example
 
 # ide
-.idea/
+.idea
+android/
+ios/

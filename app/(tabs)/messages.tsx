@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { useAuth } from '@/contexts/authContext';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import {useAuthContext} from "@/contexts/authContext";
 
 export default function MessagesScreen() {
-    const { user } = useAuth();
+    const { user } = useAuthContext();
     const { t } = useTranslation();
 
-    console.log("MessagesScreen rendered, user:", user?.uid || "not logged in");
+    console.log("MessagesScreen rendered, user:", user?.id || "not logged in");
 
     if (!user) {
         return (

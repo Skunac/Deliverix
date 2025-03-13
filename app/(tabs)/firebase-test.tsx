@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { testCollection, firestoreService, Collections } from '@/services/firebase/firestore';
 import { router } from 'expo-router';
-import { useAuth } from "@/contexts/authContext";
 import { useTranslation } from 'react-i18next';
+import {useAuthContext} from '@/contexts/authContext';
+import { testService } from '@/src/services/test.service';
+import { testRepository } from '@/src/firebase/repositories/test.repository';
 
 export default function FirebaseTestPage() {
     // Translation hook
     const { t } = useTranslation();
 
     // Auth state
-    const { user, login, register, logout, error: authError } = useAuth();
+    const { user, login, register, logout, error: authError } = useAuthContext();
 
     // Log when the component renders
     useEffect(() => {
@@ -42,7 +43,7 @@ export default function FirebaseTestPage() {
         clearResults();
         try {
             console.log("Testing document creation:", testMessage);
-            const docId = await testCollection.add(testMessage);
+            const docId = await testService.addTestMessage(testMessage);
             console.log("Document created:", docId);
             setFirestoreResult(`Document created with ID: ${docId}`);
         } catch (error) {
@@ -56,7 +57,7 @@ export default function FirebaseTestPage() {
         clearResults();
         try {
             console.log("Fetching latest document");
-            const doc = await testCollection.getLatest();
+            const doc = await testService.getLatestTestMessage();
             if (doc) {
                 console.log("Document found:", doc.id);
                 setFirestoreResult(`Latest document: ${JSON.stringify(doc, null, 2)}`);
@@ -75,8 +76,7 @@ export default function FirebaseTestPage() {
         clearResults();
         try {
             console.log("Querying documents");
-            const docs = await firestoreService.queryDocuments(
-                Collections.TEST,
+            const docs = await testRepository.query(
                 [],
                 'timestamp',
                 'desc',
@@ -243,7 +243,7 @@ export default function FirebaseTestPage() {
 
                 {authError && (
                     <View className="mb-4 p-3 bg-red-100 rounded-md">
-                        <Text className="text-red-700">{authError}</Text>
+                        <Text className="text-red-700">{authError.message}</Text>
                     </View>
                 )}
 

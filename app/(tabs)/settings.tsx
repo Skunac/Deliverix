@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, Switch, TouchableOpacity, ScrollView } from 'react-native';
-import { useAuth } from '@/contexts/authContext';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from "@/components/ui/languageSelector";
-
-// Define types for the auth context
-interface User {
-    uid: string;
-    // Add other user properties as needed
-}
-
-interface AuthContext {
-    user: User | null;
-    logout: () => void;
-}
+import {useAuthContext} from "@/contexts/authContext";
 
 // Define type for SettingItem props
 interface SettingItemProps {
@@ -25,10 +14,10 @@ interface SettingItemProps {
 }
 
 export default function SettingsScreen() {
-    const { user, logout } = useAuth() as AuthContext;
+    const { user, logout } = useAuthContext();
     const { t } = useTranslation();
 
-    console.log("SettingsScreen rendered, user:", user?.uid || "not logged in");
+    console.log("SettingsScreen rendered, user:", user?.id || "not logged in");
 
     // Settings state
     const [darkMode, setDarkMode] = useState<boolean>(false);
