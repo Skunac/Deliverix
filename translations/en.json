@@ -2,7 +2,7 @@
   "common": {
     "welcome": "Welcome!",
     "home": "Home",
-    "messages": "Messages",
+    "payment": "Payment",
     "profile": "Profile",
     "settings": "Settings",
     "firebaseTest": "Firebase Test",

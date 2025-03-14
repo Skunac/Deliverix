@@ -57,26 +57,57 @@ export const auth = {
     ): Promise<User> => {
         console.log(`Attempting to create user: ${email}`);
         try {
+            // Create the user account
             const userCredential = await firebaseAuth.createUserWithEmailAndPassword(
                 email,
                 password
             );
 
-            const user = userCredential.user;
+            let user = userCredential.user;
             console.log("User created:", user.uid);
 
             // Update profile if displayName is provided
             if (displayName) {
-                console.log(`Updating profile with displayName: ${displayName}`);
-                await user.updateProfile({ displayName });
+                try {
+                    console.log(`Updating profile with displayName: ${displayName}`);
+
+                    // Ensure we have the latest user reference
+                    const currentUser = firebaseAuth.currentUser;
+                    if (!currentUser) {
+                        console.warn("No current user found when trying to update profile");
+                    } else {
+                        // Update profile and wait for it to complete
+                        await currentUser.updateProfile({
+                            displayName: displayName
+                        });
+
+                        // Wait a moment for the update to process
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+
+                        // Reload user data to get updated profile
+                        await currentUser.reload();
+
+                        // Get fresh user object after reload
+                        user = firebaseAuth.currentUser;
+
+                        // Log to see if the displayName was updated
+                        console.log("User after profile update:", {
+                            displayName: user?.displayName,
+                            uid: user?.uid
+                        });
+                    }
+                } catch (profileError) {
+                    console.error("Error updating user profile:", profileError);
+                    // Continue with user creation even if profile update fails
+                }
             }
 
-            // Create user document in Firestore
+            // Create user document in Firestore with reliable data
             console.log("Creating user document in Firestore");
             await userRepository.create(
                 {
                     email: user.email || '',  // Fallback if null
-                    displayName: user.displayName,
+                    displayName: user?.displayName || displayName || '',
                     photoURL: user.photoURL,
                     uid: user.uid,
                     emailVerified: user.emailVerified,

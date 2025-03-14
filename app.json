@@ -6,8 +6,7 @@
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-
+    "newArchEnabled": false,
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -17,7 +16,7 @@
 
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fstcklocal.rapidroyal",
+      "bundleIdentifier": "com.fstck.rapidroyalstaging",
       "googleServicesFile": "./GoogleService-Info.plist",
       "splash": {
         "image": "./assets/images/splash-icon.png",
@@ -28,7 +27,7 @@
     },
 
     "android": {
-      "package": "com.fstcklocal.rapidroyal",
+      "package": "com.fstck.rapidroyalstaging",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -49,9 +48,6 @@
 
     "plugins": [
       "expo-router",
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      "@react-native-firebase/crashlytics",
       [
         "expo-build-properties",
         {
@@ -60,6 +56,9 @@
           }
         }
       ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/crashlytics",
       [
         "expo-splash-screen",
         {
@@ -67,6 +66,13 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "id",
+          "enableGooglePay": true
         }
       ]
     ],

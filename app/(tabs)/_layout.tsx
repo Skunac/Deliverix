@@ -44,9 +44,9 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="messages"
+                name="payment"
                 options={{
-                    title: t('common.messages'),
+                    title: t('common.payment'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="chatbubbles" size={size} color={color} />
                     ),

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator} from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {useAuthContext} from '@/contexts/authContext';
@@ -11,7 +11,7 @@ export default function FirebaseTestPage() {
     const { t } = useTranslation();
 
     // Auth state
-    const { user, login, register, logout, error: authError } = useAuthContext();
+    const { user, loading, login, register, logout, error: authError } = useAuthContext();
 
     // Log when the component renders
     useEffect(() => {
@@ -94,7 +94,7 @@ export default function FirebaseTestPage() {
     const testRegister = async () => {
         clearResults();
         try {
-            console.log(`Registering user: ${email}`);
+            console.log(`Registering user: ${email}, ${displayName}`);
             await register(email, password, displayName);
             console.log("Registration successful");
             setFirestoreResult('User registered successfully');
@@ -179,13 +179,13 @@ export default function FirebaseTestPage() {
                         className="bg-blue-500 px-4 py-2 rounded-md flex-1 mr-2"
                         onPress={testRegister}
                     >
-                        <Text className="text-white text-center">{t('auth.register')}</Text>
+                        { loading ? (<ActivityIndicator color={'white'} />) : (<Text className="text-white text-center">{t('auth.register')}</Text>)}
                     </TouchableOpacity>
                     <TouchableOpacity
                         className="bg-green-500 px-4 py-2 rounded-md flex-1"
                         onPress={testLogin}
                     >
-                        <Text className="text-white text-center">{t('auth.login')}</Text>
+                        { loading ? (<ActivityIndicator color={'white'} />) : (<Text className="text-white text-center">{t('auth.login')}</Text>)}
                     </TouchableOpacity>
                 </View>
 

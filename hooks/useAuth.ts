@@ -19,10 +19,12 @@ export function useAuth() {
                     // But we can fetch the complete profile with any additional data
                     const userProfile = await userService.getUserProfile(authUser.uid!);
                     if (userProfile) {
-                        // Merge auth data with profile data
+                        // Merge auth data with profile data - prioritize Firestore profile over auth
                         setUser({
                             ...authUser,
                             ...userProfile,
+                            // Make sure displayName from Firestore overrides auth if available
+                            displayName: userProfile.displayName || authUser.displayName,
                             // Ensure id and uid are consistent
                             id: authUser.uid!,
                             uid: authUser.uid
@@ -61,7 +63,21 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            await auth.createUserWithEmailAndPassword(email, password, displayName);
+            const newUser = await auth.createUserWithEmailAndPassword(email, password, displayName);
+
+            // Manually update the user state with displayName to show immediately
+            if (displayName && newUser) {
+                setUser(prevUser => {
+                    if (prevUser) {
+                        return {
+                            ...prevUser,
+                            displayName: displayName
+                        };
+                    }
+                    return prevUser;
+                });
+            }
+
             return true;
         } catch (err) {
             console.error('Sign up error:', err);
@@ -93,7 +109,7 @@ export function useAuth() {
             setError(null);
             await auth.updateProfile(data);
 
-            // Update local state
+            // Update local state immediately
             if (user) {
                 setUser({
                     ...user,
