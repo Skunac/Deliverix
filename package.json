@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@invertase/firestore-stripe-payments": "^0.0.7",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-firebase/app": "^21.10.0",
     "@react-native-firebase/auth": "^21.10.0",
@@ -23,6 +24,7 @@
     "@react-native-firebase/firestore": "^21.10.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
+    "@stripe/stripe-react-native": "0.38.6",
     "expo": "~52.0.33",
     "expo-blur": "~14.0.3",
     "expo-build-properties": "~0.13.2",
@@ -50,8 +52,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "tailwindcss": "^3.4.17",
-    "@stripe/stripe-react-native": "0.38.6"
+    "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

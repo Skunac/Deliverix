@@ -4,118 +4,209 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthContext } from "@/contexts/authContext";
 import { initStripe, useStripe } from '@stripe/stripe-react-native';
+import { db, serverTimestamp } from '@/src/firebase/config';
 
-export default function MessagesScreen() {
+// Collections constants - match extension defaults
+const COLLECTIONS = {
+    CUSTOMERS: 'customers',
+    CHECKOUT_SESSIONS: 'checkout_sessions',
+    PAYMENT_INTENTS: 'payment_intents'
+};
+
+export default function ProductPaymentScreen({
+                                                 // These props would be passed from your product detail screen
+                                                 productId = 'dynamic_product',
+                                                 productName = 'Premium Feature',
+                                                 productDescription = 'Unlock this premium feature',
+                                                 amount = 999, // in cents ($9.99)
+                                                 currency = 'usd'
+                                             }) {
     const { user } = useAuthContext();
     const { t } = useTranslation();
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [loading, setLoading] = useState(false);
     const [paymentReady, setPaymentReady] = useState(false);
+    const [clientSecret, setClientSecret] = useState(null);
 
-    // Simulated function to get a payment intent client secret
-    // This would be replaced with a Firebase extension call later
+    const formatCurrency = (amount, currency = 'usd') => {
+        const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currency.toUpperCase(),
+            minimumFractionDigits: 2
+        });
+
+        return formatter.format(amount / 100);
+    };
+
     const createPaymentIntent = async () => {
+        if (!user) {
+            Alert.alert('Error', 'You must be signed in to make a purchase');
+            return null;
+        }
+
         try {
             setLoading(true);
 
-            // For testing: hardcoded client secret
-            // In production, this would come from your backend or Firebase extension
-            // This will NOT work for actual payments but allows for UI testing
-            const testClientSecret = 'pi_3OQGKCNvhQVapHRO0CvIBSSY_secret_2wUoRRmCfQAK6pYf3YzYEpuAu';
+            console.log('Creating payment intent for user:', user.uid);
 
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const checkoutSessionRef = await db
+                .collection(COLLECTIONS.CUSTOMERS)
+                .doc(user.uid)
+                .collection(COLLECTIONS.CHECKOUT_SESSIONS)
+                .add({
+                    client: 'mobile',
+                    mode: 'payment',
+                    amount: amount,
+                    currency: currency,
+                    metadata: {
+                        productId: productId,
+                        productName: productName
+                    }
+                });
 
-            console.log('Client secret retrieved (demo mode)');
-            return testClientSecret;
+            console.log('Checkout session created with ID:', checkoutSessionRef.id);
+
+            return new Promise((resolve, reject) => {
+                const unsubscribe = checkoutSessionRef.onSnapshot(
+                    (doc) => {
+                        const data = doc.data();
+                        console.log('Checkout session data:', data);
+
+                        if (data && data.paymentIntentClientSecret) {
+                            setClientSecret(data.paymentIntentClientSecret);
+                            unsubscribe();
+                            resolve({
+                                clientSecret: data.paymentIntentClientSecret,
+                                ephemeralKeySecret: data.ephemeralKeySecret,
+                                customer: data.customer,
+                                checkoutSessionId: doc.id
+                            });
+                        }
+                    },
+                    (error) => {
+                        console.error('Error listening to checkout session:', error);
+                        unsubscribe();
+                        reject(error);
+                    }
+                );
+
+                setTimeout(() => {
+                    unsubscribe();
+                    reject(new Error('Checkout session creation timed out'));
+                }, 15000);
+            });
         } catch (error) {
-            console.error('Error creating payment intent:', error);
-            Alert.alert('Error', 'Failed to initialize payment (demo mode)');
+            console.error('Error creating checkout session:', error);
+            Alert.alert('Error', `Could not initialize payment: ${error.message}`);
             throw error;
         } finally {
             setLoading(false);
         }
     };
 
-    // Initialize the payment sheet
-    const initializePayment = async () => {
+    // Initialize and show the payment sheet
+    const handlePayment = async () => {
         try {
             setLoading(true);
 
-            // In a real app, this would call your backend or Firebase
-            // For now, we'll use our simulated function
-            const clientSecret = await createPaymentIntent();
+            // Create a payment intent if needed
+            if (!clientSecret) {
+                const paymentData = await createPaymentIntent();
 
-            // Initialize the payment sheet
-            const { error } = await initPaymentSheet({
-                paymentIntentClientSecret: clientSecret,
-                merchantDisplayName: 'Your App Name',
-                allowsDelayedPaymentMethods: true,
-                defaultBillingDetails: {
-                    name: user?.displayName || 'Customer',
-                    email: user?.email || ''
+                if (!paymentData) {
+                    setLoading(false);
+                    return;
                 }
-            });
 
-            if (error) {
-                console.error('Error initializing payment sheet:', error);
-                //Alert.alert('Demo Mode', 'This is a demo implementation. In a real app, you would connect to the Stripe API via a backend service or Firebase extension.');
-            } else {
+                // Initialize the payment sheet
+                const { error: initError } = await initPaymentSheet({
+                    paymentIntentClientSecret: paymentData.clientSecret,
+                    merchantDisplayName: 'Your App Name',
+                    customerId: paymentData.customer,
+                    customerEphemeralKeySecret: paymentData.ephemeralKeySecret,
+                    // Disable Link payment method
+                    allowsDelayedPaymentMethods: false,
+                    ppaymentMethodsConfiguration: {
+                        link: {
+                            enabled: false
+                        }
+                    },
+                    defaultBillingDetails: {
+                        name: user.displayName || '',
+                        email: user.email || ''
+                    }
+                });
+
+                if (initError) {
+                    console.error('Error initializing payment sheet:', initError);
+                    Alert.alert('Error', initError.message);
+                    setLoading(false);
+                    return;
+                }
+
                 setPaymentReady(true);
-                //Alert.alert('Demo Ready', 'Payment sheet initialized in demo mode. No actual charges will be made.');
             }
+
+            // Present the payment sheet
+            const { error: presentError } = await presentPaymentSheet();
+
+            if (presentError) {
+                if (presentError.code === 'Canceled') {
+                    console.log('Payment canceled');
+                } else {
+                    console.error('Payment error:', presentError);
+                    Alert.alert('Payment Error', presentError.message);
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Payment succeeded
+            Alert.alert('Success', 'Your payment was successful!');
+
+            // Record the purchase in your database
+            await recordPurchase();
+
+            // Here you would unlock the feature or provide the purchased product
+
         } catch (error) {
-            console.error('Failed to initialize payment:', error);
-            //Alert.alert('Demo Mode', 'This is a demo implementation. For actual payments, you would need a properly configured backend or Firebase extension.');
+            console.error('Error in payment process:', error);
+            Alert.alert('Error', `Payment failed: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
 
-    // Open the payment sheet when the user presses the pay button
-    const handlePayment = async () => {
-        if (!paymentReady) {
-            await initializePayment();
-            return;
-        }
-
+    // Record the purchase in your database
+    const recordPurchase = async () => {
         try {
-            const { error } = await presentPaymentSheet();
+            await db.collection('purchases').add({
+                userId: user.uid,
+                productId: productId,
+                productName: productName,
+                amount: amount,
+                currency: currency,
+                purchaseDate: serverTimestamp(),
+                status: 'completed'
+            });
 
-            if (error) {
-                console.log('Payment error:', error);
-                if (error.code === 'Canceled') {
-                    Alert.alert('Cancelled', 'Payment was cancelled');
-                } else {
-                    //Alert.alert('Demo Mode', 'This is a demo implementation. For actual payments, you would need a properly configured backend or Firebase extension.');
-                }
-            } else {
-                Alert.alert('Demo Success', 'Your payment would be successful in a real implementation!');
-                // Here you would update the user's subscription status in your database
-            }
+            console.log('Purchase recorded');
         } catch (error) {
-            console.error('Payment presentation error:', error);
-            Alert.alert('Error', 'An unexpected error occurred');
+            console.error('Error recording purchase:', error);
         }
     };
 
     // Initialize Stripe when the component mounts
     useEffect(() => {
-        if (user) {
-            // Initialize with a test publishable key
-            initStripe({
-                publishableKey: 'pk_test_51OQGJoNvhQVapHROTvxHi8vNfZYzjTj9NfB2MtQyGLcAVp0ZdoZg84iRlK6uUYVnFcmj9oAEbG3XSKdibB1VmQjM00U0U2AYdl',
-                // This is a test key from Stripe docs, replace with your own before production
-                merchantIdentifier: 'merchant.com.your.app',
-            }).then(() => {
-                console.log('Stripe initialized successfully');
-            }).catch(error => {
-                console.error('Failed to initialize Stripe:', error);
-            });
-        }
-    }, [user]);
-
-    console.log("StripePaymentScreen rendered, user:", user?.uid || "not logged in");
+        initStripe({
+            publishableKey: 'pk_test_51R2aIOArSiMSA6GzD5di58E0KQPjhdqbXcvVhIh0ZemCTtkLqS6MGt15C5cqWCnjK8ON1CKf1oLGpUmzYo2bLohx00Lnonqp2N',
+            merchantIdentifier: 'merchant.com.your.app',
+        }).then(() => {
+            console.log('Stripe initialized successfully');
+        }).catch(error => {
+            console.error('Failed to initialize Stripe:', error);
+        });
+    }, []);
 
     if (!user) {
         return (
@@ -135,17 +226,17 @@ export default function MessagesScreen() {
 
     return (
         <View className="flex-1 bg-white p-4">
-            <Text className="text-xl font-bold mb-4">Stripe Payment Test</Text>
+            <Text className="text-xl font-bold mb-6">{productName}</Text>
 
             <View className="bg-gray-100 p-4 rounded-lg mb-6">
-                <Text className="text-gray-700 font-medium mb-2">
-                    Premium Subscription
+                <Text className="text-gray-700 mb-4">
+                    {productDescription}
                 </Text>
-                <Text className="text-gray-500 mb-4">
-                    Unlock all premium features for just $19.99 per month
-                </Text>
+
                 <View className="flex-row justify-between items-center">
-                    <Text className="text-lg font-bold">$19.99</Text>
+                    <Text className="text-lg font-bold">
+                        {formatCurrency(amount, currency)}
+                    </Text>
                     <TouchableOpacity
                         className="px-6 py-3 bg-blue-500 rounded-full"
                         onPress={handlePayment}
@@ -155,7 +246,7 @@ export default function MessagesScreen() {
                             <ActivityIndicator color="white" size="small" />
                         ) : (
                             <Text className="text-white font-medium">
-                                {paymentReady ? 'Pay Now (Demo)' : 'Initialize Payment'}
+                                Buy Now
                             </Text>
                         )}
                     </TouchableOpacity>
@@ -164,14 +255,8 @@ export default function MessagesScreen() {
 
             <View className="bg-gray-50 p-4 rounded-lg">
                 <Text className="text-sm text-gray-500">
-                    This is a demonstration of Stripe payments integration. Without a backend or
-                    Firebase extension, this is only showing the UI flow. No actual charges
-                    will be processed.
-                </Text>
-
-                <Text className="text-sm text-gray-500 mt-2">
-                    When you add the Firebase Stripe extension, this code will be updated to
-                    create real payment intents through Firebase.
+                    Your payment is processed securely with Stripe.
+                    After purchase, this feature will be immediately available.
                 </Text>
             </View>
         </View>
