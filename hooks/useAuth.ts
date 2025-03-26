@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { auth } from '@/src/firebase/auth';
-import { userService } from '@/src/services/user.service';
+import { authService } from '@/src/firebase/auth';
+import { UserService } from '@/src/services/user.service';
 import { User } from '@/src/models/user.model';
-import { handleFirebaseError } from '@/src/utils/error-handler';
+import { handleAuthError, AppError } from '@/src/utils/error-handler';
+import { FirebaseAuthTypes } from "@react-native-firebase/auth";
+
+const userService = new UserService();
+
+// Convert AppError to standard Error
+const createErrorFromAppError = (appError: AppError): Error => {
+    const error = new Error(appError.message);
+    error.name = appError.code as string;
+    return error;
+};
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null);
@@ -10,14 +20,14 @@ export function useAuth() {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
+        const unsubscribe = authService.onAuthStateChanged(async (authUser) => {
             if (authUser) {
                 try {
                     // For just authenticated users, we already have basic profile info
                     setUser(authUser);
 
                     // But we can fetch the complete profile with any additional data
-                    const userProfile = await userService.getUserProfile(authUser.uid!);
+                    const userProfile = await userService.getUserById(authUser.uid!);
                     if (userProfile) {
                         // Merge auth data with profile data - prioritize Firestore profile over auth
                         setUser({
@@ -48,11 +58,12 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            await auth.signInWithEmailAndPassword(email, password);
+            await authService.signInWithEmailAndPassword(email, password);
             return true;
         } catch (err) {
             console.error('Sign in error:', err);
-            setError(handleFirebaseError(err));
+            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
+            setError(createErrorFromAppError(appError));
             return false;
         } finally {
             setLoading(false);
@@ -63,7 +74,7 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            const newUser = await auth.createUserWithEmailAndPassword(email, password, displayName);
+            const newUser = await authService.createUserWithEmailAndPassword(email, password, displayName);
 
             // Manually update the user state with displayName to show immediately
             if (displayName && newUser) {
@@ -81,7 +92,8 @@ export function useAuth() {
             return true;
         } catch (err) {
             console.error('Sign up error:', err);
-            setError(handleFirebaseError(err));
+            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
+            setError(createErrorFromAppError(appError));
             return false;
         } finally {
             setLoading(false);
@@ -92,11 +104,12 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            await auth.signOut();
+            await authService.signOut();
             return true;
         } catch (err) {
             console.error('Sign out error:', err);
-            setError(handleFirebaseError(err));
+            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
+            setError(createErrorFromAppError(appError));
             return false;
         } finally {
             setLoading(false);
@@ -107,7 +120,7 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            await auth.updateProfile(data);
+            await authService.updateProfile(data);
 
             // Update local state immediately
             if (user) {
@@ -121,7 +134,8 @@ export function useAuth() {
             return true;
         } catch (err) {
             console.error('Update profile error:', err);
-            setError(handleFirebaseError(err));
+            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
+            setError(createErrorFromAppError(appError));
             return false;
         } finally {
             setLoading(false);

@@ -1,7 +1,12 @@
+// src/firebase/auth.ts
 import { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import { firebaseAuth } from './config';
-import { userRepository } from './repositories/user.repository';
+import { UserRepository } from './repositories/user.repository';
 import { User } from '../models/user.model';
+import { UserAdapter } from './adapters/user.adapter';
+
+const userRepository = new UserRepository();
 
 // Convert Firebase user to app user model
 export const mapFirebaseUser = (
@@ -11,18 +16,10 @@ export const mapFirebaseUser = (
 
     console.log("Mapping Firebase user:", user.uid);
 
-    return {
-        id: user.uid,         // Set the document id to match the uid
-        uid: user.uid,        // Keep the uid field for clarity
-        email: user.email || '',
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        emailVerified: user.emailVerified,
-        phoneNumber: user.phoneNumber,
-    };
+    return UserAdapter.fromFirebaseUser(user);
 };
 
-export const auth = {
+export const authService = {
     // Current user
     getCurrentUser: (): User | null => {
         const user = firebaseAuth.currentUser;
@@ -88,7 +85,7 @@ export const auth = {
                         await currentUser.reload();
 
                         // Get fresh user object after reload
-                        user = firebaseAuth.currentUser;
+                        user = firebaseAuth.currentUser!;
 
                         // Log to see if the displayName was updated
                         console.log("User after profile update:", {
@@ -104,17 +101,20 @@ export const auth = {
 
             // Create user document in Firestore with reliable data
             console.log("Creating user document in Firestore");
-            await userRepository.create(
-                {
-                    email: user.email || '',  // Fallback if null
-                    displayName: user?.displayName || displayName || '',
-                    photoURL: user.photoURL,
-                    uid: user.uid,
-                    emailVerified: user.emailVerified,
-                    phoneNumber: user.phoneNumber
-                },
-                user.uid // Use UID as document ID
-            );
+
+            // Create a proper User object that satisfies the Omit<User, "id"> type
+            const userData: Omit<User, "id"> = {
+                email: user.email || '',  // Fallback if null
+                displayName: user?.displayName || displayName || null,
+                photoURL: user.photoURL,
+                uid: user.uid,
+                emailVerified: user.emailVerified,
+                phoneNumber: user.phoneNumber,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            await userRepository.create(userData, user.uid);
 
             return mapFirebaseUser(user)!;
         } catch (error) {
@@ -154,9 +154,12 @@ export const auth = {
         console.log(`Updating profile for: ${user.uid}`);
         await user.updateProfile(data);
 
+        // Prepare data for Firestore update
+        const firestoreData: Partial<User> = { ...data };
+
         // Update user document in Firestore
         console.log("Updating user document in Firestore");
-        await userRepository.update(user.uid, data);
+        await userRepository.update(user.uid, firestoreData);
     },
 
     // Email verification
@@ -198,6 +201,16 @@ export const auth = {
         await user.delete();
     },
 
+    // Reauthenticate user
+    reauthenticate: async (password: string): Promise<void> => {
+        const user = firebaseAuth.currentUser;
+        if (!user || !user.email) throw new Error('No user is signed in or email is missing');
+
+        // Use the auth module's EmailAuthProvider
+        const credential = auth.EmailAuthProvider.credential(user.email, password);
+        await user.reauthenticateWithCredential(credential);
+    },
+
     // Auth state observer
     onAuthStateChanged: (
         callback: (user: User | null) => void
@@ -209,3 +222,5 @@ export const auth = {
         });
     },
 };
+
+export default authService;

@@ -1,7 +1,8 @@
+// src/firebase/repositories/base.repository.ts
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db } from '../config';
 import { serverTimestamp } from '../config';
-import { FirestoreDocument } from '../../models/common.model';
+import { FirestoreDocument, FirestoreDocumentData } from '../../models/common.model';
 
 export class BaseRepository<T extends FirestoreDocument> {
     constructor(protected collection: string) {}
@@ -10,18 +11,23 @@ export class BaseRepository<T extends FirestoreDocument> {
         return db.collection(this.collection);
     }
 
+    protected getServerTimestamp() {
+        return serverTimestamp();
+    }
+
     async create(data: Omit<T, 'id'>, customId?: string): Promise<string> {
-        const documentData = {
+        // Separate model data from Firestore data with timestamps
+        const firestoreData: FirestoreDocumentData = {
             ...data,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: this.getServerTimestamp(),
+            updatedAt: this.getServerTimestamp(),
         };
 
         if (customId) {
-            await this.getCollectionRef().doc(customId).set(documentData);
+            await this.getCollectionRef().doc(customId).set(firestoreData);
             return customId;
         } else {
-            const docRef = await this.getCollectionRef().add(documentData);
+            const docRef = await this.getCollectionRef().add(firestoreData);
             return docRef.id;
         }
     }
@@ -68,12 +74,13 @@ export class BaseRepository<T extends FirestoreDocument> {
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
-        const updateData = {
+        // Separate model data from Firestore data with timestamp
+        const firestoreData: FirestoreDocumentData = {
             ...data,
-            updatedAt: serverTimestamp(),
+            updatedAt: this.getServerTimestamp(),
         };
 
-        await this.getCollectionRef().doc(id).update(updateData);
+        await this.getCollectionRef().doc(id).update(firestoreData);
     }
 
     async delete(id: string): Promise<void> {

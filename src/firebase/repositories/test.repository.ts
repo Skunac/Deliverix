@@ -1,12 +1,12 @@
 import { Test } from '../../models/test.model';
 import { BaseRepository } from './base.repository';
-import { Collections } from '../collections';
+import { COLLECTIONS } from '../collections';
 import { toFirestoreTest, fromFirestoreTest } from '../adapters/test.adapter';
 import { serverTimestamp } from '../config';
 
 class TestRepository extends BaseRepository<Test> {
     constructor() {
-        super(Collections.TEST);
+        super(COLLECTIONS.TEST);
     }
 
     async getById(id: string): Promise<Test | null> {
