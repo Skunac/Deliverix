@@ -2,10 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import {useAuthContext} from "@/contexts/authContext";
-
+import {useAuth} from "@/contexts/authContext";
 export default function ProfileScreen() {
-    const { user, logout } = useAuthContext();
+    const { user, signOut } = useAuth();
     const { t } = useTranslation();
 
     console.log("ProfileScreen rendered, user:", user?.id || "not logged in");
@@ -14,14 +13,14 @@ export default function ProfileScreen() {
         <View className="flex-1 bg-gray-50">
             <View className="items-center pt-6 pb-4 bg-white">
                 <Text className="text-2xl font-bold">
-                    {user?.displayName || t('profile.title')}
+                    {user?.firstName || t('profile.title')} {user?.lastName || ''}
                 </Text>
                 <Text className="text-gray-500 mb-2">{user?.email || t('profile.notSignedIn')}</Text>
 
                 {user ? (
                     <TouchableOpacity
                         className="mt-2 px-4 py-2 bg-red-500 rounded-full"
-                        onPress={logout}
+                        onPress={signOut}
                     >
                         <Text className="text-white font-medium">{t('common.signOut')}</Text>
                     </TouchableOpacity>
@@ -44,7 +43,7 @@ export default function ProfileScreen() {
                     <View className="p-4">
                         <View className="py-3">
                             <Text className="text-sm text-gray-500">{t('profile.displayName')}</Text>
-                            <Text className="text-base">{user?.displayName || t('profile.notSet')}</Text>
+                            <Text className="text-base">{user?.firstName || t('profile.notSet')} {user?.lastName}</Text>
                         </View>
 
                         <View className="py-3">

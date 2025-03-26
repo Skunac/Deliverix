@@ -25,11 +25,16 @@ export class DeliveryAgentService {
         serviceAreas?: string[];
         weeklyAvailability?: AvailabilitySlot[];
     }): Promise<void> {
+        console.log(`Starting to register user ${userId} as delivery agent`);
+
         // Get user to ensure it exists
         const user = await this.userService.getUserById(userId);
         if (!user) {
+            console.error(`User ${userId} not found during delivery agent registration`);
             throw new Error('User not found');
         }
+
+        console.log(`User ${userId} found, creating delivery agent profile`);
 
         // Create default agent data
         const defaultAgentData: Omit<DeliveryAgent, 'id'> = {
@@ -38,10 +43,10 @@ export class DeliveryAgentService {
             firstName: agentData.firstName,
             lastName: agentData.lastName,
             biography: agentData.biography || '',
-            vehicleType: agentData.vehicleType,
-            vehicleMake: agentData.vehicleMake,
-            vehicleModel: agentData.vehicleModel,
-            vehicleYear: agentData.vehicleYear,
+            vehicleType: agentData.vehicleType || 'car',
+            vehicleMake: agentData.vehicleMake  || '',
+            vehicleModel: agentData.vehicleModel || '',
+            vehicleYear: agentData.vehicleYear || 2000,
             vehiclePlateNumber: agentData.vehiclePlateNumber,
             rating: 5,
             completedDeliveries: 0,
@@ -62,7 +67,13 @@ export class DeliveryAgentService {
         };
 
         // Create the agent profile
-        await this.repository.create(userId, defaultAgentData);
+        try {
+            await this.repository.create(userId, defaultAgentData);
+            console.log(`Successfully created delivery agent profile for user ${userId}`);
+        } catch (error) {
+            console.error(`Error creating delivery agent profile for user ${userId}:`, error);
+            throw error;
+        }
     }
 
     async getAgentProfile(userId: string): Promise<DeliveryAgent | null> {

@@ -1,9 +1,15 @@
-// src/firebase/auth.ts
 import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import auth from '@react-native-firebase/auth';
 import { firebaseAuth } from './config';
 import { UserRepository } from './repositories/user.repository';
-import { User } from '../models/user.model';
+import {
+    User,
+    UserType,
+    IndividualUser,
+    ProfessionalUser,
+    DeliveryUser,
+    UserDataWithType
+} from '../models/user.model';
 import { UserAdapter } from './adapters/user.adapter';
 
 const userRepository = new UserRepository();
@@ -18,6 +24,41 @@ export const mapFirebaseUser = (
 
     return UserAdapter.fromFirebaseUser(user);
 };
+
+// Helper functions to create properly typed user data for each user type
+function createIndividualUserData(
+    data: Partial<IndividualUser> & { userType: 'individual'; email: string; }
+): Omit<IndividualUser, 'id'> {
+    return {
+        ...data,
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        userType: 'individual'
+    } as Omit<IndividualUser, 'id'>;
+}
+
+function createProfessionalUserData(
+    data: Partial<ProfessionalUser> & { userType: 'professional'; email: string; }
+): Omit<ProfessionalUser, 'id'> {
+    return {
+        ...data,
+        companyName: data.companyName || '',
+        contactName: data.contactName || '',
+        siret: data.siret || '',
+        userType: 'professional'
+    } as Omit<ProfessionalUser, 'id'>;
+}
+
+function createDeliveryUserData(
+    data: Partial<DeliveryUser> & { userType: 'delivery'; email: string; }
+): Omit<DeliveryUser, 'id'> {
+    return {
+        ...data,
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        userType: 'delivery'
+    } as Omit<DeliveryUser, 'id'>;
+}
 
 export const authService = {
     // Current user
@@ -46,13 +87,13 @@ export const authService = {
         }
     },
 
-    // Create account with email/password
-    createUserWithEmailAndPassword: async (
+    // Generic user creation method for all user types
+    createUser: async (
         email: string,
         password: string,
-        displayName?: string
+        userData: UserDataWithType
     ): Promise<User> => {
-        console.log(`Attempting to create user: ${email}`);
+        console.log(`Attempting to create user: ${email}, type: ${userData.userType}`);
         try {
             // Create the user account
             const userCredential = await firebaseAuth.createUserWithEmailAndPassword(
@@ -62,6 +103,17 @@ export const authService = {
 
             let user = userCredential.user;
             console.log("User created:", user.uid);
+
+            // Handle display name based on user type
+            let displayName = '';
+
+            if (userData.userType === 'individual' || userData.userType === 'delivery') {
+                const typedData = userData as Partial<IndividualUser | DeliveryUser> & { userType: 'individual' | 'delivery' };
+                displayName = `${typedData.firstName || ''} ${typedData.lastName || ''}`.trim();
+            } else if (userData.userType === 'professional') {
+                const typedData = userData as Partial<ProfessionalUser> & { userType: 'professional' };
+                displayName = typedData.companyName || '';
+            }
 
             // Update profile if displayName is provided
             if (displayName) {
@@ -102,25 +154,65 @@ export const authService = {
             // Create user document in Firestore with reliable data
             console.log("Creating user document in Firestore");
 
-            // Create a proper User object that satisfies the Omit<User, "id"> type
-            const userData: Omit<User, "id"> = {
-                email: user.email || '',  // Fallback if null
-                displayName: user?.displayName || displayName || null,
+            // Prepare the user data with common fields
+            const baseUserData = {
+                email: user.email || '',
                 photoURL: user.photoURL,
                 uid: user.uid,
                 emailVerified: user.emailVerified,
-                phoneNumber: user.phoneNumber,
+                phoneNumber: userData.phoneNumber || user.phoneNumber,
                 createdAt: new Date(),
-                updatedAt: new Date()
+                updatedAt: new Date(),
             };
 
-            await userRepository.create(userData, user.uid);
+            let fullUserData;
+
+            // Create properly typed user data based on user type
+            if (userData.userType === 'individual') {
+                fullUserData = createIndividualUserData({
+                    ...baseUserData,
+                    ...userData as Partial<IndividualUser>,
+                    userType: 'individual'
+                } as Partial<IndividualUser> & { userType: 'individual'; email: string; });
+            }
+            else if (userData.userType === 'professional') {
+                fullUserData = createProfessionalUserData({
+                    ...baseUserData,
+                    ...userData as Partial<ProfessionalUser>,
+                    userType: 'professional'
+                } as Partial<ProfessionalUser> & { userType: 'professional'; email: string; });
+            }
+            else { // delivery
+                fullUserData = createDeliveryUserData({
+                    ...baseUserData,
+                    ...userData as Partial<DeliveryUser>,
+                    userType: 'delivery'
+                } as Partial<DeliveryUser> & { userType: 'delivery'; email: string; });
+            }
+
+            await userRepository.create(fullUserData, user.uid);
 
             return mapFirebaseUser(user)!;
         } catch (error) {
             console.error("Create user error:", error);
             throw error;
         }
+    },
+
+    // Legacy method for backward compatibility
+    createUserWithEmailAndPassword: async (
+        email: string,
+        password: string,
+        firstName: string,
+        lastName: string,
+        phone: string
+    ): Promise<User> => {
+        return await authService.createUser(email, password, {
+            firstName,
+            lastName,
+            phoneNumber: phone,
+            userType: 'individual'
+        });
     },
 
     // Sign out
@@ -143,7 +235,7 @@ export const authService = {
 
     // Update profile
     updateProfile: async (
-        data: { displayName?: string; photoURL?: string }
+        data: { firstName?: string; lastName?: string; photoURL?: string }
     ): Promise<void> => {
         const user = firebaseAuth.currentUser;
         if (!user) {
@@ -152,14 +244,43 @@ export const authService = {
         }
 
         console.log(`Updating profile for: ${user.uid}`);
-        await user.updateProfile(data);
 
-        // Prepare data for Firestore update
-        const firestoreData: Partial<User> = { ...data };
+        // Get current user data from Firestore to determine user type
+        const currentUserData = await userRepository.getById(user.uid);
+        if (!currentUserData) {
+            throw new Error('User not found in database');
+        }
+
+        const userType = currentUserData.userType;
+
+        // Update display name based on user type
+        if ((userType === 'individual' || userType === 'delivery') &&
+            (data.firstName || data.lastName)) {
+            // For individuals and delivery agents, get existing names
+            const firstName = data.firstName ||
+                (userType === 'individual' || userType === 'delivery' ?
+                    (currentUserData as IndividualUser | DeliveryUser).firstName : '');
+
+            const lastName = data.lastName ||
+                (userType === 'individual' || userType === 'delivery' ?
+                    (currentUserData as IndividualUser | DeliveryUser).lastName : '');
+
+            const displayName = `${firstName} ${lastName}`.trim();
+
+            await user.updateProfile({
+                displayName,
+                photoURL: data.photoURL
+            });
+        } else if (data.photoURL) {
+            // Just update photo URL if that's all that's changing
+            await user.updateProfile({
+                photoURL: data.photoURL
+            });
+        }
 
         // Update user document in Firestore
         console.log("Updating user document in Firestore");
-        await userRepository.update(user.uid, firestoreData);
+        await userRepository.update(user.uid, data);
     },
 
     // Email verification

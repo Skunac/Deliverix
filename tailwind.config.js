@@ -7,6 +7,13 @@ module.exports = {
       fontFamily: {
         'space-mono': ['SpaceMono'],
         'cabin': ['Cabin']
+      },
+      colors: {
+        'primary': '#5DD6FF',
+        'secondary': '#9EAEB4',
+        'tertiary': '#576D75',
+        'dark': '#0F2026',
+        'darker': '#031116'
       }
     },
   },

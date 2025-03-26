@@ -7,20 +7,46 @@ import { FirestoreDocumentData } from '../../models/common.model';
 
 export class DeliveryAgentRepository {
     private getAgentDocRef(userId: string) {
-        return db.doc(COLLECTIONS.USER_DELIVERY_AGENT(userId));
+        const path = COLLECTIONS.USER_DELIVERY_AGENT(userId);
+        console.log(`Getting agent doc ref with path: "${path}"`);
+
+        // Make sure the path is properly formatted for a document
+        if (!path || path.trim() === '' || path.endsWith('/')) {
+            console.error(`Invalid document path: "${path}"`);
+            throw new Error('Invalid document path');
+        }
+
+        return db.doc(path);
     }
 
     async create(userId: string, data: Omit<DeliveryAgent, 'id'>): Promise<void> {
-        // Separate model data from Firestore data
-        const firestoreData: FirestoreDocumentData = {
-            ...data,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            id: DEFAULT_DOCUMENT_ID
-        };
+        console.log(`Creating delivery agent document for user ${userId}`);
 
-        await this.getAgentDocRef(userId).set(firestoreData);
+        try {
+            // Log the collection definition
+            console.log(`Collection definition for USER_DELIVERY_AGENT: ${JSON.stringify(COLLECTIONS.USER_DELIVERY_AGENT)}`);
+
+            // Separate model data from Firestore data
+            const firestoreData: FirestoreDocumentData = {
+                ...data,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+
+            // Alternative approach: use collection/document pattern instead of direct doc path
+            const userDocRef = db.collection('users').doc(userId);
+            const agentDocRef = userDocRef.collection('deliveryAgent').doc(DEFAULT_DOCUMENT_ID);
+
+            console.log(`Creating document at users/${userId}/deliveryAgent/${DEFAULT_DOCUMENT_ID}`);
+            await agentDocRef.set(firestoreData);
+
+            console.log(`Successfully created delivery agent document for user ${userId}`);
+        } catch (error) {
+            console.error(`Error creating delivery agent document for user ${userId}:`, error);
+            throw error;
+        }
     }
+
 
     async getByUserId(userId: string): Promise<DeliveryAgent | null> {
         const doc = await this.getAgentDocRef(userId).get();

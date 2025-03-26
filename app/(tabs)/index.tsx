@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { testService } from "@/src/services/test.service";
-import {useAuthContext} from "@/contexts/authContext";
+import {useAuth} from "@/contexts/authContext";
 
 export default function Index() {
-    const { user } = useAuthContext();
+    const { user } = useAuth();
     const [testData, setTestData] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { t } = useTranslation();
