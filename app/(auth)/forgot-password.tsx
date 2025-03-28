@@ -7,12 +7,12 @@ import { GradientView } from "@/components/ui/GradientView";
 export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
     const [isSent, setIsSent] = useState(false);
-    const { resetPassword } = useAuth();
+    //const { resetPassword } = useAuth();
     const router = useRouter();
 
     const handleResetPassword = async () => {
         try {
-            await resetPassword(email);
+            //await resetPassword(email);
             setIsSent(true);
             Alert.alert(
                 "Email envoyé",

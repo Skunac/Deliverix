@@ -6,7 +6,10 @@ module.exports = {
     extend: {
       fontFamily: {
         'space-mono': ['SpaceMono'],
-        'cabin': ['Cabin']
+        'cabin': ['Cabin'],
+        'cabin-medium': ['Cabin-Medium'],
+        'cabin-semibold': ['Cabin-SemiBold'],
+        'cabin-bold': ['Cabin-Bold']
       },
       colors: {
         'primary': '#5DD6FF',

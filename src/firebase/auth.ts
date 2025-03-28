@@ -82,7 +82,7 @@ export const authService = {
             console.log("Sign in successful:", userCredential.user.uid);
             return mapFirebaseUser(userCredential.user)!;
         } catch (error) {
-            console.error("Sign in error:", error);
+            console.log("Sign in error:", error);
             throw error;
         }
     },
@@ -146,7 +146,7 @@ export const authService = {
                         });
                     }
                 } catch (profileError) {
-                    console.error("Error updating user profile:", profileError);
+                    console.log("Error updating user profile:", profileError);
                     // Continue with user creation even if profile update fails
                 }
             }
@@ -194,7 +194,7 @@ export const authService = {
 
             return mapFirebaseUser(user)!;
         } catch (error) {
-            console.error("Create user error:", error);
+            console.log("Create user error:", error);
             throw error;
         }
     },
@@ -222,7 +222,7 @@ export const authService = {
             await firebaseAuth.signOut();
             console.log("Sign out successful");
         } catch (error) {
-            console.error("Sign out error:", error);
+            console.log("Sign out error:", error);
             throw error;
         }
     },
@@ -239,7 +239,8 @@ export const authService = {
     ): Promise<void> => {
         const user = firebaseAuth.currentUser;
         if (!user) {
-            console.error("No user signed in");
+            console.log("No user signed in");
+            console.log("No user signed in");
             throw new Error('No user is signed in');
         }
 

@@ -41,7 +41,7 @@ export function useAuth() {
                         });
                     }
                 } catch (err) {
-                    console.error('Error fetching user profile:', err);
+                    console.log('Error fetching user profile:', err);
                     setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
                 }
             } else {
@@ -61,7 +61,7 @@ export function useAuth() {
             await authService.signInWithEmailAndPassword(email, password);
             return true;
         } catch (err) {
-            console.error('Sign in error:', err);
+            console.log('Sign in error:', err);
             const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
             setError(createErrorFromAppError(appError));
             return false;
@@ -98,7 +98,7 @@ export function useAuth() {
 
             return true;
         } catch (err) {
-            console.error('Sign up error:', err);
+            console.log('Sign up error:', err);
             const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
             setError(createErrorFromAppError(appError));
             return false;
@@ -137,7 +137,7 @@ export function useAuth() {
 
             return true;
         } catch (err) {
-            console.error('Sign up error:', err);
+            console.log('Sign up error:', err);
             const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
             setError(createErrorFromAppError(appError));
             return false;
@@ -209,7 +209,7 @@ export function useAuth() {
 
                 console.log("Successfully registered as delivery agent");
             } catch (agentError) {
-                console.error("Failed to register as delivery agent:", agentError);
+                console.log("Failed to register as delivery agent:", agentError);
                 throw new Error(`User created but failed to register as delivery agent: ${agentError}`);
             }
 
@@ -218,7 +218,7 @@ export function useAuth() {
 
             return true;
         } catch (err) {
-            console.error('Sign up error:', err);
+            console.log('Sign up error:', err);
             const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
             setError(createErrorFromAppError(appError));
             return false;
@@ -235,7 +235,7 @@ export function useAuth() {
             setUser(null);
             return true;
         } catch (err) {
-            console.error('Sign out error:', err);
+            console.log('Sign out error:', err);
             const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
             setError(createErrorFromAppError(appError));
             return false;
@@ -289,7 +289,7 @@ export function useAuth() {
 
             return true;
         } catch (err) {
-            console.error('Update profile error:', err);
+            console.log('Update profile error:', err);
             const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
             setError(createErrorFromAppError(appError));
             return false;
@@ -308,6 +308,7 @@ export function useAuth() {
         signUpDelivery,
         signOut,
         updateProfile,
+        setError,
         isAuthenticated: !!user
     };
 }

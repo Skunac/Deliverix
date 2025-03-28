@@ -12,6 +12,7 @@ export enum ErrorCode {
     AUTH_WRONG_PASSWORD = 'auth/wrong-password',
     AUTH_WEAK_PASSWORD = 'auth/weak-password',
     AUTH_REQUIRES_RECENT_LOGIN = 'auth/requires-recent-login',
+    AUTH_INVALID_CREDENTIALS = 'auth/invalid-credential',
 
     // Firestore errors
     FIRESTORE_DOCUMENT_NOT_FOUND = 'firestore/document-not-found',
@@ -35,63 +36,70 @@ export interface AppError {
 export const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError): AppError => {
     let appError: AppError = {
         code: ErrorCode.UNKNOWN_ERROR,
-        message: 'An unknown error occurred during authentication.'
+        message: 'Une erreur inconnue s\'est produite lors de l\'authentification.'
     };
 
     switch (error.code) {
         case ErrorCode.AUTH_EMAIL_ALREADY_IN_USE:
             appError = {
                 code: error.code,
-                message: 'This email address is already in use. Please use a different email or try signing in.',
+                message: 'Cette adresse email est déjà utilisée. Veuillez utiliser une autre adresse ou essayer de vous connecter.',
+                originalError: error
+            };
+            break;
+        case ErrorCode.AUTH_INVALID_CREDENTIALS:
+            appError = {
+                code: error.code,
+                message: 'Les informations d\'identification sont invalides. Veuillez vérifier et réessayer.',
                 originalError: error
             };
             break;
         case ErrorCode.AUTH_INVALID_EMAIL:
             appError = {
                 code: error.code,
-                message: 'The email address is invalid. Please check and try again.',
+                message: 'L\'adresse email est invalide. Veuillez vérifier et réessayer.',
                 originalError: error
             };
             break;
         case ErrorCode.AUTH_USER_DISABLED:
             appError = {
                 code: error.code,
-                message: 'This account has been disabled. Please contact support for assistance.',
+                message: 'Ce compte a été désactivé. Veuillez contacter le support pour obtenir de l\'aide.',
                 originalError: error
             };
             break;
         case ErrorCode.AUTH_USER_NOT_FOUND:
             appError = {
                 code: error.code,
-                message: 'No account found with this email address. Please check your email or create a new account.',
+                message: 'Aucun compte trouvé avec cette adresse email. Veuillez vérifier votre email ou créer un nouveau compte.',
                 originalError: error
             };
             break;
         case ErrorCode.AUTH_WRONG_PASSWORD:
             appError = {
                 code: error.code,
-                message: 'Incorrect password. Please try again or reset your password.',
+                message: 'Mot de passe incorrect. Veuillez réessayer ou réinitialiser votre mot de passe.',
                 originalError: error
             };
             break;
         case ErrorCode.AUTH_WEAK_PASSWORD:
             appError = {
                 code: error.code,
-                message: 'Password is too weak. Please use a stronger password with at least 6 characters.',
+                message: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort avec au moins 6 caractères.',
                 originalError: error
             };
             break;
         case ErrorCode.AUTH_REQUIRES_RECENT_LOGIN:
             appError = {
                 code: error.code,
-                message: 'This operation requires a recent login. Please sign out and sign back in, then try again.',
+                message: 'Cette opération nécessite une connexion récente. Veuillez vous déconnecter et vous reconnecter, puis réessayer.',
                 originalError: error
             };
             break;
         default:
             appError = {
                 code: error.code || ErrorCode.UNKNOWN_ERROR,
-                message: error.message || 'An authentication error occurred. Please try again.',
+                message: error.message || 'Une erreur d\'authentification s\'est produite. Veuillez réessayer.',
                 originalError: error
             };
     }
@@ -102,28 +110,28 @@ export const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError
 export const handleFirestoreError = (error: Error): AppError => {
     let appError: AppError = {
         code: ErrorCode.UNKNOWN_ERROR,
-        message: 'An unknown database error occurred.'
+        message: 'Une erreur inconnue de base de données s\'est produite.'
     };
 
     switch (error.code) {
         case 'permission-denied':
             appError = {
                 code: ErrorCode.FIRESTORE_PERMISSION_DENIED,
-                message: 'You do not have permission to perform this operation.',
+                message: 'Vous n\'avez pas l\'autorisation d\'effectuer cette opération.',
                 originalError: error
             };
             break;
         case 'not-found':
             appError = {
                 code: ErrorCode.FIRESTORE_DOCUMENT_NOT_FOUND,
-                message: 'The requested document was not found.',
+                message: 'Le document demandé n\'a pas été trouvé.',
                 originalError: error
             };
             break;
         default:
             appError = {
                 code: `firestore/${error.code}` || ErrorCode.UNKNOWN_ERROR,
-                message: error.message || 'A database error occurred. Please try again.',
+                message: error.message || 'Une erreur de base de données s\'est produite. Veuillez réessayer.',
                 originalError: error
             };
     }
@@ -134,7 +142,7 @@ export const handleFirestoreError = (error: Error): AppError => {
 export const handleNetworkError = (error: Error): AppError => {
     return {
         code: ErrorCode.NETWORK_ERROR,
-        message: 'A network error occurred. Please check your internet connection and try again.',
+        message: 'Une erreur réseau s\'est produite. Veuillez vérifier votre connexion internet et réessayer.',
         originalError: error
     };
 };
@@ -142,7 +150,7 @@ export const handleNetworkError = (error: Error): AppError => {
 export const handleUnknownError = (error: any): AppError => {
     return {
         code: ErrorCode.UNKNOWN_ERROR,
-        message: error.message || 'An unexpected error occurred. Please try again.',
+        message: error.message || 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
         originalError: error
     };
 };
@@ -162,19 +170,19 @@ export const handleApiError = (error: any): AppError => {
         if (status === 401 || status === 403) {
             return {
                 code: ErrorCode.UNAUTHORIZED,
-                message: 'You are not authorized to perform this action.',
+                message: 'Vous n\'êtes pas autorisé à effectuer cette action.',
                 originalError: error
             };
         } else if (status === 404) {
             return {
                 code: ErrorCode.NOT_FOUND,
-                message: 'The requested resource was not found.',
+                message: 'La ressource demandée n\'a pas été trouvée.',
                 originalError: error
             };
         } else if (status >= 500) {
             return {
                 code: ErrorCode.SERVER_ERROR,
-                message: 'A server error occurred. Please try again later.',
+                message: 'Une erreur serveur s\'est produite. Veuillez réessayer plus tard.',
                 originalError: error
             };
         }
