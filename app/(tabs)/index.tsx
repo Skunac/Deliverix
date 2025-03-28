@@ -1,119 +1,57 @@
-import { Text, View, TouchableOpacity, ScrollView } from "react-native";
-import { useState } from "react";
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { testService } from "@/src/services/test.service";
+import React, {useEffect, useState} from 'react';
+import { View, FlatList } from 'react-native';
+import { useRouter } from 'expo-router';
 import {useAuth} from "@/contexts/authContext";
+import {DeliveryService} from "@/src/services/delivery.service";
+import {Delivery} from "@/src/models/delivery.model";
+import DeliveryCard from "@/components/ui/DeliveryCard";
+import {GradientView} from "@/components/ui/GradientView";
 
-export default function Index() {
+// Example component that displays a list of deliveries
+export default function DeliveriesScreen() {
     const { user } = useAuth();
-    const [testData, setTestData] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const { t } = useTranslation();
+    const router = useRouter();
+    const deliveryService = new DeliveryService();
+    const [deliveries, setDeliveries] = useState<Delivery[]>([]);
 
-    const addTestDocument = async () => {
-        try {
-            const docId = await testService.addTestMessage("Hello from React Native!");
-            setTestData('Document written with ID: ' + docId);
-            setError(null);
-        } catch (e) {
-            setError('Error adding document: ' + (e as Error).message);
-        }
-    };
-
-    const fetchTestData = async () => {
-        try {
-            const doc = await testService.getLatestTestMessage();
-
-            if (doc) {
-                setTestData(`Latest message: ${doc.message}`);
-            } else {
-                setTestData('No documents found');
+    useEffect(() => {
+        const fetchDeliveries = async () => {
+            try {
+                const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
+                setDeliveries(userDeliveries);
+            } catch (error) {
+                console.error("Error fetching deliveries:", error);
             }
-            setError(null);
-        } catch (e) {
-            setError('Error fetching data: ' + (e as Error).message);
-        }
+        };
+
+        fetchDeliveries();
+    }, [user.uid]);
+
+    const handleDeliveryPress = (delivery: Delivery) => {
+        // Navigate to delivery details
+        console.log(`Navigating to delivery with ID: ${delivery.id}`);
+        //router.push(`/deliveries/${delivery.id}`);
     };
+
+    // Separator component to add space between items
+    const ItemSeparator = () => <View className="h-4" />;
 
     return (
-        <ScrollView className="flex-1 bg-gray-50">
-            {/* Header */}
-            <View className="bg-white p-6 shadow-sm">
-                <Text className="text-3xl font-bold">{t('home.title')}</Text>
-                <Text className="text-gray-500 mt-1">{t('home.subtitle')}</Text>
+        <GradientView>
+            <View className="flex-1">
+                <FlatList
+                    data={deliveries}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <DeliveryCard
+                            delivery={item}
+                            onPress={handleDeliveryPress}
+                        />
+                    )}
+                    ItemSeparatorComponent={ItemSeparator}
+                    contentContainerStyle={{ padding: 16 }}
+                />
             </View>
-
-            {/* Auth Status Card */}
-            <View className="m-4 p-4 bg-white rounded-xl shadow-sm">
-                <View className="flex-row items-center mb-4">
-                    <Ionicons name="person-circle" size={24} color="#3b82f6" />
-                    <Text className="text-lg font-bold ml-2">{t('home.accountStatus')}</Text>
-                </View>
-
-                {user ? (
-                    <View className="bg-green-50 p-3 rounded-lg">
-                        <Text className="text-green-700 font-medium">
-                            {t('home.loggedInAs', { email: user.email })}
-                        </Text>
-                        <Text className="text-green-600 text-sm mt-1">
-                            {t('home.userId', { id: (user.uid || user.id).substring(0, 8) + '...' })}
-                        </Text>
-                    </View>
-                ) : (
-                    <View className="bg-yellow-50 p-3 rounded-lg">
-                        <Text className="text-yellow-700 font-medium">
-                            {t('home.notLoggedIn')}
-                        </Text>
-                        <Text className="text-yellow-600 text-sm mt-1">
-                            {t('home.useFirebaseTest')}
-                        </Text>
-                    </View>
-                )}
-            </View>
-
-            <View className="m-4 bg-white rounded-xl shadow-sm">
-                <Text className="font-cabin">This text should use Cabin font</Text>
-                <Text className="font-space-mono">This text should use Space Mono font</Text>
-            </View>
-
-            {/* Firestore Test Card */}
-            <View className="m-4 p-4 bg-white rounded-xl shadow-sm">
-                <View className="flex-row items-center mb-4">
-                    <Ionicons name="cloud" size={24} color="#3b82f6" />
-                    <Text className="text-lg font-bold ml-2">{t('home.firestoreTest')}</Text>
-                </View>
-
-                <View className="flex-row justify-between mb-4">
-                    <TouchableOpacity
-                        className="bg-blue-500 px-4 py-2 rounded-lg flex-row items-center"
-                        onPress={addTestDocument}
-                    >
-                        <Ionicons name="add-circle-outline" size={18} color="white" />
-                        <Text className="text-white font-medium ml-1">{t('home.addDocument')}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        className="bg-purple-500 px-4 py-2 rounded-lg flex-row items-center"
-                        onPress={fetchTestData}
-                    >
-                        <Ionicons name="download-outline" size={18} color="white" />
-                        <Text className="text-white font-medium ml-1">{t('home.fetchLatest')}</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {testData && (
-                    <View className="bg-blue-50 p-3 rounded-lg">
-                        <Text className="text-blue-700">{testData}</Text>
-                    </View>
-                )}
-
-                {error && (
-                    <View className="bg-red-50 p-3 rounded-lg mt-2">
-                        <Text className="text-red-700">{error}</Text>
-                    </View>
-                )}
-            </View>
-        </ScrollView>
+        </GradientView>
     );
 }

@@ -1,4 +1,4 @@
-import { User } from '../models/user.model';
+import { User, UserType, IndividualUser, ProfessionalUser, DeliveryUser, isIndividualUser } from '../models/user.model';
 import { UserRepository } from '../firebase/repositories/user.repository';
 import { UserAdapter } from '../firebase/adapters/user.adapter';
 import { Address } from '../models/address.model';
@@ -26,22 +26,28 @@ export class UserService {
 
         if (!existingUser) {
             // Create user in Firestore if not exists
-            // Create a complete user object that satisfies Omit<User, "id">
-            const userData: Omit<User, "id"> = {
-                email: userModel.email,
-                displayName: userModel.displayName,
-                photoURL: userModel.photoURL,
-                uid: userModel.uid,
-                emailVerified: userModel.emailVerified,
-                phoneNumber: userModel.phoneNumber,
-                createdAt: userModel.createdAt,
-                updatedAt: userModel.updatedAt
+            const displayNameParts = currentUser.displayName ? currentUser.displayName.split(' ') : ['', ''];
+
+            // Create an IndividualUser explicitly - this is safer for new users
+            const userData: Omit<IndividualUser, "id"> = {
+                email: currentUser.email || '',
+                photoURL: currentUser.photoURL,
+                uid: currentUser.uid,
+                emailVerified: currentUser.emailVerified || false,
+                phoneNumber: currentUser.phoneNumber,
+                userType: 'individual',
+                isDeliveryAgent: false,
+                firstName: displayNameParts[0] || '',
+                lastName: displayNameParts.slice(1).join(' ') || '',
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
 
             await this.repository.create(userData, currentUser.uid);
+            return { ...userModel, id: currentUser.uid };
         }
 
-        return userModel;
+        return existingUser;
     }
 
     async getUserById(userId: string): Promise<User | null> {
@@ -52,7 +58,11 @@ export class UserService {
         return this.repository.update(userId, data);
     }
 
-    // Address methods
+    async getAllDeliveryAgentUsers(): Promise<User[]> {
+        return this.repository.getAllByDeliveryAgentStatus(true);
+    }
+
+    // Address methods remain the same
     async addUserAddress(userId: string, address: {
         placeId: string;
         formattedAddress: string;

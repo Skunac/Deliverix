@@ -12,23 +12,35 @@ export default function TabsLayout() {
     return (
         <Tabs
             screenOptions={{
-                tabBarActiveTintColor: '#3b82f6',
-                tabBarInactiveTintColor: '#64748b',
+                tabBarActiveTintColor: '#5DD6FF',
+                tabBarInactiveTintColor: '#9ca3af',
                 tabBarStyle: {
-                    backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
-                    direction: isRTL ? 'rtl' : 'ltr'
+                    backgroundColor: '#0F2026',
+                    direction: isRTL ? 'rtl' : 'ltr',
+                    borderTopWidth: 0,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
                     fontWeight: '500',
+                    fontFamily: 'Cabin'
                 },
                 headerShown: true,
+                headerStyle: {
+                    backgroundColor: '#0F2026',
+                    borderBottomWidth: 0,
+                },
+                headerTitleStyle: {
+                    color: '#9ca3af',
+                    fontSize: 20,
+                    fontWeight: '600',
+                    fontFamily: 'Cabin'
+                },
             }}
         >
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: t('common.home'),
+                    title: 'Courses',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="home" size={size} color={color} />
                     ),

@@ -7,6 +7,7 @@ export interface BaseUser extends FirestoreDocument {
     email: string;
     photoURL?: string | null;
     userType: UserType;  // Required, never undefined
+    isDeliveryAgent: boolean;  // Flag to identify delivery agents
 
     // Auth-specific fields
     uid?: string;
@@ -48,6 +49,10 @@ export const isProfessionalUser = (user: User): user is ProfessionalUser =>
 
 export const isDeliveryUser = (user: User): user is DeliveryUser =>
     user.userType === 'delivery';
+
+// New type guard for delivery agents
+export const isDeliveryAgent = (user: User): boolean =>
+    user.isDeliveryAgent === true;
 
 // Utility types to help with creating partial user data
 export type IndividualUserData = Partial<IndividualUser> & { userType: 'individual' };

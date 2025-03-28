@@ -1,4 +1,4 @@
-import { User, UserType, IndividualUser, ProfessionalUser, DeliveryUser, isIndividualUser, isProfessionalUser, isDeliveryUser } from '../../models/user.model';
+import { User, UserType, IndividualUser, ProfessionalUser, isIndividualUser, isProfessionalUser } from '../../models/user.model';
 import { firebaseAuth } from '../config';
 import { Address } from '../../models/address.model';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
@@ -13,6 +13,7 @@ export class UserAdapter {
             photoURL: user.photoURL,
             emailVerified: user.emailVerified,
             phoneNumber: user.phoneNumber,
+            isDeliveryAgent: false, // Default to false for new users
             createdAt: user.metadata?.creationTime
                 ? new Date(user.metadata.creationTime)
                 : new Date(),
@@ -41,12 +42,24 @@ export class UserAdapter {
             photoURL: data.photoURL,
             emailVerified: data.emailVerified,
             phoneNumber: data.phoneNumber,
+            isDeliveryAgent: data.isDeliveryAgent || false,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt
         };
 
         // Determine user type and return appropriate model
         const userType = data.userType as UserType || 'individual';
+
+        // Map deprecated 'delivery' type to individual with isDeliveryAgent=true
+        if (data.userType === 'delivery') {
+            return {
+                ...baseUser,
+                firstName: data.firstName || '',
+                lastName: data.lastName || '',
+                userType: 'individual' as const,
+                isDeliveryAgent: true
+            };
+        }
 
         switch (userType) {
             case 'individual':
@@ -64,14 +77,6 @@ export class UserAdapter {
                     contactName: data.contactName || '',
                     siret: data.siret || '',
                     userType: 'professional' as const
-                };
-
-            case 'delivery':
-                return {
-                    ...baseUser,
-                    firstName: data.firstName || '',
-                    lastName: data.lastName || '',
-                    userType: 'delivery' as const
                 };
 
             default:
@@ -99,9 +104,9 @@ export class UserAdapter {
         if (user.userType) {
             result.userType = user.userType;
 
-            // For individual and delivery types, ensure firstName and lastName
-            if (user.userType === 'individual' || user.userType === 'delivery') {
-                const typedUser = user as Partial<IndividualUser> | Partial<DeliveryUser>;
+            // For individual type, ensure firstName and lastName
+            if (user.userType === 'individual') {
+                const typedUser = user as Partial<IndividualUser>;
                 if (typedUser.firstName) result.firstName = typedUser.firstName;
                 if (typedUser.lastName) result.lastName = typedUser.lastName;
             }
@@ -114,6 +119,9 @@ export class UserAdapter {
                 if (typedUser.siret) result.siret = typedUser.siret;
             }
         }
+
+        // Always include the isDeliveryAgent field
+        result.isDeliveryAgent = user.isDeliveryAgent ?? false;
 
         return result;
     }

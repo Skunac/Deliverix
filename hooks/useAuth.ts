@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { authService } from '@/src/firebase/auth';
 import { UserService } from '@/src/services/user.service';
 import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
-import { User, DeliveryUser, IndividualUser, ProfessionalUser } from '@/src/models/user.model';
+import {
+    User,
+    DeliveryUser,
+    IndividualUser,
+    ProfessionalUser,
+    isIndividualUser,
+    isProfessionalUser
+} from '@/src/models/user.model';
 import { handleAuthError, AppError } from '@/src/utils/error-handler';
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
 
@@ -163,12 +170,13 @@ export function useAuth() {
             setError(null);
 
             // 1. Create the user account first with required user type
-            const userData: Partial<DeliveryUser> & { userType: 'delivery' } = {
+            const userData: Partial<IndividualUser> & { userType: 'individual' } = {
                 email,
                 firstName,
                 lastName,
                 phoneNumber: phone,
-                userType: 'delivery'
+                userType: 'individual',
+                isDeliveryAgent: true // Set this flag to true
             };
 
             console.log("Creating delivery user account:", email);
@@ -256,7 +264,7 @@ export function useAuth() {
             await authService.updateProfile(data);
 
             // If it's a delivery agent, update their profile in the delivery agent collection
-            if (user.userType === 'delivery' && user.uid) {
+            if (user.isDeliveryAgent && user.uid) {
                 const agentProfile = await deliveryAgentService.getAgentProfile(user.uid);
                 if (agentProfile) {
                     await deliveryAgentService.updateAgentProfile(user.uid, {
@@ -269,16 +277,15 @@ export function useAuth() {
 
             // Update local state immediately
             if (user) {
-                if (user.userType === 'individual' || user.userType === 'delivery') {
-                    // Type assertion to access firstName/lastName
-                    const typedUser = user as IndividualUser | DeliveryUser;
+                if (isIndividualUser(user)) {
+                    // For individual users we can set firstName/lastName directly
                     setUser({
                         ...user,
-                        firstName: data.firstName ?? typedUser.firstName,
-                        lastName: data.lastName ?? typedUser.lastName,
+                        firstName: data.firstName ?? user.firstName,
+                        lastName: data.lastName ?? user.lastName,
                         photoURL: data.photoURL ?? user.photoURL
                     });
-                } else {
+                } else if (isProfessionalUser(user)) {
                     // For professional users
                     setUser({
                         ...user,

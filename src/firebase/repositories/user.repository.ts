@@ -9,6 +9,18 @@ export class UserRepository extends BaseRepository<User> {
         super(COLLECTIONS.USERS);
     }
 
+    // Add method to get all users by delivery agent status
+    async getAllByDeliveryAgentStatus(isDeliveryAgent: boolean): Promise<User[]> {
+        const querySnapshot = await db.collection(COLLECTIONS.USERS)
+            .where('isDeliveryAgent', '==', isDeliveryAgent)
+            .get();
+
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as User));
+    }
+
     async createAddress(userId: string, address: Omit<Address, 'id' | 'userId'>): Promise<string> {
         const addressData = {
             ...address,

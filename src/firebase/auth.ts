@@ -33,7 +33,8 @@ function createIndividualUserData(
         ...data,
         firstName: data.firstName || '',
         lastName: data.lastName || '',
-        userType: 'individual'
+        userType: 'individual',
+        isDeliveryAgent: data.isDeliveryAgent || false
     } as Omit<IndividualUser, 'id'>;
 }
 
@@ -45,10 +46,12 @@ function createProfessionalUserData(
         companyName: data.companyName || '',
         contactName: data.contactName || '',
         siret: data.siret || '',
-        userType: 'professional'
+        userType: 'professional',
+        isDeliveryAgent: data.isDeliveryAgent || false
     } as Omit<ProfessionalUser, 'id'>;
 }
 
+// Update DeliveryUser creation to set isDeliveryAgent to true
 function createDeliveryUserData(
     data: Partial<DeliveryUser> & { userType: 'delivery'; email: string; }
 ): Omit<DeliveryUser, 'id'> {
@@ -56,7 +59,8 @@ function createDeliveryUserData(
         ...data,
         firstName: data.firstName || '',
         lastName: data.lastName || '',
-        userType: 'delivery'
+        userType: 'delivery',
+        isDeliveryAgent: true // Always true for delivery users
     } as Omit<DeliveryUser, 'id'>;
 }
 

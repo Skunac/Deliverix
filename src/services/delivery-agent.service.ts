@@ -66,6 +66,11 @@ export class DeliveryAgentService {
             applicationDate: new Date()
         };
 
+        // Update user record to mark as delivery agent
+        await this.userService.updateUserProfile(userId, {
+            isDeliveryAgent: true
+        });
+
         // Create the agent profile
         try {
             await this.repository.create(userId, defaultAgentData);
@@ -174,9 +179,8 @@ export class DeliveryAgentService {
             return false;
         }
 
-        // Additional eligibility checks can be added here
-
-        return true;
+        // Check if user is already marked as a delivery agent (but missing profile)
+        return !user.isDeliveryAgent;
     }
 
     // Find nearby agents
