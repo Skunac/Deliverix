@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
-import {Stack, Slot, useRouter, useSegments} from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import "@/global.css";
 import "@/config/i18nConfig";
@@ -61,9 +61,29 @@ function RootLayoutNav() {
 
     console.log('RootLayoutNav - user:', user);
 
-    // Just use Slot instead of Stack for more flexibility
-    // The navigation is handled by the useEffect hook above
-    return <Slot />;
+    return (
+        <Stack
+            initialRouteName={user ? '(tabs)' : '(auth)'}
+            screenOptions={{
+                headerShown: false,
+            }}
+        >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
+
+            <Stack.Screen
+                name="delivery/[id]"
+                options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    animationDuration: 300,
+                    animationTypeForReplace: 'push',
+                    gestureEnabled: true,
+                    gestureDirection: 'horizontal'
+                }}
+            />
+        </Stack>
+    );
 }
 
 export default function RootLayout() {

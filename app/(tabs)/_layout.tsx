@@ -30,11 +30,12 @@ export default function TabsLayout() {
                     borderBottomWidth: 0,
                 },
                 headerTitleStyle: {
-                    color: '#9ca3af',
+                    color: '#fff',
                     fontSize: 20,
                     fontWeight: '600',
                     fontFamily: 'Cabin'
                 },
+                animation: 'none'
             }}
         >
             <Tabs.Screen
