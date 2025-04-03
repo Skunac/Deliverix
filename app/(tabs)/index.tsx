@@ -20,7 +20,7 @@ export default function DeliveriesScreen() {
         const fetchDeliveries = async () => {
             try {
                 setLoading(true);
-                if (user.uid) {
+                if (user?.uid) {
                     const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
                     setDeliveries(userDeliveries);
                 } else {
@@ -35,7 +35,7 @@ export default function DeliveriesScreen() {
         };
 
         fetchDeliveries();
-    }, [user.uid]);
+    }, [user?.uid]);
 
     if (!user) {
         return (

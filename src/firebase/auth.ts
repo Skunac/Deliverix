@@ -7,7 +7,6 @@ import {
     UserType,
     IndividualUser,
     ProfessionalUser,
-    DeliveryUser,
     UserDataWithType
 } from '../models/user.model';
 import { UserAdapter } from './adapters/user.adapter';
@@ -34,7 +33,7 @@ function createIndividualUserData(
         firstName: data.firstName || '',
         lastName: data.lastName || '',
         userType: 'individual',
-        isDeliveryAgent: data.isDeliveryAgent || false
+        isDeliveryAgent: false
     } as Omit<IndividualUser, 'id'>;
 }
 
@@ -45,23 +44,9 @@ function createProfessionalUserData(
         ...data,
         companyName: data.companyName || '',
         contactName: data.contactName || '',
-        siret: data.siret || '',
         userType: 'professional',
         isDeliveryAgent: data.isDeliveryAgent || false
     } as Omit<ProfessionalUser, 'id'>;
-}
-
-// Update DeliveryUser creation to set isDeliveryAgent to true
-function createDeliveryUserData(
-    data: Partial<DeliveryUser> & { userType: 'delivery'; email: string; }
-): Omit<DeliveryUser, 'id'> {
-    return {
-        ...data,
-        firstName: data.firstName || '',
-        lastName: data.lastName || '',
-        userType: 'delivery',
-        isDeliveryAgent: true // Always true for delivery users
-    } as Omit<DeliveryUser, 'id'>;
 }
 
 export const authService = {
@@ -95,9 +80,10 @@ export const authService = {
     createUser: async (
         email: string,
         password: string,
-        userData: UserDataWithType
+        userData: UserDataWithType,
+        isDeliveryAgent = false
     ): Promise<User> => {
-        console.log(`Attempting to create user: ${email}, type: ${userData.userType}`);
+        console.log(`Attempting to create user: ${email}, type: ${userData.userType}, isDeliveryAgent: ${isDeliveryAgent}`);
         try {
             // Create the user account
             const userCredential = await firebaseAuth.createUserWithEmailAndPassword(
@@ -111,8 +97,8 @@ export const authService = {
             // Handle display name based on user type
             let displayName = '';
 
-            if (userData.userType === 'individual' || userData.userType === 'delivery') {
-                const typedData = userData as Partial<IndividualUser | DeliveryUser> & { userType: 'individual' | 'delivery' };
+            if (userData.userType === 'individual') {
+                const typedData = userData as Partial<IndividualUser> & { userType: 'individual' };
                 displayName = `${typedData.firstName || ''} ${typedData.lastName || ''}`.trim();
             } else if (userData.userType === 'professional') {
                 const typedData = userData as Partial<ProfessionalUser> & { userType: 'professional' };
@@ -167,6 +153,7 @@ export const authService = {
                 phoneNumber: userData.phoneNumber || user.phoneNumber,
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                isDeliveryAgent: isDeliveryAgent, // Set the delivery agent flag based on the parameter
             };
 
             let fullUserData;
@@ -178,20 +165,12 @@ export const authService = {
                     ...userData as Partial<IndividualUser>,
                     userType: 'individual'
                 } as Partial<IndividualUser> & { userType: 'individual'; email: string; });
-            }
-            else if (userData.userType === 'professional') {
+            } else {
                 fullUserData = createProfessionalUserData({
                     ...baseUserData,
                     ...userData as Partial<ProfessionalUser>,
                     userType: 'professional'
                 } as Partial<ProfessionalUser> & { userType: 'professional'; email: string; });
-            }
-            else { // delivery
-                fullUserData = createDeliveryUserData({
-                    ...baseUserData,
-                    ...userData as Partial<DeliveryUser>,
-                    userType: 'delivery'
-                } as Partial<DeliveryUser> & { userType: 'delivery'; email: string; });
             }
 
             await userRepository.create(fullUserData, user.uid);
@@ -201,22 +180,6 @@ export const authService = {
             console.log("Create user error:", error);
             throw error;
         }
-    },
-
-    // Legacy method for backward compatibility
-    createUserWithEmailAndPassword: async (
-        email: string,
-        password: string,
-        firstName: string,
-        lastName: string,
-        phone: string
-    ): Promise<User> => {
-        return await authService.createUser(email, password, {
-            firstName,
-            lastName,
-            phoneNumber: phone,
-            userType: 'individual'
-        });
     },
 
     // Sign out
@@ -237,82 +200,12 @@ export const authService = {
         await firebaseAuth.sendPasswordResetEmail(email);
     },
 
-    // Update profile
-    updateProfile: async (
-        data: { firstName?: string; lastName?: string; photoURL?: string }
-    ): Promise<void> => {
-        const user = firebaseAuth.currentUser;
-        if (!user) {
-            console.log("No user signed in");
-            console.log("No user signed in");
-            throw new Error('No user is signed in');
-        }
-
-        console.log(`Updating profile for: ${user.uid}`);
-
-        // Get current user data from Firestore to determine user type
-        const currentUserData = await userRepository.getById(user.uid);
-        if (!currentUserData) {
-            throw new Error('User not found in database');
-        }
-
-        const userType = currentUserData.userType;
-
-        // Update display name based on user type
-        if ((userType === 'individual' || userType === 'delivery') &&
-            (data.firstName || data.lastName)) {
-            // For individuals and delivery agents, get existing names
-            const firstName = data.firstName ||
-                (userType === 'individual' || userType === 'delivery' ?
-                    (currentUserData as IndividualUser | DeliveryUser).firstName : '');
-
-            const lastName = data.lastName ||
-                (userType === 'individual' || userType === 'delivery' ?
-                    (currentUserData as IndividualUser | DeliveryUser).lastName : '');
-
-            const displayName = `${firstName} ${lastName}`.trim();
-
-            await user.updateProfile({
-                displayName,
-                photoURL: data.photoURL
-            });
-        } else if (data.photoURL) {
-            // Just update photo URL if that's all that's changing
-            await user.updateProfile({
-                photoURL: data.photoURL
-            });
-        }
-
-        // Update user document in Firestore
-        console.log("Updating user document in Firestore");
-        await userRepository.update(user.uid, data);
-    },
-
     // Email verification
     sendEmailVerification: async (): Promise<void> => {
         const user = firebaseAuth.currentUser;
         if (!user) throw new Error('No user is signed in');
 
         await user.sendEmailVerification();
-    },
-
-    // Change email
-    updateEmail: async (newEmail: string): Promise<void> => {
-        const user = firebaseAuth.currentUser;
-        if (!user) throw new Error('No user is signed in');
-
-        await user.updateEmail(newEmail);
-
-        // Update email in Firestore
-        await userRepository.update(user.uid, { email: newEmail });
-    },
-
-    // Change password
-    updatePassword: async (newPassword: string): Promise<void> => {
-        const user = firebaseAuth.currentUser;
-        if (!user) throw new Error('No user is signed in');
-
-        await user.updatePassword(newPassword);
     },
 
     // Delete account
@@ -325,16 +218,6 @@ export const authService = {
 
         // Delete Firebase auth account
         await user.delete();
-    },
-
-    // Reauthenticate user
-    reauthenticate: async (password: string): Promise<void> => {
-        const user = firebaseAuth.currentUser;
-        if (!user || !user.email) throw new Error('No user is signed in or email is missing');
-
-        // Use the auth module's EmailAuthProvider
-        const credential = auth.EmailAuthProvider.credential(user.email, password);
-        await user.reauthenticateWithCredential(credential);
     },
 
     // Auth state observer

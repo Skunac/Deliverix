@@ -1,6 +1,8 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
 import { User } from '@/src/models/user.model';
+import { UserService } from "@/src/services/user.service";
+import { DeliveryAgentService } from "@/src/services/delivery-agent.service";
 
 interface AuthContextType {
     user: User | null;
@@ -9,6 +11,8 @@ interface AuthContextType {
     authError: string;
     resetErrors: () => void;
     signIn: (email: string, password: string) => Promise<boolean>;
+
+    // Individual sign up (now mostly for customers)
     signUpIndividual: (
         email: string,
         password: string,
@@ -16,27 +20,21 @@ interface AuthContextType {
         lastName: string,
         phone: string
     ) => Promise<boolean>;
+
+    // Professional sign up
     signUpProfessional: (
         email: string,
         password: string,
         companyName: string,
         contactName: string,
         phone: string,
-        siret: string
+        isDeliveryAgent?: boolean
     ) => Promise<boolean>;
-    signUpDelivery: (
-        email: string,
-        password: string,
-        firstName: string,
-        lastName: string,
-        phone: string,
-        vehicleType: 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck' | 'on_foot',
-        licenseNumber: string,
-        availability?: 'full-time' | 'part-time',
-        serviceAreas?: string[]
-    ) => Promise<boolean>;
-    signOut: () => Promise<boolean>;
+
+    // Update user profile
     updateProfile: (data: { firstName?: string; lastName?: string; photoURL?: string }) => Promise<boolean>;
+
+    signOut: () => Promise<boolean>;
     isAuthenticated: boolean;
 }
 
@@ -47,6 +45,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const auth = useAuthHook();
     const [authError, setAuthError] = useState<string>('');
+    const userService = new UserService();
+    const deliveryAgentService = new DeliveryAgentService();
 
     // Function to reset all errors when navigating between screens
     const resetErrors = () => {
@@ -94,12 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         },
 
-        signUpProfessional: async (email: string, password: string, companyName: string, contactName: string, phone: string, siret: string) => {
+        signUpProfessional: async (email: string, password: string, companyName: string, contactName: string, phone: string, isDeliveryAgent=false) => {
             try {
                 // Reset all errors first
                 resetErrors();
 
-                const result = await auth.signUpProfessional(email, password, companyName, contactName, phone, siret);
+                const result = await auth.signUpProfessional(email, password, companyName, contactName, phone, isDeliveryAgent);
+
                 if (!result && auth.error) {
                     setAuthError(auth.error.message || 'Erreur lors de l\'inscription');
                 }
@@ -111,18 +112,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         },
 
-        signUpDelivery: async (email: string, password: string, firstName: string, lastName: string, phone: string, vehicleType: any, licenseNumber: string, availability?: any, serviceAreas?: string[]) => {
+        updateProfile: async (data: { firstName?: string; lastName?: string; photoURL?: string }) => {
             try {
                 // Reset all errors first
                 resetErrors();
 
-                const result = await auth.signUpDelivery(email, password, firstName, lastName, phone, vehicleType, licenseNumber, availability, serviceAreas);
-                if (!result && auth.error) {
-                    setAuthError(auth.error.message || 'Erreur lors de l\'inscription');
+                if (!auth.user || !auth.user.uid) {
+                    setAuthError('Utilisateur non connecté');
+                    return false;
                 }
-                return result;
+
+                // Update user profile in Firestore
+                await userService.updateUserProfile(auth.user.uid, data);
+
+                return true;
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'inscription';
+                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil';
                 setAuthError(errorMessage);
                 return false;
             }
@@ -140,23 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return result;
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la déconnexion';
-                setAuthError(errorMessage);
-                return false;
-            }
-        },
-
-        updateProfile: async (data: { firstName?: string; lastName?: string; photoURL?: string }) => {
-            try {
-                // Reset all errors first
-                resetErrors();
-
-                const result = await auth.updateProfile(data);
-                if (!result && auth.error) {
-                    setAuthError(auth.error.message || 'Erreur lors de la mise à jour du profil');
-                }
-                return result;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil';
                 setAuthError(errorMessage);
                 return false;
             }

@@ -1,4 +1,13 @@
-import { DeliveryAgent, AgentStatus, AvailabilitySlot, SpecificDateAvailability } from '../models/delivery-agent.model';
+import {
+    DeliveryAgent,
+    AgentStatus,
+    PersonalInfo,
+    CompanyInfo,
+    VehicleInfo,
+    DriverInfo,
+    CompanyType,
+    VehicleType
+} from '../models/delivery-agent.model';
 import { DeliveryAgentRepository } from '../firebase/repositories/delivery-agent.repository';
 import { DeliveryAgentAdapter } from '../firebase/adapters/delivery-agent.adapter';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
@@ -14,16 +23,24 @@ export class DeliveryAgentService {
     }
 
     async registerAsAgent(userId: string, agentData: {
-        firstName: string;
-        lastName: string;
-        vehicleType: 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck' | 'on_foot';
-        vehicleMake?: string;
-        vehicleModel?: string;
-        vehicleYear?: number;
-        vehiclePlateNumber?: string;
-        biography?: string;
-        serviceAreas?: string[];
-        weeklyAvailability?: AvailabilitySlot[];
+        // Personal info
+        personalInfo: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phoneNumber: string;
+        };
+        // Company info
+        companyInfo: {
+            name: string;
+            type: CompanyType;
+            sirenNumber: string;
+        };
+        // Vehicle info (minimal required)
+        vehicleInfo?: {
+            type: VehicleType;
+            plateNumber: string;
+        };
     }): Promise<void> {
         console.log(`Starting to register user ${userId} as delivery agent`);
 
@@ -34,29 +51,70 @@ export class DeliveryAgentService {
             throw new Error('User not found');
         }
 
+        // Verify this is a professional user
+        if (user.userType !== 'professional') {
+            console.error(`User ${userId} is not a professional user`);
+            throw new Error('Only professional users can be registered as delivery agents');
+        }
+
         console.log(`User ${userId} found, creating delivery agent profile`);
+
+        // Create default personal info
+        const personalInfo: PersonalInfo = {
+            firstName: agentData.personalInfo.firstName,
+            lastName: agentData.personalInfo.lastName,
+            email: agentData.personalInfo.email || user.email,
+            phoneNumber: agentData.personalInfo.phoneNumber || user.phoneNumber || '',
+            birthDate: new Date(), // Will be filled in by the user
+            nationality: '', // Will be filled in by the user
+            birthPlace: '', // Will be filled in by the user
+            address: {
+                street: '',
+                postalCode: '',
+                city: '',
+                country: 'France'
+            },
+            idType: 'identity_card'
+        };
+
+        // Create default company info
+        const companyInfo: CompanyInfo = {
+            name: agentData.companyInfo.name,
+            type: agentData.companyInfo.type,
+            sirenNumber: agentData.companyInfo.sirenNumber
+        };
+
+        // Create default vehicle info
+        const vehicleInfo: VehicleInfo = {
+            type: agentData.vehicleInfo?.type || 'car',
+            model: '',
+            year: new Date().getFullYear(),
+            plateNumber: agentData.vehicleInfo?.plateNumber || ''
+        };
+
+        // Create default driver info
+        const driverInfo: DriverInfo = {
+            licenseType: ''
+        };
 
         // Create default agent data
         const defaultAgentData: Omit<DeliveryAgent, 'id'> = {
             activeStatus: 'offline',
             approvalStatus: 'pending',
-            firstName: agentData.firstName,
-            lastName: agentData.lastName,
-            biography: agentData.biography || '',
-            vehicleType: agentData.vehicleType || 'car',
-            vehicleMake: agentData.vehicleMake  || '',
-            vehicleModel: agentData.vehicleModel || '',
-            vehicleYear: agentData.vehicleYear || 2000,
-            vehiclePlateNumber: agentData.vehiclePlateNumber,
+            termsAccepted: false,
+            termsAcceptanceDate: new Date(),
+
+            // Core information
+            personalInfo,
+            companyInfo,
+            vehicleInfo,
+            driverInfo,
+
             rating: 5,
             completedDeliveries: 0,
             canceledDeliveries: 0,
             totalEarnings: 0,
-            weeklyAvailability: agentData.weeklyAvailability || [],
-            specialAvailability: [],
-            unavailableDates: [],
-            serviceAreas: agentData.serviceAreas || [],
-            paymentInfo: {},
+            vatApplicable: false,
             notificationPreferences: {
                 email: true,
                 push: true,
@@ -89,6 +147,74 @@ export class DeliveryAgentService {
         return this.repository.update(userId, DeliveryAgentAdapter.toFirestore(data));
     }
 
+    // Update personal information
+    async updatePersonalInfo(userId: string, personalInfo: Partial<PersonalInfo>): Promise<void> {
+        const agent = await this.repository.getByUserId(userId);
+        if (!agent) {
+            throw new Error('Agent not found');
+        }
+
+        return this.repository.update(userId, {
+            personalInfo: {
+                ...agent.personalInfo,
+                ...personalInfo
+            }
+        });
+    }
+
+    // Update company information
+    async updateCompanyInfo(userId: string, companyInfo: Partial<CompanyInfo>): Promise<void> {
+        const agent = await this.repository.getByUserId(userId);
+        if (!agent) {
+            throw new Error('Agent not found');
+        }
+
+        return this.repository.update(userId, {
+            companyInfo: {
+                ...agent.companyInfo,
+                ...companyInfo
+            }
+        });
+    }
+
+    // Update vehicle information
+    async updateVehicleInfo(userId: string, vehicleInfo: Partial<VehicleInfo>): Promise<void> {
+        const agent = await this.repository.getByUserId(userId);
+        if (!agent) {
+            throw new Error('Agent not found');
+        }
+
+        return this.repository.update(userId, {
+            vehicleInfo: {
+                ...agent.vehicleInfo,
+                ...vehicleInfo
+            }
+        });
+    }
+
+    // Update driver information
+    async updateDriverInfo(userId: string, driverInfo: Partial<DriverInfo>): Promise<void> {
+        const agent = await this.repository.getByUserId(userId);
+        if (!agent) {
+            throw new Error('Agent not found');
+        }
+
+        return this.repository.update(userId, {
+            driverInfo: {
+                ...agent.driverInfo,
+                ...driverInfo
+            }
+        });
+    }
+
+    // Accept terms and conditions
+    async acceptTerms(userId: string): Promise<void> {
+        return this.repository.update(userId, {
+            termsAccepted: true,
+            termsAcceptanceDate: new Date()
+        });
+    }
+
     async updateAgentStatus(userId: string, status: AgentStatus): Promise<void> {
         return this.repository.updateAgentStatus(userId, status);
     }
@@ -105,28 +231,6 @@ export class DeliveryAgentService {
         return this.repository.getAvailableAgents();
     }
 
-    async updateWeeklyAvailability(userId: string, availability: AvailabilitySlot[]): Promise<void> {
-        return this.repository.updateWeeklyAvailability(
-            userId,
-            DeliveryAgentAdapter.availabilitySlotsToFirestore(availability)
-        );
-    }
-
-    async updateSpecialAvailability(userId: string, availability: SpecificDateAvailability[]): Promise<void> {
-        return this.repository.updateSpecialAvailability(
-            userId,
-            DeliveryAgentAdapter.specificDateAvailabilityToFirestore(availability)
-        );
-    }
-
-    async addUnavailableDate(userId: string, date: Date): Promise<void> {
-        return this.repository.addUnavailableDate(userId, date);
-    }
-
-    async removeUnavailableDate(userId: string, date: Date): Promise<void> {
-        return this.repository.removeUnavailableDate(userId, date);
-    }
-
     async approveAgent(userId: string, notes?: string): Promise<void> {
         return this.repository.updateApprovalStatus(userId, 'approved', notes);
     }
@@ -141,10 +245,6 @@ export class DeliveryAgentService {
 
     async getApprovedAgents(): Promise<{ userId: string; agent: DeliveryAgent }[]> {
         return this.repository.getAgentsByApprovalStatus('approved');
-    }
-
-    async getAgentsInServiceArea(area: string): Promise<{ userId: string; agent: DeliveryAgent }[]> {
-        return this.repository.getAgentsInServiceArea(area);
     }
 
     async recordDeliveryCompletion(userId: string, deliveryId: string, earnings: number): Promise<void> {
@@ -173,9 +273,19 @@ export class DeliveryAgentService {
             return false;
         }
 
-        // Check if user exists and has required fields
+        // Check if user exists
         const user = await this.userService.getUserById(userId);
-        if (!user || !user.email || !user.phoneNumber) {
+        if (!user) {
+            return false;
+        }
+
+        // Check if user is a professional user
+        if (user.userType !== 'professional') {
+            return false;
+        }
+
+        // Check if user has required fields
+        if (!user.email) {
             return false;
         }
 
@@ -183,84 +293,62 @@ export class DeliveryAgentService {
         return !user.isDeliveryAgent;
     }
 
-    // Find nearby agents
-    async getNearbyAgents(
-        location: FirebaseFirestoreTypes.GeoPoint,
-        radiusInKm: number,
-        onlyAvailable: boolean = true
-    ): Promise<{ userId: string; agent: DeliveryAgent; distance: number }[]> {
-        return this.repository.getNearbyAgents(location, radiusInKm, onlyAvailable);
-    }
-
-    // Check agent availability for a specific time
-    async checkAgentAvailabilityForTime(
-        userId: string,
-        date: Date,
-        startTime: string,
-        endTime: string
-    ): Promise<boolean> {
-        const agent = await this.repository.getByUserId(userId);
-        if (!agent) {
-            throw new Error('Agent not found');
-        }
-
-        // Check if date is in unavailable dates
-        const dateString = date.toDateString();
-        const unavailableDatesStrings = agent.unavailableDates.map(d => d.toDateString());
-        if (unavailableDatesStrings.includes(dateString)) {
-            return false;
-        }
-
-        // Check special availability for this date
-        const specialAvailForDate = agent.specialAvailability.find(
-            a => a.date.toDateString() === dateString
-        );
-
-        if (specialAvailForDate) {
-            // Check if time slot is within any of the special availability slots
-            return specialAvailForDate.slots.some(slot =>
-                slot.startTime <= startTime && slot.endTime >= endTime
-            );
-        }
-
-        // Check weekly availability
-        const dayOfWeek = date.getDay();
-        const weeklySlots = agent.weeklyAvailability.filter(slot =>
-            slot.dayOfWeek === dayOfWeek && slot.isRecurring
-        );
-
-        return weeklySlots.some(slot =>
-            slot.startTime <= startTime && slot.endTime >= endTime
-        );
-    }
-
-    // Get agents available for a specific delivery time
-    async getAvailableAgentsForDelivery(
-        date: Date,
-        startTime: string,
-        endTime: string,
-        pickupLocation: FirebaseFirestoreTypes.GeoPoint,
+    // Get agents near a specific location based on their delivery range
+    async getNearbyAgentsForDelivery(
+        deliveryLocation: FirebaseFirestoreTypes.GeoPoint,
         radiusInKm: number = 10
     ): Promise<{ userId: string; agent: DeliveryAgent; distance: number }[]> {
-        // First get nearby agents
-        const nearbyAgents = await this.repository.getNearbyAgents(pickupLocation, radiusInKm, true);
+        // Get all available agents
+        const allAgents = await this.repository.getAvailableAgents();
 
-        // Filter for time availability
-        const availableAgents = [];
+        // Calculate distance and filter by delivery range
+        const eligibleAgents = [];
 
-        for (const agentData of nearbyAgents) {
-            const isAvailable = await this.checkAgentAvailabilityForTime(
-                agentData.userId,
-                date,
-                startTime,
-                endTime
+        for (const agentData of allAgents) {
+            // Skip agents without location data
+            if (!agentData.agent.currentLocation) {
+                continue;
+            }
+
+            // Calculate distance to delivery location
+            const distance = this.calculateDistance(
+                deliveryLocation.latitude, deliveryLocation.longitude,
+                agentData.agent.currentLocation.latitude, agentData.agent.currentLocation.longitude
             );
 
-            if (isAvailable) {
-                availableAgents.push(agentData);
+            // Check if delivery location is within the agent's delivery range
+            const maxRange = agentData.agent.deliveryRange || radiusInKm;
+            if (distance <= maxRange) {
+                eligibleAgents.push({
+                    userId: agentData.userId,
+                    agent: agentData.agent,
+                    distance
+                });
             }
         }
 
-        return availableAgents;
+        // Sort by distance
+        return eligibleAgents.sort((a, b) => a.distance - b.distance);
+    }
+
+    // Calculate distance using Haversine formula
+    private calculateDistance(
+        lat1: number, lon1: number,
+        lat2: number, lon2: number
+    ): number {
+        const R = 6371; // Radius of the earth in km
+        const dLat = this.deg2rad(lat2 - lat1);
+        const dLon = this.deg2rad(lon2 - lon1);
+        const a =
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c; // Distance in km
+        return distance;
+    }
+
+    private deg2rad(deg: number): number {
+        return deg * (Math.PI/180);
     }
 }

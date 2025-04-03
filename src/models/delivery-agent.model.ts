@@ -2,51 +2,73 @@ import { FirestoreDocument } from './common.model';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 export type AgentStatus = 'available' | 'busy' | 'offline' | 'pending_approval';
+export type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
+export type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck';
 
-export interface AvailabilitySlot {
-    dayOfWeek: number; // 0-6 (Sunday to Saturday)
-    startTime: string; // Format: "HH:MM" in 24h format
-    endTime: string; // Format: "HH:MM" in 24h format
-    isRecurring: boolean;
+export interface PersonalInfo {
+    firstName: string;
+    lastName: string;
+    birthDate: Date;
+    nationality: string;
+    birthPlace: string;
+    address: {
+        street: string;
+        postalCode: string;
+        city: string;
+        country: string;
+    };
+    email: string;
+    phoneNumber: string;
+    idType: 'identity_card' | 'passport' | 'residence_permit';
+    idPhotoUrl?: string | null; // Changé pour accepter null
+    photoUrl?: string | null; // Changé pour accepter null
 }
 
-export interface SpecificDateAvailability {
-    date: Date;
-    slots: Array<{
-        startTime: string;
-        endTime: string;
-    }>;
+export interface CompanyInfo {
+    name: string;
+    type: CompanyType;
+    sirenNumber: string; // Numéro SIREN/SIRET
+    kbisPhotoUrl?: string | null; // Changé pour accepter null
+    professionalInsuranceProvider?: string;
+    professionalInsurancePhotoUrl?: string | null; // Changé pour accepter null
 }
 
-export interface PaymentInfo {
-    iban?: string;
-    bankName?: string;
-    accountHolderName?: string;
-    taxIdentificationNumber?: string;
+export interface VehicleInfo {
+    type: VehicleType;
+    model: string;
+    year: number;
+    plateNumber: string;
+    registrationPhotoUrl?: string | null; // Changé pour accepter null
+    insuranceProvider?: string;
+    insurancePhotoUrl?: string | null; // Changé pour accepter null
+}
+
+export interface DriverInfo {
+    licenseType: string;
+    licensePhotoUrl?: string | null; // Changé pour accepter null
+    transportCertificatePhotoUrl?: string | null; // Changé pour accepter null
+    trainingRegistrationPhotoUrl?: string | null; // Changé pour accepter null
 }
 
 export interface DeliveryAgent extends FirestoreDocument {
     // Status and verification
     activeStatus: AgentStatus;
     approvalStatus: 'pending' | 'approved' | 'rejected';
-    verificationNotes?: string;
+    termsAccepted: boolean;
+    termsAcceptanceDate: Date;
 
-    // Profile and capabilities
-    firstName: string;
-    lastName: string;
-    profilePhoto?: string;
-    biography?: string;
+    // Core information
+    personalInfo: PersonalInfo;
+    companyInfo: CompanyInfo;
+    vehicleInfo: VehicleInfo;
+    driverInfo: DriverInfo;
 
     // Location and tracking
     currentLocation?: FirebaseFirestoreTypes.GeoPoint;
     lastLocationUpdate?: Date;
 
-    // Vehicle information
-    vehicleType: 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck' | 'on_foot';
-    vehicleMake?: string;
-    vehicleModel?: string;
-    vehicleYear?: number;
-    vehiclePlateNumber?: string;
+    // Delivery range in kilometers
+    deliveryRange?: number;
 
     // Performance metrics
     rating: number;
@@ -54,16 +76,9 @@ export interface DeliveryAgent extends FirestoreDocument {
     canceledDeliveries: number;
     totalEarnings: number;
 
-    // Schedule and availability
-    weeklyAvailability: AvailabilitySlot[];
-    specialAvailability: SpecificDateAvailability[];
-    unavailableDates: Date[];
-    maxDailyDeliveries?: number;
-    maxDeliveryDistance?: number;
-    serviceAreas?: string[]; // ZIP codes or area names
-
     // Payment and financial
-    paymentInfo: PaymentInfo;
+    vatApplicable: boolean;
+    vatNumber?: string | null; // Changé pour accepter null
 
     // Settings
     notificationPreferences: {

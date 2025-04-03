@@ -23,7 +23,7 @@ export default function AuthHomeScreen() {
                     <Text className={"text-white text-center mt-8 mb-3 font-cabin-medium"}>Déjà un compte ? Se connecter</Text>
                 </TouchableOpacity>
 
-                <StyledButton className={"border-white"} variant={"bordered"} onPress={() => router.push('/(auth)/register-delivery-agent')}>
+                <StyledButton className={"border-white"} variant={"bordered"} onPress={() => router.push('/register-delivery-agent-step1')}>
                     <Text className="text-white font-cabin-medium">Je suis livreur, je souhaite créer mon compte</Text>
                 </StyledButton>
             </View>

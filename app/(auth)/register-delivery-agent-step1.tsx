@@ -1,66 +1,54 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView, StyleSheet} from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
 import { GradientView } from "@/components/ui/GradientView";
 import StyledButton from "@/components/ui/StyledButton";
 import StyledTextInput from "@/components/ui/StyledTextInput";
-import { Picker } from '@react-native-picker/picker';
 
-type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck' | 'on_foot';
-type AvailabilityType = 'full-time' | 'part-time';
+type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
 
 interface FormData {
-    firstName: string;
-    lastName: string;
+    companyName: string;
+    contactName: string;
     email: string;
     phone: string;
-    vehicleType: VehicleType;
-    licensePlate: string;
-    availability: AvailabilityType;
-    serviceAreas: string;
     password: string;
     confirmPassword: string;
 }
 
 interface FormErrors {
-    firstName: string;
-    lastName: string;
+    companyName: string;
+    contactName: string;
     email: string;
-    licensePlate: string;
     password: string;
     confirmPassword: string;
     auth: string;
 }
 
-export default function RegisterDeliveryScreen(): JSX.Element {
+export default function RegisterDeliveryStep1Screen(): JSX.Element {
     // Form fields
     const [formData, setFormData] = useState<FormData>({
-        firstName: '',
-        lastName: '',
+        companyName: '',
+        contactName: '',
         email: '',
         phone: '',
-        vehicleType: 'car',
-        licensePlate: '',
-        availability: 'full-time',
-        serviceAreas: '',
         password: '',
         confirmPassword: ''
     });
 
     // Single object for all form errors
     const [formErrors, setFormErrors] = useState<FormErrors>({
-        firstName: '',
-        lastName: '',
+        companyName: '',
+        contactName: '',
         email: '',
-        licensePlate: '',
         password: '',
         confirmPassword: '',
         auth: '' // For auth-related errors
     });
 
     const [isRegistering, setIsRegistering] = useState(false);
-    const { signUpDelivery, authError, error, resetErrors } = useAuth();
+    const { signUpProfessional, authError, error, resetErrors } = useAuth();
     const router = useRouter();
 
     // Effect to sync authError from context with formErrors.auth in the component
@@ -79,12 +67,12 @@ export default function RegisterDeliveryScreen(): JSX.Element {
 
     // Single useEffect for component mount/unmount
     useEffect(() => {
-        console.log('RegisterDeliveryScreen mounted - resetting errors');
+        console.log('RegisterDeliveryStep1Screen mounted - resetting errors');
         resetErrors();
 
         // Cleanup on unmount
         return () => {
-            console.log('RegisterDeliveryScreen unmounted - resetting errors');
+            console.log('RegisterDeliveryStep1Screen unmounted - resetting errors');
             resetErrors();
         };
     }, []);
@@ -104,41 +92,19 @@ export default function RegisterDeliveryScreen(): JSX.Element {
         }
     };
 
-    // Handle vehicle type changes with license plate validation
-    const handleVehicleTypeChange = (value: VehicleType): void => {
-        setFormData(prev => ({ ...prev, vehicleType: value }));
-
-        // Clear license plate error if switched to on_foot
-        if (value === 'on_foot' && formErrors.licensePlate) {
-            setFormErrors(prev => ({ ...prev, licensePlate: '' }));
-        }
-        // Validate license plate if switched from on_foot
-        else if (value !== 'on_foot' && !formData.licensePlate.trim()) {
-            setFormErrors(prev => ({
-                ...prev,
-                licensePlate: 'La plaque d\'immatriculation est requise pour ce type de véhicule'
-            }));
-        }
-
-        // Clear auth error as well
-        if (formErrors.auth) {
-            setFormErrors(prev => ({ ...prev, auth: '' }));
-        }
-    };
-
     const validateForm = (): boolean => {
         const newErrors: Partial<FormErrors> = {};
         let isValid = true;
 
-        // Validate first name
-        if (!formData.firstName.trim()) {
-            newErrors.firstName = 'Le prénom est requis';
+        // Validate company name
+        if (!formData.companyName.trim()) {
+            newErrors.companyName = 'Le nom de l\'entreprise est requis';
             isValid = false;
         }
 
-        // Validate last name
-        if (!formData.lastName.trim()) {
-            newErrors.lastName = 'Le nom est requis';
+        // Validate contact name
+        if (!formData.contactName.trim()) {
+            newErrors.contactName = 'Le nom du contact est requis';
             isValid = false;
         }
 
@@ -148,12 +114,6 @@ export default function RegisterDeliveryScreen(): JSX.Element {
             isValid = false;
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = 'Format d\'email invalide';
-            isValid = false;
-        }
-
-        // Validate license plate (not required for on_foot)
-        if (formData.vehicleType !== 'on_foot' && !formData.licensePlate.trim()) {
-            newErrors.licensePlate = 'La plaque d\'immatriculation est requise pour ce type de véhicule';
             isValid = false;
         }
 
@@ -178,12 +138,6 @@ export default function RegisterDeliveryScreen(): JSX.Element {
     };
 
     const handleRegister = async (): Promise<void> => {
-        // Log values for debugging
-        console.log('Password:', formData.password);
-        console.log('Confirm Password:', formData.confirmPassword);
-        console.log('Match?', formData.password === formData.confirmPassword);
-        console.log(`Vehicle type: ${formData.vehicleType}`);
-
         if (!validateForm()) {
             return;
         }
@@ -193,29 +147,22 @@ export default function RegisterDeliveryScreen(): JSX.Element {
             resetErrors();
             setFormErrors(prev => ({ ...prev, auth: '' })); // Clear auth error
 
-            // Parse service areas as array
-            const serviceAreasArray = formData.serviceAreas
-                .split(',')
-                .map(area => area.trim())
-                .filter(area => area.length > 0);
+            console.log("Starting delivery professional registration process");
 
-            console.log("Starting delivery driver registration process");
-
-            const success = await signUpDelivery(
+            const success = await signUpProfessional(
                 formData.email,
                 formData.password,
-                formData.firstName,
-                formData.lastName,
+                formData.companyName,
+                formData.contactName,
                 formData.phone,
-                formData.vehicleType,
-                formData.licensePlate,
-                formData.availability,
-                serviceAreasArray
+                true
             );
 
             if (success) {
-                console.log('Registration successful, user should be redirected automatically');
-                // The navigation is handled by the RootLayoutNav component
+                console.log('Registration successful, proceeding to step 2');
+
+                // Navigate to step 2
+                router.push('/register-delivery-agent-step2');
             } else {
                 console.log('Registration failed, checking for errors...');
             }
@@ -235,7 +182,11 @@ export default function RegisterDeliveryScreen(): JSX.Element {
             <ScrollView contentContainerClassName="flex-grow">
                 <View className="flex-1 justify-center p-5">
                     <Text className="text-2xl font-cabin-bold mb-5 text-center text-white">
-                        Inscription Livreur
+                        Inscription Livreur Professionnel - Étape 1
+                    </Text>
+
+                    <Text className="text-sm font-cabin-medium mb-5 text-center text-white">
+                        Veuillez d'abord créer votre compte professionnel
                     </Text>
 
                     {/* Display auth error if present */}
@@ -248,21 +199,21 @@ export default function RegisterDeliveryScreen(): JSX.Element {
                     ) : null}
 
                     <StyledTextInput
-                        placeholder="Prénom"
-                        value={formData.firstName}
-                        onChangeText={(text) => handleChange('firstName', text)}
-                        error={formErrors.firstName}
+                        placeholder="Nom de l'entreprise"
+                        value={formData.companyName}
+                        onChangeText={(text) => handleChange('companyName', text)}
+                        error={formErrors.companyName}
                     />
 
                     <StyledTextInput
-                        placeholder="Nom"
-                        value={formData.lastName}
-                        onChangeText={(text) => handleChange('lastName', text)}
-                        error={formErrors.lastName}
+                        placeholder="Nom et prénom du contact"
+                        value={formData.contactName}
+                        onChangeText={(text) => handleChange('contactName', text)}
+                        error={formErrors.contactName}
                     />
 
                     <StyledTextInput
-                        placeholder="Email"
+                        placeholder="Email professionnel"
                         value={formData.email}
                         onChangeText={(text) => handleChange('email', text)}
                         autoCapitalize="none"
@@ -271,52 +222,10 @@ export default function RegisterDeliveryScreen(): JSX.Element {
                     />
 
                     <StyledTextInput
-                        placeholder="Téléphone"
+                        placeholder="Téléphone professionnel"
                         value={formData.phone}
                         onChangeText={(text) => handleChange('phone', text)}
                         keyboardType="phone-pad"
-                    />
-
-                    <View className="border border-gray-300 bg-white rounded-md mb-4">
-                        <Picker
-                            selectedValue={formData.vehicleType}
-                            onValueChange={handleVehicleTypeChange}
-                            style={{height: 50}}
-                        >
-                            <Picker.Item label="Voiture" value="car"/>
-                            <Picker.Item label="Moto" value="motorcycle"/>
-                            <Picker.Item label="Vélo" value="bicycle"/>
-                            <Picker.Item label="Scooter" value="scooter"/>
-                            <Picker.Item label="Camionnette" value="van"/>
-                            <Picker.Item label="Camion" value="truck"/>
-                            <Picker.Item label="À pied" value="on_foot"/>
-                        </Picker>
-                    </View>
-
-                    <StyledTextInput
-                        placeholder="Plaque d'immatriculation"
-                        value={formData.licensePlate}
-                        onChangeText={(text) => handleChange('licensePlate', text)}
-                        error={formErrors.licensePlate}
-                        editable={formData.vehicleType !== 'on_foot'}
-                    />
-
-                    <View className="border border-gray-300 bg-white rounded-md mb-4">
-                        <Picker
-                            selectedValue={formData.availability}
-                            onValueChange={(value) => handleChange('availability', value)}
-                            style={{height: 50}}
-                        >
-                            <Picker.Item label="Temps plein" value="full-time"/>
-                            <Picker.Item label="Temps partiel" value="part-time"/>
-                        </Picker>
-                    </View>
-
-                    <StyledTextInput
-                        placeholder="Zones de livraison (séparées par des virgules)"
-                        value={formData.serviceAreas}
-                        onChangeText={(text) => handleChange('serviceAreas', text)}
-                        multiline
                     />
 
                     <StyledTextInput
@@ -342,7 +251,7 @@ export default function RegisterDeliveryScreen(): JSX.Element {
                         disabled={isRegistering}
                     >
                         <Text className="text-darker font-cabin-medium">
-                            {isRegistering ? 'Inscription en cours...' : 'S\'inscrire'}
+                            {isRegistering ? 'Inscription en cours...' : 'Continuer'}
                         </Text>
                     </StyledButton>
 

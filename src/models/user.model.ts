@@ -25,20 +25,9 @@ export interface ProfessionalUser extends BaseUser {
     userType: 'professional';
     companyName: string;
     contactName: string;
-    siret: string;
 }
 
-// This interface intentionally has overlap with the DeliveryAgent model
-// The User model contains auth information while DeliveryAgent contains operational data
-export interface DeliveryUser extends BaseUser {
-    userType: 'delivery';
-    firstName: string;
-    lastName: string;
-    // These fields will link this user to their full DeliveryAgent profile
-    // The full DeliveryAgent model is stored in a separate collection
-}
-
-export type User = IndividualUser | ProfessionalUser | DeliveryUser;
+export type User = IndividualUser | ProfessionalUser;
 
 // Type guards for user types - these help with TypeScript narrowing
 export const isIndividualUser = (user: User): user is IndividualUser =>
@@ -47,20 +36,15 @@ export const isIndividualUser = (user: User): user is IndividualUser =>
 export const isProfessionalUser = (user: User): user is ProfessionalUser =>
     user.userType === 'professional';
 
-export const isDeliveryUser = (user: User): user is DeliveryUser =>
-    user.userType === 'delivery';
-
 // New type guard for delivery agents
 export const isDeliveryAgent = (user: User): boolean =>
-    user.isDeliveryAgent === true;
+    user.isDeliveryAgent;
 
 // Utility types to help with creating partial user data
 export type IndividualUserData = Partial<IndividualUser> & { userType: 'individual' };
 export type ProfessionalUserData = Partial<ProfessionalUser> & { userType: 'professional' };
-export type DeliveryUserData = Partial<DeliveryUser> & { userType: 'delivery' };
 
 // Ensure that when creating user data, the userType is always present
 export type UserDataWithType =
     IndividualUserData |
-    ProfessionalUserData |
-    DeliveryUserData;
+    ProfessionalUserData

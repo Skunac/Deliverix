@@ -4,11 +4,8 @@ import { UserService } from '@/src/services/user.service';
 import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
 import {
     User,
-    DeliveryUser,
     IndividualUser,
     ProfessionalUser,
-    isIndividualUser,
-    isProfessionalUser
 } from '@/src/models/user.model';
 import { handleAuthError, AppError } from '@/src/utils/error-handler';
 import { FirebaseAuthTypes } from "@react-native-firebase/auth";
@@ -121,7 +118,7 @@ export function useAuth() {
         companyName: string,
         contactName: string,
         phone: string,
-        siret: string
+        isDeliveryAgent = false
     ) => {
         try {
             setLoading(true);
@@ -131,98 +128,15 @@ export function useAuth() {
                 companyName,
                 contactName,
                 phoneNumber: phone,
-                siret,
                 userType: 'professional'
             };
 
-            const newUser = await authService.createUser(email, password, userData);
+            const newUser = await authService.createUser(email, password, userData, isDeliveryAgent);
 
             // Manually update the user state to show immediately
             if (newUser) {
                 setUser(newUser as User);
             }
-
-            return true;
-        } catch (err) {
-            console.log('Sign up error:', err);
-            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
-            setError(createErrorFromAppError(appError));
-            return false;
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Delivery agent sign up - using your existing DeliveryAgentService
-    const signUpDelivery = async (
-        email: string,
-        password: string,
-        firstName: string,
-        lastName: string,
-        phone: string,
-        vehicleType: 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck' | 'on_foot',
-        licenseNumber: string,
-        availability?: 'full-time' | 'part-time',
-        serviceAreas?: string[]
-    ) => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            // 1. Create the user account first with required user type
-            const userData: Partial<IndividualUser> & { userType: 'individual' } = {
-                email,
-                firstName,
-                lastName,
-                phoneNumber: phone,
-                userType: 'individual',
-                isDeliveryAgent: true // Set this flag to true
-            };
-
-            console.log("Creating delivery user account:", email);
-            const newUser = await authService.createUser(email, password, userData);
-
-            if (!newUser || !newUser.uid) {
-                throw new Error('Failed to create user account');
-            }
-
-            console.log("User created successfully, registering as delivery agent:", newUser.uid);
-
-            // 2. Create weekly availability based on full-time/part-time selection
-            const weeklyAvailability = availability === 'full-time'
-                ? [0, 1, 2, 3, 4, 5, 6].map(day => ({
-                    dayOfWeek: day,
-                    startTime: '08:00',
-                    endTime: '18:00',
-                    isRecurring: true
-                }))
-                : [1, 2, 3, 4, 5].map(day => ({
-                    dayOfWeek: day,
-                    startTime: '09:00',
-                    endTime: '17:00',
-                    isRecurring: true
-                }));
-
-            // 3. Now register as delivery agent using your existing service
-            try {
-                await deliveryAgentService.registerAsAgent(newUser.uid, {
-                    firstName,
-                    lastName,
-                    vehicleType,
-                    vehiclePlateNumber: licenseNumber,
-                    biography: `${availability === 'full-time' ? 'Full-time' : 'Part-time'} delivery agent`,
-                    serviceAreas,
-                    weeklyAvailability
-                });
-
-                console.log("Successfully registered as delivery agent");
-            } catch (agentError) {
-                console.log("Failed to register as delivery agent:", agentError);
-                throw new Error(`User created but failed to register as delivery agent: ${agentError}`);
-            }
-
-            // 4. Manually update the user state to show immediately
-            setUser(newUser as User);
 
             return true;
         } catch (err) {
@@ -252,59 +166,6 @@ export function useAuth() {
         }
     };
 
-    const updateProfile = async (data: { firstName?: string; lastName?: string; photoURL?: string }) => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            if (!user) {
-                throw new Error('No user is signed in');
-            }
-
-            await authService.updateProfile(data);
-
-            // If it's a delivery agent, update their profile in the delivery agent collection
-            if (user.isDeliveryAgent && user.uid) {
-                const agentProfile = await deliveryAgentService.getAgentProfile(user.uid);
-                if (agentProfile) {
-                    await deliveryAgentService.updateAgentProfile(user.uid, {
-                        firstName: data.firstName || agentProfile.firstName,
-                        lastName: data.lastName || agentProfile.lastName,
-                        profilePhoto: data.photoURL || agentProfile.profilePhoto
-                    });
-                }
-            }
-
-            // Update local state immediately
-            if (user) {
-                if (isIndividualUser(user)) {
-                    // For individual users we can set firstName/lastName directly
-                    setUser({
-                        ...user,
-                        firstName: data.firstName ?? user.firstName,
-                        lastName: data.lastName ?? user.lastName,
-                        photoURL: data.photoURL ?? user.photoURL
-                    });
-                } else if (isProfessionalUser(user)) {
-                    // For professional users
-                    setUser({
-                        ...user,
-                        photoURL: data.photoURL ?? user.photoURL
-                    });
-                }
-            }
-
-            return true;
-        } catch (err) {
-            console.log('Update profile error:', err);
-            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
-            setError(createErrorFromAppError(appError));
-            return false;
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return {
         user,
         loading,
@@ -312,9 +173,7 @@ export function useAuth() {
         signIn,
         signUpIndividual,
         signUpProfessional,
-        signUpDelivery,
         signOut,
-        updateProfile,
         setError,
         isAuthenticated: !!user
     };

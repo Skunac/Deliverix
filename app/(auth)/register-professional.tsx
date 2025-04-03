@@ -11,7 +11,6 @@ interface FormData {
     contactName: string;
     email: string;
     phone: string;
-    siret: string;
     password: string;
     confirmPassword: string;
 }
@@ -20,7 +19,6 @@ interface FormErrors {
     companyName: string;
     contactName: string;
     email: string;
-    siret: string;
     password: string;
     confirmPassword: string;
     auth: string;
@@ -33,7 +31,6 @@ export default function RegisterProfessionalScreen(): JSX.Element {
         contactName: '',
         email: '',
         phone: '',
-        siret: '',
         password: '',
         confirmPassword: ''
     });
@@ -43,7 +40,6 @@ export default function RegisterProfessionalScreen(): JSX.Element {
         companyName: '',
         contactName: '',
         email: '',
-        siret: '',
         password: '',
         confirmPassword: '',
         auth: '' // For auth-related errors
@@ -119,15 +115,6 @@ export default function RegisterProfessionalScreen(): JSX.Element {
             isValid = false;
         }
 
-        // Validate SIRET number
-        if (!formData.siret.trim()) {
-            newErrors.siret = 'Le numéro SIRET est requis';
-            isValid = false;
-        } else if (!/^\d{14}$/.test(formData.siret.replace(/\s/g, ''))) {
-            newErrors.siret = 'Le numéro SIRET doit contenir 14 chiffres';
-            isValid = false;
-        }
-
         // Validate password
         if (!formData.password) {
             newErrors.password = 'Le mot de passe est requis';
@@ -168,8 +155,7 @@ export default function RegisterProfessionalScreen(): JSX.Element {
                 formData.password,
                 formData.companyName,
                 formData.contactName,
-                formData.phone,
-                formData.siret
+                formData.phone
             );
 
             if (success) {
@@ -234,14 +220,6 @@ export default function RegisterProfessionalScreen(): JSX.Element {
                         value={formData.phone}
                         onChangeText={(text) => handleChange('phone', text)}
                         keyboardType="phone-pad"
-                    />
-
-                    <StyledTextInput
-                        placeholder="Numéro SIRET"
-                        value={formData.siret}
-                        onChangeText={(text) => handleChange('siret', text)}
-                        keyboardType="number-pad"
-                        error={formErrors.siret}
                     />
 
                     <StyledTextInput

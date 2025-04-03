@@ -75,7 +75,6 @@ export class UserAdapter {
                     ...baseUser,
                     companyName: data.companyName || '',
                     contactName: data.contactName || '',
-                    siret: data.siret || '',
                     userType: 'professional' as const
                 };
 
@@ -111,12 +110,11 @@ export class UserAdapter {
                 if (typedUser.lastName) result.lastName = typedUser.lastName;
             }
 
-            // For professional type, ensure companyName, contactName, and siret
+            // For professional type, ensure companyName, contactName
             if (user.userType === 'professional') {
                 const typedUser = user as Partial<ProfessionalUser>;
                 if (typedUser.companyName) result.companyName = typedUser.companyName;
                 if (typedUser.contactName) result.contactName = typedUser.contactName;
-                if (typedUser.siret) result.siret = typedUser.siret;
             }
         }
 

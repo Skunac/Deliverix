@@ -1,4 +1,4 @@
-import { DeliveryAgent, AgentStatus, AvailabilitySlot, SpecificDateAvailability } from '../../models/delivery-agent.model';
+import { DeliveryAgent, AgentStatus } from '../../models/delivery-agent.model';
 import { COLLECTIONS, DEFAULT_DOCUMENT_ID } from '../collections';
 import { db, serverTimestamp } from '../config';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
@@ -7,25 +7,14 @@ import { FirestoreDocumentData } from '../../models/common.model';
 
 export class DeliveryAgentRepository {
     private getAgentDocRef(userId: string) {
-        const path = COLLECTIONS.USER_DELIVERY_AGENT(userId);
-        console.log(`Getting agent doc ref with path: "${path}"`);
-
-        // Make sure the path is properly formatted for a document
-        if (!path || path.trim() === '' || path.endsWith('/')) {
-            console.error(`Invalid document path: "${path}"`);
-            throw new Error('Invalid document path');
-        }
-
-        return db.doc(path);
+        // Utiliser directement le chemin structuré pour éviter les erreurs
+        return db.collection('users').doc(userId).collection('deliveryAgent').doc(DEFAULT_DOCUMENT_ID);
     }
 
     async create(userId: string, data: Omit<DeliveryAgent, 'id'>): Promise<void> {
         console.log(`Creating delivery agent document for user ${userId}`);
 
         try {
-            // Log the collection definition
-            console.log(`Collection definition for USER_DELIVERY_AGENT: ${JSON.stringify(COLLECTIONS.USER_DELIVERY_AGENT)}`);
-
             // Separate model data from Firestore data
             const firestoreData: FirestoreDocumentData = {
                 ...data,
@@ -33,9 +22,8 @@ export class DeliveryAgentRepository {
                 updatedAt: serverTimestamp(),
             };
 
-            // Alternative approach: use collection/document pattern instead of direct doc path
-            const userDocRef = db.collection('users').doc(userId);
-            const agentDocRef = userDocRef.collection('deliveryAgent').doc(DEFAULT_DOCUMENT_ID);
+            // Utiliser directement le chemin structuré
+            const agentDocRef = db.collection('users').doc(userId).collection('deliveryAgent').doc(DEFAULT_DOCUMENT_ID);
 
             console.log(`Creating document at users/${userId}/deliveryAgent/${DEFAULT_DOCUMENT_ID}`);
             await agentDocRef.set(firestoreData);
@@ -46,7 +34,6 @@ export class DeliveryAgentRepository {
             throw error;
         }
     }
-
 
     async getByUserId(userId: string): Promise<DeliveryAgent | null> {
         const doc = await this.getAgentDocRef(userId).get();
@@ -125,39 +112,6 @@ export class DeliveryAgentRepository {
         });
     }
 
-    // Availability management
-    async updateWeeklyAvailability(userId: string, availability: AvailabilitySlot[]): Promise<void> {
-        return this.update(userId, { weeklyAvailability: availability });
-    }
-
-    async updateSpecialAvailability(userId: string, availability: SpecificDateAvailability[]): Promise<void> {
-        return this.update(userId, { specialAvailability: availability });
-    }
-
-    async addUnavailableDate(userId: string, date: Date): Promise<void> {
-        // Get current unavailable dates
-        const agent = await this.getByUserId(userId);
-        if (!agent) throw new Error('Agent not found');
-
-        const unavailableDates = agent.unavailableDates || [];
-        unavailableDates.push(date);
-
-        return this.update(userId, { unavailableDates });
-    }
-
-    async removeUnavailableDate(userId: string, dateToRemove: Date): Promise<void> {
-        // Get current unavailable dates
-        const agent = await this.getByUserId(userId);
-        if (!agent) throw new Error('Agent not found');
-
-        const unavailableDates = agent.unavailableDates || [];
-        const filteredDates = unavailableDates.filter(date =>
-            date.getTime() !== dateToRemove.getTime()
-        );
-
-        return this.update(userId, { unavailableDates: filteredDates });
-    }
-
     // Application and approval
     async updateApprovalStatus(userId: string, status: 'pending' | 'approved' | 'rejected', notes?: string): Promise<void> {
         // Separate model data from Firestore data
@@ -182,25 +136,6 @@ export class DeliveryAgentRepository {
         const snapshot = await db.collectionGroup('deliveryAgent')
             .where('approvalStatus', '==', status)
             .orderBy('applicationDate', 'asc')
-            .get();
-
-        return snapshot.docs.map(doc => {
-            const pathSegments = doc.ref.path.split('/');
-            const userId = pathSegments[1];
-
-            return {
-                userId,
-                agent: { id: doc.id, ...doc.data() } as DeliveryAgent
-            };
-        });
-    }
-
-    // Find agents available in a specific area
-    async getAgentsInServiceArea(area: string): Promise<{ userId: string; agent: DeliveryAgent }[]> {
-        const snapshot = await db.collectionGroup('deliveryAgent')
-            .where('serviceAreas', 'array-contains', area)
-            .where('approvalStatus', '==', 'approved')
-            .where('activeStatus', '==', 'available')
             .get();
 
         return snapshot.docs.map(doc => {
@@ -304,7 +239,16 @@ export class DeliveryAgentRepository {
         lat1: number, lon1: number,
         lat2: number, lon2: number
     ): number {
-        return 100;
+        const R = 6371; // Radius of the earth in km
+        const dLat = this.deg2rad(lat2 - lat1);
+        const dLon = this.deg2rad(lon2 - lon1);
+        const a =
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c; // Distance in km
+        return distance;
     }
 
     private deg2rad(deg: number): number {
