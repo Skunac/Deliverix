@@ -5,7 +5,6 @@ export type UserType = 'individual' | 'professional' | 'delivery';
 export interface BaseUser extends FirestoreDocument {
     // Core fields
     email: string;
-    photoURL?: string | null;
     userType: UserType;  // Required, never undefined
     isDeliveryAgent: boolean;  // Flag to identify delivery agents
 

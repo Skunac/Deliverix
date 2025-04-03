@@ -10,10 +10,10 @@ import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
 import { DeliveryAgent } from '@/src/models/delivery-agent.model';
 import StyledButton from '@/components/ui/StyledButton';
 import { format } from 'date-fns';
+import AgentCard from "@/components/ui/AgentCard";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
-    const { user } = useAuth();
     const router = useRouter();
     const deliveryService = new DeliveryService();
     const deliveryAgentService = new DeliveryAgentService();
@@ -33,8 +33,10 @@ export default function DeliveryDetailsScreen() {
 
                 // If there's a delivery agent, fetch their details
                 if (deliveryData?.deliveryAgentId) {
+                    console.log("Fetching delivery agent details for ID:", deliveryData.deliveryAgentId);
                     const agentData = await deliveryAgentService.getAgentProfile(deliveryData.deliveryAgentId);
                     setAgent(agentData);
+                    console.log('agent',agent);
                 }
             } catch (err) {
                 console.error("Error fetching delivery details:", err);
@@ -153,44 +155,9 @@ export default function DeliveryDetailsScreen() {
 
                     <Separator />
 
-                    {/* Delivery Agent Information */}
+                    {/* Delivery Agent Information - Using the new AgentCard component */}
                     <SectionTitle title="Livreur" />
-                    {agent ? (
-                        <View>
-                            <InfoRow
-                                label="Nom"
-                                value={`${agent.firstName} ${agent.lastName}`}
-                            />
-                            <InfoRow
-                                label="Évaluation"
-                                value={
-                                    <View className="flex-row items-center">
-                                        <Ionicons name="star" size={16} color="#f59e0b" />
-                                        <Text className="ml-1 text-white font-cabin">{agent.rating.toFixed(1)} / 5</Text>
-                                    </View>
-                                }
-                            />
-                            <InfoRow
-                                label="Véhicule"
-                                value={
-                                    <View className="flex-row items-center">
-                                        <Text className="text-white capitalize font-cabin">{agent.vehicleType}</Text>
-                                        {agent.vehicleMake && agent.vehicleModel && (
-                                            <Text className="ml-1 text-white font-cabin">({agent.vehicleMake} {agent.vehicleModel})</Text>
-                                        )}
-                                    </View>
-                                }
-                            />
-                            {agent.biography && (
-                                <InfoRow
-                                    label="Bio"
-                                    value={agent.biography}
-                                />
-                            )}
-                        </View>
-                    ) : (
-                        <Text className="text-white opacity-60 italic font-cabin">Aucun livreur assigné</Text>
-                    )}
+                    <AgentCard agent={agent} />
 
                     <Separator />
 
@@ -235,7 +202,6 @@ export default function DeliveryDetailsScreen() {
                 </ScrollView>
 
                 {/* Bottom Action Bar - Stacked Vertically */}
-                {/* Bottom Action Bar with Fixed Margins */}
                 <View className="absolute bottom-0 left-0 right-0 flex-col bg-slate-900/95 px-2 py-1.5 border-t border-white/10">
                     <TouchableOpacity
                         onPress={handleModifyDelivery}
@@ -255,16 +221,6 @@ export default function DeliveryDetailsScreen() {
                     >
                         <Ionicons name="close-outline" size={14} color="#FFFFFF" />
                         <Text className="text-white text-xs font-cabin-medium ml-1">Annuler</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={handleDeleteDelivery}
-                        style={[styles.actionButton, {backgroundColor: '#EF4444'}]}
-                        className="flex-row justify-center rounded-xl"
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="trash-outline" size={14} color="#FFFFFF" />
-                        <Text className="text-white text-xs font-cabin-medium ml-1">Supprimer</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -338,10 +294,7 @@ function getStatusText(status: string): string {
     }
 }
 
-// Removed Dimensions import as we're using Tailwind for responsive layout
-
 const styles = StyleSheet.create({
-    // Removed container style as it's now using Tailwind classes
     separator: {
         height: 1,
         width: '100%',

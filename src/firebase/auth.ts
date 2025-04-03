@@ -147,7 +147,6 @@ export const authService = {
             // Prepare the user data with common fields
             const baseUserData = {
                 email: user.email || '',
-                photoURL: user.photoURL,
                 uid: user.uid,
                 emailVerified: user.emailVerified,
                 phoneNumber: userData.phoneNumber || user.phoneNumber,

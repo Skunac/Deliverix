@@ -10,7 +10,6 @@ export class UserAdapter {
             id: user.uid,
             uid: user.uid,
             email: user.email || '',
-            photoURL: user.photoURL,
             emailVerified: user.emailVerified,
             phoneNumber: user.phoneNumber,
             isDeliveryAgent: false, // Default to false for new users
