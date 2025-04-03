@@ -1,4 +1,3 @@
-// src/firebase/repositories/base.repository.ts
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db } from '../config';
 import { serverTimestamp } from '../config';
@@ -85,19 +84,5 @@ export class BaseRepository<T extends FirestoreDocument> {
 
     async delete(id: string): Promise<void> {
         await this.getCollectionRef().doc(id).delete();
-    }
-
-    async getLatest(orderByField: string = 'createdAt'): Promise<T | null> {
-        const snapshot = await this.getCollectionRef()
-            .orderBy(orderByField, 'desc')
-            .limit(1)
-            .get();
-
-        if (snapshot.empty) {
-            return null;
-        }
-
-        const doc = snapshot.docs[0];
-        return { id: doc.id, ...doc.data() } as T;
     }
 }

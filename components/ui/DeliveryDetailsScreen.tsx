@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {View, Text, ScrollView, ActivityIndicator, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from "@/contexts/authContext";
 import { DeliveryService } from "@/src/services/delivery.service";
 import { Delivery } from "@/src/models/delivery.model";
 import { GradientView } from "@/components/ui/GradientView";
@@ -76,11 +75,6 @@ export default function DeliveryDetailsScreen() {
     const handleCancelDelivery = () => {
         // Implement cancel delivery functionality
         console.log("Cancel delivery");
-    };
-
-    const handleDeleteDelivery = () => {
-        // Implement delete delivery functionality
-        console.log("Delete delivery");
     };
 
     if (loading) {

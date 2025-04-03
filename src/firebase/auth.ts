@@ -1,10 +1,8 @@
 import { FirebaseAuthTypes } from '@react-native-firebase/auth';
-import auth from '@react-native-firebase/auth';
 import { firebaseAuth } from './config';
 import { UserRepository } from './repositories/user.repository';
 import {
     User,
-    UserType,
     IndividualUser,
     ProfessionalUser,
     UserDataWithType
@@ -191,20 +189,6 @@ export const authService = {
             console.log("Sign out error:", error);
             throw error;
         }
-    },
-
-    // Password reset
-    sendPasswordResetEmail: async (email: string): Promise<void> => {
-        console.log(`Sending password reset email to: ${email}`);
-        await firebaseAuth.sendPasswordResetEmail(email);
-    },
-
-    // Email verification
-    sendEmailVerification: async (): Promise<void> => {
-        const user = firebaseAuth.currentUser;
-        if (!user) throw new Error('No user is signed in');
-
-        await user.sendEmailVerification();
     },
 
     // Delete account

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {useAuth} from "@/contexts/authContext";
 export default function ProfileScreen() {
@@ -13,7 +12,7 @@ export default function ProfileScreen() {
         <View className="flex-1 bg-gray-50">
             <View className="items-center pt-6 pb-4 bg-white">
                 <Text className="text-2xl font-bold">
-                    {user?.firstName || t('profile.title')} {user?.lastName || ''}
+                    {user?. || t('profile.title')} {user?.lastName || ''}
                 </Text>
                 <Text className="text-gray-500 mb-2">{user?.email || t('profile.notSignedIn')}</Text>
 
@@ -25,12 +24,7 @@ export default function ProfileScreen() {
                         <Text className="text-white font-medium">{t('common.signOut')}</Text>
                     </TouchableOpacity>
                 ) : (
-                    <TouchableOpacity
-                        className="mt-2 px-4 py-2 bg-blue-500 rounded-full"
-                        onPress={() => router.push('/(tabs)/firebase-test')}
-                    >
-                        <Text className="text-white font-medium">{t('common.signIn')}</Text>
-                    </TouchableOpacity>
+                    <></>
                 )}
             </View>
 

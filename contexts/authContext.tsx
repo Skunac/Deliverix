@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
 import { User } from '@/src/models/user.model';
 import { UserService } from "@/src/services/user.service";

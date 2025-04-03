@@ -1,4 +1,3 @@
-// src/utils/error-handler.ts
 import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import {Error} from "@firebase/auth-types";
@@ -107,90 +106,9 @@ export const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError
     return appError;
 };
 
-export const handleFirestoreError = (error: Error): AppError => {
-    let appError: AppError = {
-        code: ErrorCode.UNKNOWN_ERROR,
-        message: 'Une erreur inconnue de base de données s\'est produite.'
-    };
-
-    switch (error.code) {
-        case 'permission-denied':
-            appError = {
-                code: ErrorCode.FIRESTORE_PERMISSION_DENIED,
-                message: 'Vous n\'avez pas l\'autorisation d\'effectuer cette opération.',
-                originalError: error
-            };
-            break;
-        case 'not-found':
-            appError = {
-                code: ErrorCode.FIRESTORE_DOCUMENT_NOT_FOUND,
-                message: 'Le document demandé n\'a pas été trouvé.',
-                originalError: error
-            };
-            break;
-        default:
-            appError = {
-                code: `firestore/${error.code}` || ErrorCode.UNKNOWN_ERROR,
-                message: error.message || 'Une erreur de base de données s\'est produite. Veuillez réessayer.',
-                originalError: error
-            };
-    }
-
-    return appError;
-};
-
-export const handleNetworkError = (error: Error): AppError => {
-    return {
-        code: ErrorCode.NETWORK_ERROR,
-        message: 'Une erreur réseau s\'est produite. Veuillez vérifier votre connexion internet et réessayer.',
-        originalError: error
-    };
-};
-
-export const handleUnknownError = (error: any): AppError => {
-    return {
-        code: ErrorCode.UNKNOWN_ERROR,
-        message: error.message || 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
-        originalError: error
-    };
-};
-
 export const createValidationError = (message: string): AppError => {
     return {
         code: ErrorCode.VALIDATION_ERROR,
         message
     };
-};
-
-export const handleApiError = (error: any): AppError => {
-    if (error.response) {
-        // The request was made, but the server responded with an error status
-        const status = error.response.status;
-
-        if (status === 401 || status === 403) {
-            return {
-                code: ErrorCode.UNAUTHORIZED,
-                message: 'Vous n\'êtes pas autorisé à effectuer cette action.',
-                originalError: error
-            };
-        } else if (status === 404) {
-            return {
-                code: ErrorCode.NOT_FOUND,
-                message: 'La ressource demandée n\'a pas été trouvée.',
-                originalError: error
-            };
-        } else if (status >= 500) {
-            return {
-                code: ErrorCode.SERVER_ERROR,
-                message: 'Une erreur serveur s\'est produite. Veuillez réessayer plus tard.',
-                originalError: error
-            };
-        }
-    } else if (error.request) {
-        // The request was made but no response was received
-        return handleNetworkError(error);
-    }
-
-    // Something else happened while setting up the request
-    return handleUnknownError(error);
 };

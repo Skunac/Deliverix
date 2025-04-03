@@ -28,17 +28,6 @@ export interface ProfessionalUser extends BaseUser {
 
 export type User = IndividualUser | ProfessionalUser;
 
-// Type guards for user types - these help with TypeScript narrowing
-export const isIndividualUser = (user: User): user is IndividualUser =>
-    user.userType === 'individual';
-
-export const isProfessionalUser = (user: User): user is ProfessionalUser =>
-    user.userType === 'professional';
-
-// New type guard for delivery agents
-export const isDeliveryAgent = (user: User): boolean =>
-    user.isDeliveryAgent;
-
 // Utility types to help with creating partial user data
 export type IndividualUserData = Partial<IndividualUser> & { userType: 'individual' };
 export type ProfessionalUserData = Partial<ProfessionalUser> & { userType: 'professional' };
