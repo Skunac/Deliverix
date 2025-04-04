@@ -85,5 +85,60 @@
     "tryAgain": "Veuillez réessayer plus tard",
     "networkError": "Erreur réseau",
     "authFailed": "L'authentification a échoué"
+  },
+  "delivery": {
+    "state": {
+      "waiting_for_prepayment": "En attente de prépaiement",
+      "prepaid": "Prépayé",
+      "processing": "En traitement",
+      "waiting_for_payment": "En attente de paiement",
+      "paid": "Payé",
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    },
+    "status": {
+      "waiting_for_delivery_guy": "En attente du livreur",
+      "delivery_guy_accepted": "Accepté par le livreur",
+      "picked_up": "Récupéré",
+      "delivered": "Livré",
+      "failed": "Échoué"
+    },
+    "packageCategory": {
+      "exceptional": "Exceptionnel",
+      "urgent": "Urgent",
+      "expensive": "Coûteux",
+      "sensitive": "Sensible",
+      "urgent_mechanical_parts": "Pièces mécaniques urgentes",
+      "aeronotics": "Aéronautique",
+      "rare": "Rare",
+      "sentimental_value": "Valeur sentimentale",
+      "products": "Produits",
+      "it_equipment": "Équipement informatique",
+      "gift": "Cadeau",
+      "electronics": "Électronique"
+    },
+    "step": "Etape",
+    "type": "Type",
+    "by": "Par",
+    "estimatedDelivery": "Livraison prévue :",
+    "map": "Carte",
+    "orderDelivery": "Commander une livraison",
+    "ongoingDelivery": "Course en cours",
+    "ongoingDeliveries": "Courses en cours",
+    "agent": {
+      "unassigned": "Non assigné"
+    },
+    "date": {
+      "undefined": "Date non définie"
+    },
+    "time": {
+      "undefined": "Horaire non défini",
+      "onDay": "Le",
+      "between": "entre",
+      "and": "et",
+      "from": "Du",
+      "to": "au",
+      "at": "à"
+    }
   }
 }

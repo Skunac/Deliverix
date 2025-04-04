@@ -1,7 +1,9 @@
 import { FirestoreDocument } from './common.model';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
-export type DeliveryStatus = 'pending' | 'accepted' | 'in_progress' | 'delivered' | 'cancelled';
+export type DeliveryState = 'waiting_for_prepayment' | 'prepaid'  | 'processing' | 'waiting_for_payment' | 'paid' | 'completed' | 'cancelled'; // financial state
+export type DeliveryStatus = 'waiting_for_delivery_guy' | 'delivery_guy_accepted' | 'picked_up' | 'delivered' | 'failed'; // delivery state
+export type PackageCategory = 'exceptional' | 'urgent' | 'expensive' | 'sensitive' | 'urgent_mechanical_parts' | 'aeronotics' | 'rare' | 'sentimental_value' | 'products' | 'it_equipment' | 'gift';
 
 export interface DeliveryTimeSlot {
     start: Date;
@@ -18,6 +20,7 @@ export interface EmbeddedAddress {
     placeId: string;
     formattedAddress: string;
     coordinates: FirebaseFirestoreTypes.GeoPoint;
+    complementaryAddress?: string;
     additionalInstructions?: string;
     components: {
         street_number?: string;
@@ -29,11 +32,18 @@ export interface EmbeddedAddress {
     };
 }
 
+export interface Person {
+    firstName: string;
+    phoneNumber: string;
+    address: EmbeddedAddress;
+}
+
 export interface Delivery extends FirestoreDocument {
     status: DeliveryStatus;
-    state: string;
-    expeditorId: string;
-    receiverId?: string;
+    state: DeliveryState;
+    creator: string;
+    expeditor: Person;
+    receiver: Person;
 
     pickupAddress: EmbeddedAddress;
     deliveryAddress: EmbeddedAddress;
@@ -44,7 +54,7 @@ export interface Delivery extends FirestoreDocument {
     packageDescription: string;
     packageWeight: number;
     packageDimensions: PackageDimensions;
-    packageCategory: string;
+    packageCategory: PackageCategory;
 
     expeditorComments?: string;
     deliveryComments?: string;

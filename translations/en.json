@@ -85,5 +85,59 @@
     "tryAgain": "Please try again later",
     "networkError": "Network error",
     "authFailed": "Authentication failed"
+  },
+  "delivery": {
+    "state": {
+      "waiting_for_prepayment": "Waiting for Prepayment",
+      "prepaid": "Prepaid",
+      "processing": "Processing",
+      "waiting_for_payment": "Waiting for Payment",
+      "paid": "Paid",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "status": {
+      "waiting_for_delivery_guy": "Waiting for Delivery Person",
+      "delivery_guy_accepted": "Accepted by Delivery Person",
+      "picked_up": "Picked Up",
+      "delivered": "Delivered",
+      "failed": "Failed"
+    },
+    "packageCategory": {
+      "exceptional": "Exceptional",
+      "urgent": "Urgent",
+      "expensive": "Expensive",
+      "sensitive": "Sensitive",
+      "urgent_mechanical_parts": "Urgent Mechanical Parts",
+      "aeronotics": "Aeronautics",
+      "rare": "Rare",
+      "sentimental_value": "Sentimental Value",
+      "products": "Products",
+      "it_equipment": "IT Equipment",
+      "gift": "Gift"
+    },
+    "step": "Step",
+    "type": "Type",
+    "by": "By",
+    "estimatedDelivery": "Estimated delivery:",
+    "map": "Map",
+    "orderDelivery": "Order delivery",
+    "ongoingDelivery": "On going delivery",
+    "onGoingDeliveries": "On going deliveries",
+    "agent": {
+      "unassigned": "Unassigned"
+    },
+    "date": {
+      "undefined": "Date undefined"
+    },
+    "time": {
+      "undefined": "Schedule undefined",
+      "onDay": "On",
+      "between": "between",
+      "and": "and",
+      "from": "From",
+      "to": "to",
+      "at": "at"
+    }
   }
 }

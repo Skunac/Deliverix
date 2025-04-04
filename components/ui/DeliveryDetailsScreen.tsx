@@ -10,6 +10,7 @@ import { DeliveryAgent } from '@/src/models/delivery-agent.model';
 import StyledButton from '@/components/ui/StyledButton';
 import { format } from 'date-fns';
 import AgentCard from "@/components/ui/AgentCard";
+import {Separator} from "@/components/ui/Separator";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -49,8 +50,6 @@ export default function DeliveryDetailsScreen() {
             fetchDeliveryDetails();
         }
     }, [id]);
-
-    const Separator = () => <View style={styles.separator} />;
 
     const InfoRow = ({ label, value }: { label: string, value: string | number | React.ReactNode }) => (
         <View className="flex-row justify-between items-center py-2">
@@ -289,13 +288,6 @@ function getStatusText(status: string): string {
 }
 
 const styles = StyleSheet.create({
-    separator: {
-        height: 1,
-        width: '100%',
-        backgroundColor: 'white',
-        marginVertical: 16,
-        opacity: 0.2,
-    },
     mapPlaceholder: {
         height: 120,
         width: '100%',

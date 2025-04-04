@@ -12,7 +12,7 @@ export default function ProfileScreen() {
         <View className="flex-1 bg-gray-50">
             <View className="items-center pt-6 pb-4 bg-white">
                 <Text className="text-2xl font-bold">
-                    {user?. || t('profile.title')} {user?.lastName || ''}
+                    {user.firstName || t('profile.title')} {user?.lastName || ''}
                 </Text>
                 <Text className="text-gray-500 mb-2">{user?.email || t('profile.notSignedIn')}</Text>
 

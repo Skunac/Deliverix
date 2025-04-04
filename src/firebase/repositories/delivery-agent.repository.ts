@@ -1,11 +1,11 @@
 import { DeliveryAgent } from '../../models/delivery-agent.model';
-import { DEFAULT_DOCUMENT_ID } from '../collections';
+import { COLLECTIONS, DEFAULT_DOCUMENT_ID } from '../collections';
 import { db, serverTimestamp } from '../config';
 import { FirestoreDocumentData } from '../../models/common.model';
 
 export class DeliveryAgentRepository {
     private getAgentDocRef(userId: string) {
-        return db.collection('users').doc(userId).collection('deliveryAgent').doc(DEFAULT_DOCUMENT_ID);
+        return db.doc(`${COLLECTIONS.USER_DELIVERY_AGENT(userId)}/${DEFAULT_DOCUMENT_ID}`);
     }
 
     async create(userId: string, data: Omit<DeliveryAgent, 'id'>): Promise<void> {
@@ -19,10 +19,9 @@ export class DeliveryAgentRepository {
                 updatedAt: serverTimestamp(),
             };
 
-            // Utiliser directement le chemin structuré
-            const agentDocRef = db.collection('users').doc(userId).collection('deliveryAgent').doc(DEFAULT_DOCUMENT_ID);
+            const agentDocRef = this.getAgentDocRef(userId);
 
-            console.log(`Creating document at users/${userId}/deliveryAgent/${DEFAULT_DOCUMENT_ID}`);
+            console.log(`Creating document at ${COLLECTIONS.USER_DELIVERY_AGENT(userId)}/${DEFAULT_DOCUMENT_ID}`);
             await agentDocRef.set(firestoreData);
 
             console.log(`Successfully created delivery agent document for user ${userId}`);
@@ -33,22 +32,36 @@ export class DeliveryAgentRepository {
     }
 
     async getByUserId(userId: string): Promise<DeliveryAgent | null> {
-        const doc = await this.getAgentDocRef(userId).get();
+        try {
+            const doc = await this.getAgentDocRef(userId).get();
 
-        if (!doc.exists) {
+            if (!doc.exists) {
+                console.log(`No delivery agent found for user ${userId}`);
+                return null;
+            }
+
+            return {
+                id: userId,
+                ...doc.data()
+            } as DeliveryAgent;
+        } catch (error) {
+            console.error(`Error fetching delivery agent for user ${userId}:`, error);
             return null;
         }
-
-        return { id: doc.id, ...doc.data() } as DeliveryAgent;
     }
 
     async update(userId: string, data: Partial<DeliveryAgent>): Promise<void> {
-        // Separate model data from Firestore data
-        const firestoreData: FirestoreDocumentData = {
-            ...data,
-            updatedAt: serverTimestamp(),
-        };
+        try {
+            // Separate model data from Firestore data
+            const firestoreData: FirestoreDocumentData = {
+                ...data,
+                updatedAt: serverTimestamp(),
+            };
 
-        await this.getAgentDocRef(userId).update(firestoreData);
+            await this.getAgentDocRef(userId).update(firestoreData);
+        } catch (error) {
+            console.error(`Error updating delivery agent for user ${userId}:`, error);
+            throw error;
+        }
     }
 }
