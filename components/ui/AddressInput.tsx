@@ -19,6 +19,7 @@ const ModernAddressInput = ({
     const [isExpanded, setIsExpanded] = useState(false);
     const [displayAddress, setDisplayAddress] = useState('');
     const expandAnimation = useRef(new Animated.Value(0)).current;
+    const [isManuallyEdited, setIsManuallyEdited] = useState(false);
 
     // For manual editing of address components
     const [streetNumber, setStreetNumber] = useState('');
@@ -29,6 +30,10 @@ const ModernAddressInput = ({
     const [complementaryAddress, setComplementaryAddress] = useState('');
     const [additionalInstructions, setAdditionalInstructions] = useState('');
 
+    // Flag to prevent update loops
+    const [isUpdatingFromProps, setIsUpdatingFromProps] = useState(false);
+    const [skipNextPropsUpdate, setSkipNextPropsUpdate] = useState(false);
+
     // Helper function to create a GeoPoint
     const createGeoPoint = (lat: number, lng: number): FirebaseFirestoreTypes.GeoPoint => {
         return {
@@ -37,43 +42,63 @@ const ModernAddressInput = ({
         } as FirebaseFirestoreTypes.GeoPoint;
     };
 
-    // Update all fields when address prop changes
+    // Generate formatted address from components
+    const generateFormattedAddress = (components: {
+        street_number?: string;
+        route?: string;
+        locality?: string;
+        postal_code?: string;
+        country?: string;
+    }) => {
+        return [
+            components.street_number || '',
+            components.route || '',
+            components.locality || '',
+            components.postal_code || '',
+            components.country || ''
+        ].filter(Boolean).join(', ');
+    };
+
+    // Update all fields when address prop changes, but only if not manually edited
     useEffect(() => {
-        // Update display address
-        if (address?.formattedAddress) {
-            setDisplayAddress(address.formattedAddress);
-            setIsExpanded(true); // Auto-expand when address is set
-        } else if (address?.components) {
-            const components = address.components;
-            const formattedAddress = [
-                components.street_number,
-                components.route,
-                components.locality,
-                components.postal_code,
-                components.country
-            ].filter(Boolean).join(', ');
+        if (skipNextPropsUpdate) {
+            setSkipNextPropsUpdate(false);
+            return;
+        }
 
-            if (formattedAddress) {
-                setDisplayAddress(formattedAddress);
-                setIsExpanded(true); // Auto-expand when address is set
+        if (isUpdatingFromProps) return;
+
+        setIsUpdatingFromProps(true);
+
+        try {
+            // Update display address
+            if (address?.formattedAddress) {
+                setDisplayAddress(address.formattedAddress);
+            } else if (address?.components) {
+                const formattedAddress = generateFormattedAddress(address.components);
+                if (formattedAddress) {
+                    setDisplayAddress(formattedAddress);
+                }
+            } else {
+                setDisplayAddress('');
+                setIsExpanded(false);
             }
-        } else {
-            setDisplayAddress('');
-            setIsExpanded(false);
-        }
 
-        // Update component fields
-        if (address?.components) {
-            setStreetNumber(address.components.street_number || '');
-            setRoute(address.components.route || '');
-            setLocality(address.components.locality || '');
-            setPostalCode(address.components.postal_code || '');
-            setCountry(address.components.country || '');
-        }
+            // Update component fields
+            if (address?.components) {
+                setStreetNumber(address.components.street_number || '');
+                setRoute(address.components.route || '');
+                setLocality(address.components.locality || '');
+                setPostalCode(address.components.postal_code || '');
+                setCountry(address.components.country || '');
+            }
 
-        // Update additional fields
-        setComplementaryAddress(address?.complementaryAddress || '');
-        setAdditionalInstructions(address?.additionalInstructions || '');
+            // Update additional fields
+            setComplementaryAddress(address?.complementaryAddress || '');
+            setAdditionalInstructions(address?.additionalInstructions || '');
+        } finally {
+            setIsUpdatingFromProps(false);
+        }
     }, [address]);
 
     // Animation for expanding/collapsing details
@@ -124,18 +149,21 @@ const ModernAddressInput = ({
             additionalInstructions: additionalInstructions
         };
 
-        // Update local fields
+        // Update local fields without triggering manual edit flag
+        setIsUpdatingFromProps(true);
         setStreetNumber(components.street_number || '');
         setRoute(components.route || '');
         setLocality(components.locality || '');
         setPostalCode(components.postal_code || '');
         setCountry(components.country || '');
         setDisplayAddress(formatted_address);
+        setIsManuallyEdited(false);
+        setIsUpdatingFromProps(false);
 
         // Call the callback with the new address
         onAddressSelected(newAddress);
         setShowModal(false); // Close modal after selection
-        setIsExpanded(true);  // Expand details
+        setIsExpanded(true);  // Show details
     };
 
     const clearAddress = () => {
@@ -148,12 +176,13 @@ const ModernAddressInput = ({
         setCountry('');
         setComplementaryAddress('');
         setAdditionalInstructions('');
+        setIsManuallyEdited(false);
 
         // Create an empty address
         const emptyAddress: EmbeddedAddress = {
             placeId: 'manual-input',
             formattedAddress: '',
-            coordinates: createGeoPoint(0, 0), // Default coordinates (Paris)
+            coordinates: createGeoPoint(0, 0), // Default coordinates
             components: {},
             complementaryAddress: '',
             additionalInstructions: ''
@@ -163,38 +192,79 @@ const ModernAddressInput = ({
         setIsExpanded(false);
     };
 
+    // Function to handle field changes
+    const handleFieldChange = (field: string, value: string) => {
+        // Skip if we're currently updating from props
+        if (isUpdatingFromProps) return;
+
+        setIsManuallyEdited(true);
+
+        // Update the relevant field
+        switch (field) {
+            case 'street_number':
+                setStreetNumber(value);
+                break;
+            case 'route':
+                setRoute(value);
+                break;
+            case 'locality':
+                setLocality(value);
+                break;
+            case 'postal_code':
+                setPostalCode(value);
+                break;
+            case 'country':
+                setCountry(value);
+                break;
+            default:
+                break;
+        }
+
+        // Immediately update the display address to keep in sync
+        const updatedComponents = {
+            street_number: field === 'street_number' ? value : streetNumber,
+            route: field === 'route' ? value : route,
+            locality: field === 'locality' ? value : locality,
+            postal_code: field === 'postal_code' ? value : postalCode,
+            country: field === 'country' ? value : country
+        };
+
+        const formattedAddress = generateFormattedAddress(updatedComponents);
+        setDisplayAddress(formattedAddress);
+
+        // Immediately update the address object
+        updateManualAddress(field, value);
+    };
+
     // Function to update address when manual fields change
-    const updateManualAddress = () => {
-        // Build components object
+    const updateManualAddress = (changedField?: string, newValue?: string) => {
+        // Skip if we're currently updating from props
+        if (isUpdatingFromProps) return;
+
+        // Build components object with the updated field value if provided
         const components = {
-            street_number: streetNumber,
-            route: route,
-            locality: locality,
-            postal_code: postalCode,
-            country: country
+            street_number: changedField === 'street_number' ? newValue! : streetNumber,
+            route: changedField === 'route' ? newValue! : route,
+            locality: changedField === 'locality' ? newValue! : locality,
+            postal_code: changedField === 'postal_code' ? newValue! : postalCode,
+            country: changedField === 'country' ? newValue! : country
         };
 
         // Create formatted address from components
-        const formattedAddress = [
-            streetNumber,
-            route,
-            locality,
-            postalCode,
-            country
-        ].filter(Boolean).join(', ');
+        const formattedAddress = generateFormattedAddress(components);
 
-        // Create updated address object
+        // Create updated address object, preserving coordinates if possible
         const updatedAddress: EmbeddedAddress = {
-            placeId: 'manual-input', // Mark as manually entered
+            placeId: isManuallyEdited ? 'manual-input' : (address?.placeId || 'manual-input'),
             formattedAddress: formattedAddress,
-            coordinates: address?.coordinates || createGeoPoint(48.8592184,  2.3456696), // Keep existing coordinates or use default
+            coordinates: address?.coordinates || createGeoPoint(48.8592184, 2.3456696), // Keep existing coordinates or use default
             components: components,
             complementaryAddress: complementaryAddress,
             additionalInstructions: additionalInstructions
         };
 
-        // Update the display address
-        setDisplayAddress(formattedAddress);
+        // Prevent the next props update from overriding our manual changes
+        setSkipNextPropsUpdate(true);
 
         // Send the updated address
         onAddressSelected(updatedAddress);
@@ -210,6 +280,10 @@ const ModernAddressInput = ({
                 ...address,
                 complementaryAddress: text
             };
+
+            // Prevent the next props update from overriding our manual changes
+            setSkipNextPropsUpdate(true);
+
             onAddressSelected(updatedAddress);
         }
     };
@@ -223,6 +297,10 @@ const ModernAddressInput = ({
                 ...address,
                 additionalInstructions: text
             };
+
+            // Prevent the next props update from overriding our manual changes
+            setSkipNextPropsUpdate(true);
+
             onAddressSelected(updatedAddress);
         }
     };
@@ -292,20 +370,16 @@ const ModernAddressInput = ({
                                 label="Street Number"
                                 placeholder="Enter street number"
                                 value={streetNumber}
-                                onChangeText={(text) => {
-                                    setStreetNumber(text);
-                                    setTimeout(updateManualAddress, 100);
-                                }}
+                                onChangeText={(text) => handleFieldChange('street_number', text)}
+                                darkBackground={true}
                             />
 
                             <StyledTextInput
                                 label="Street"
                                 placeholder="Enter street name"
                                 value={route}
-                                onChangeText={(text) => {
-                                    setRoute(text);
-                                    setTimeout(updateManualAddress, 100);
-                                }}
+                                onChangeText={(text) => handleFieldChange('route', text)}
+                                darkBackground={true}
                             />
 
                             <View className="flex-row">
@@ -314,10 +388,8 @@ const ModernAddressInput = ({
                                         label="City"
                                         placeholder="Enter city"
                                         value={locality}
-                                        onChangeText={(text) => {
-                                            setLocality(text);
-                                            setTimeout(updateManualAddress, 100);
-                                        }}
+                                        onChangeText={(text) => handleFieldChange('locality', text)}
+                                        darkBackground={true}
                                     />
                                 </View>
                                 <View className="flex-1 ml-2">
@@ -325,10 +397,8 @@ const ModernAddressInput = ({
                                         label="Postal Code"
                                         placeholder="Enter postal code"
                                         value={postalCode}
-                                        onChangeText={(text) => {
-                                            setPostalCode(text);
-                                            setTimeout(updateManualAddress, 100);
-                                        }}
+                                        onChangeText={(text) => handleFieldChange('postal_code', text)}
+                                        darkBackground={true}
                                     />
                                 </View>
                             </View>
@@ -337,10 +407,8 @@ const ModernAddressInput = ({
                                 label="Country"
                                 placeholder="Enter country"
                                 value={country}
-                                onChangeText={(text) => {
-                                    setCountry(text);
-                                    setTimeout(updateManualAddress, 100);
-                                }}
+                                onChangeText={(text) => handleFieldChange('country', text)}
+                                darkBackground={true}
                             />
 
                             <StyledTextInput
@@ -348,6 +416,7 @@ const ModernAddressInput = ({
                                 placeholder="Apartment, floor, building code, etc."
                                 value={complementaryAddress}
                                 onChangeText={handleComplementaryAddressChange}
+                                darkBackground={true}
                             />
 
                             <StyledTextInput
@@ -357,6 +426,7 @@ const ModernAddressInput = ({
                                 numberOfLines={2}
                                 value={additionalInstructions}
                                 onChangeText={handleAdditionalInstructionsChange}
+                                darkBackground={true}
                             />
                         </View>
                     </Animated.View>
@@ -389,20 +459,16 @@ const ModernAddressInput = ({
                                 label="Street Number"
                                 placeholder="Enter street number"
                                 value={streetNumber}
-                                onChangeText={(text) => {
-                                    setStreetNumber(text);
-                                    setTimeout(updateManualAddress, 100);
-                                }}
+                                onChangeText={(text) => handleFieldChange('street_number', text)}
+                                darkBackground={true}
                             />
 
                             <StyledTextInput
                                 label="Street"
                                 placeholder="Enter street name"
                                 value={route}
-                                onChangeText={(text) => {
-                                    setRoute(text);
-                                    setTimeout(updateManualAddress, 100);
-                                }}
+                                onChangeText={(text) => handleFieldChange('route', text)}
+                                darkBackground={true}
                             />
 
                             <View className="flex-row">
@@ -411,10 +477,8 @@ const ModernAddressInput = ({
                                         label="City"
                                         placeholder="Enter city"
                                         value={locality}
-                                        onChangeText={(text) => {
-                                            setLocality(text);
-                                            setTimeout(updateManualAddress, 100);
-                                        }}
+                                        onChangeText={(text) => handleFieldChange('locality', text)}
+                                        darkBackground={true}
                                     />
                                 </View>
                                 <View className="flex-1 ml-2">
@@ -422,10 +486,8 @@ const ModernAddressInput = ({
                                         label="Postal Code"
                                         placeholder="Enter postal code"
                                         value={postalCode}
-                                        onChangeText={(text) => {
-                                            setPostalCode(text);
-                                            setTimeout(updateManualAddress, 100);
-                                        }}
+                                        onChangeText={(text) => handleFieldChange('postal_code', text)}
+                                        darkBackground={true}
                                     />
                                 </View>
                             </View>
@@ -434,10 +496,8 @@ const ModernAddressInput = ({
                                 label="Country"
                                 placeholder="Enter country"
                                 value={country}
-                                onChangeText={(text) => {
-                                    setCountry(text);
-                                    setTimeout(updateManualAddress, 100);
-                                }}
+                                onChangeText={(text) => handleFieldChange('country', text)}
+                                darkBackground={true}
                             />
 
                             <StyledTextInput
@@ -445,6 +505,7 @@ const ModernAddressInput = ({
                                 placeholder="Apartment, floor, building code, etc."
                                 value={complementaryAddress}
                                 onChangeText={handleComplementaryAddressChange}
+                                darkBackground={true}
                             />
 
                             <StyledTextInput
@@ -454,6 +515,7 @@ const ModernAddressInput = ({
                                 numberOfLines={2}
                                 value={additionalInstructions}
                                 onChangeText={handleAdditionalInstructionsChange}
+                                darkBackground={true}
                             />
                         </View>
                     )}
@@ -498,7 +560,7 @@ const ModernAddressInput = ({
                                     flex: 0,
                                 },
                                 textInputContainer: {
-                                    backgroundColor: '#1F2937',
+                                    backgroundColor: 'white',
                                     borderTopWidth: 0,
                                     borderBottomWidth: 0,
                                     borderRadius: 8,
@@ -506,30 +568,30 @@ const ModernAddressInput = ({
                                 },
                                 textInput: {
                                     height: 50,
-                                    color: 'white',
+                                    color: 'black',
                                     fontSize: 16,
-                                    backgroundColor: '#1F2937',
+                                    backgroundColor: 'white',
                                     fontFamily: 'Cabin',
                                 },
                                 predefinedPlacesDescription: {
                                     color: '#5DD6FF',
                                 },
                                 listView: {
-                                    backgroundColor: '#1F2937',
+                                    backgroundColor: 'white',
                                     marginTop: 5,
                                     borderRadius: 8,
                                 },
                                 row: {
-                                    backgroundColor: '#1F2937',
+                                    backgroundColor: 'white',
                                     padding: 13,
                                     flexDirection: 'row',
                                 },
                                 separator: {
                                     height: 1,
-                                    backgroundColor: '#333',
+                                    backgroundColor: '#e0e0e0',
                                 },
                                 description: {
-                                    color: 'white',
+                                    color: '#333',  // Dark color for light background
                                     fontFamily: 'Cabin',
                                 },
                                 poweredContainer: {

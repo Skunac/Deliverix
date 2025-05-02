@@ -243,7 +243,7 @@ export default function PaymentScreen() {
                 </Text>
 
                 {/* Order Summary */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-4">
                         <Ionicons name="receipt-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
@@ -294,7 +294,7 @@ export default function PaymentScreen() {
                 </View>
 
                 {/* Payment Information */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-4">
                         <Ionicons name="card-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">

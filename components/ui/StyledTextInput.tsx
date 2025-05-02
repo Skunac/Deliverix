@@ -8,6 +8,7 @@ interface StyledTextInputProps extends TextInputProps {
     labelClassName?: string;
     errorClassName?: string;
     showBorder?: boolean;
+    darkBackground?: boolean;
 }
 
 export const StyledTextInput: React.FC<StyledTextInputProps> = ({
@@ -17,6 +18,7 @@ export const StyledTextInput: React.FC<StyledTextInputProps> = ({
                                                                     labelClassName = "",
                                                                     errorClassName = "",
                                                                     showBorder = false,
+                                                                    darkBackground = true,
                                                                     className = "",
                                                                     style,
                                                                     ...props
@@ -35,7 +37,7 @@ export const StyledTextInput: React.FC<StyledTextInputProps> = ({
             <TextInput
                 className={`${borderClass} ${errorBorderClass} p-3 rounded-lg ${className}`}
                 placeholderTextColor="#9ca3af"
-                style={[styles.darkBackground, style]}
+                style={[darkBackground ? styles.darkBackground : styles.lightBackground, style]}
                 {...props}
             />
 
@@ -52,6 +54,9 @@ const styles = StyleSheet.create({
     darkBackground: {
         backgroundColor: '#0D1C22',
         color: 'white',
+    },
+    lightBackground: {
+        color: 'black',
     }
 });
 

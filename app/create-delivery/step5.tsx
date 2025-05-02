@@ -113,7 +113,7 @@ export default function DeliveryRecapScreen() {
                 </Text>
 
                 {/* Package Information */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="cube-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
@@ -155,7 +155,7 @@ export default function DeliveryRecapScreen() {
                 </View>
 
                 {/* Addresses */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="location-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
@@ -195,7 +195,7 @@ export default function DeliveryRecapScreen() {
                 </View>
 
                 {/* Schedule */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="calendar-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
@@ -227,7 +227,7 @@ export default function DeliveryRecapScreen() {
                 </View>
 
                 {/* Contact Information */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="people-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
@@ -249,7 +249,7 @@ export default function DeliveryRecapScreen() {
                 </View>
 
                 {/* Facturation Information */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="document-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
@@ -270,7 +270,7 @@ export default function DeliveryRecapScreen() {
                 </View>
 
                 {/* Price */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="cash-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">

@@ -91,7 +91,7 @@ export default function ScheduleScreen() {
                 )}
 
                 {/* Scheduled Date */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <Text className="text-white font-cabin-medium text-lg mb-4">
                         Delivery Date and Time
                     </Text>
@@ -169,7 +169,7 @@ export default function ScheduleScreen() {
                 </View>
 
                 {/* Comments */}
-                <View className="bg-gray-800 p-4 rounded-lg mb-6">
+                <View className="bg-dark p-4 rounded-lg mb-6">
                     <Text className="text-white font-cabin-medium text-lg mb-4">
                         Delivery Comment
                     </Text>
@@ -208,6 +208,8 @@ export default function ScheduleScreen() {
                         </View>
                     )}
                     <DateTimePicker
+                        style={{ backgroundColor: 'white' }}
+                        locale="fr-FR"
                         value={formState.scheduledDate || new Date()}
                         mode="date"
                         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
