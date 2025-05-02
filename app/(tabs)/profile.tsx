@@ -92,12 +92,12 @@ export default function ProfileScreen() {
                         {menuItems.map((item) => (
                             <TouchableOpacity
                                 key={item.id}
-                                className="flex-row items-center mb-3 p-4 bg-white rounded-xl shadow-sm"
+                                className="flex-row items-center mb-3 p-4 bg-dark rounded-xl shadow-sm"
                             >
                                 <View className="w-10 h-10 rounded-full bg-primary/20 items-center justify-center mr-4">
                                     <Ionicons name={item.icon} size={22} color="#5DD6FF" />
                                 </View>
-                                <Text className="text-base text-dark font-cabin-medium flex-1">{item.title}</Text>
+                                <Text className="text-base text-white font-cabin-medium flex-1">{item.title}</Text>
                                 <Ionicons name="chevron-forward" size={20} color="#9EAEB4" />
                             </TouchableOpacity>
                         ))}
