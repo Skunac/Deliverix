@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuthService } from '@/src/services/auth.service';
 import { User } from '@/src/models/user.model';
+import { UserService } from "@/src/services/user.service";
+
+interface RegistrationStatus {
+    isCompleted: boolean;
+    currentStep: number;
+    userType: 'individual' | 'professional' | 'delivery' | null;
+}
 
 interface AuthContextType {
     user: User | null;
@@ -29,13 +36,18 @@ interface AuthContextType {
     updateProfile: (data: { firstName?: string; lastName?: string; photoURL?: string }) => Promise<boolean>;
     signOut: () => Promise<boolean>;
     isAuthenticated: boolean;
+
+    // Registration flow management
+    registrationStatus: RegistrationStatus;
+    updateRegistrationStatus: (status: Partial<RegistrationStatus>) => void;
+    completeRegistration: () => void;
 }
 
 // Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create a single instance of AuthService to be used across the app
 const authService = new AuthService();
+const userService = new UserService();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     // State management
@@ -45,10 +57,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [error, setError] = useState<Error | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
+    // Registration status state
+    const [registrationStatus, setRegistrationStatus] = useState<RegistrationStatus>({
+        isCompleted: true,
+        currentStep: 1,
+        userType: null
+    });
+
     // Set up auth state listener on component mount
     useEffect(() => {
         const unsubscribe = authService.onAuthStateChanged((authUser) => {
             setUser(authUser);
+
+            // For existing users that log in, ensure registration is marked as complete
+            if (authUser && !loading) {
+                // Check if this is a returning user (not a new registration)
+                if (!['delivery', 'individual', 'professional'].includes(registrationStatus.userType || '')) {
+                    setRegistrationStatus({
+                        isCompleted: true,
+                        currentStep: 1,
+                        userType: null
+                    });
+                }
+            }
+
             setLoading(false);
         });
 
@@ -62,12 +94,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setErrorMessage('');
     };
 
+    // Update registration status
+    const updateRegistrationStatus = (status: Partial<RegistrationStatus>) => {
+        setRegistrationStatus(prev => ({ ...prev, ...status }));
+        console.log('Registration status updated:', { ...registrationStatus, ...status });
+    };
+
+    // Mark registration as complete
+    const completeRegistration = () => {
+        setRegistrationStatus({
+            isCompleted: true,
+            currentStep: 1,
+            userType: null
+        });
+        console.log('Registration completed');
+    };
+
+    // Enhanced sign in method
     const signIn = async (email: string, password: string) => {
         try {
             resetErrors();
             setIsAuthenticating(true);
 
             await authService.signInWithEmailAndPassword(email, password);
+
+            // Ensure registration is marked as complete for signed-in users
+            setRegistrationStatus({
+                isCompleted: true,
+                currentStep: 1,
+                userType: null
+            });
+
             return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Authentication failed'));
@@ -93,6 +150,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
 
             await authService.createUser(email, password, userData);
+
+            // Set registration status - individual registration is one-step
+            updateRegistrationStatus({
+                isCompleted: true,
+                currentStep: 1,
+                userType: 'individual'
+            });
+
             return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Registration failed'));
@@ -118,6 +183,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
 
             await authService.createUser(email, password, userData, isDeliveryAgent);
+
+            if (isDeliveryAgent) {
+                // Delivery agent registration is multi-step
+                updateRegistrationStatus({
+                    isCompleted: false,
+                    currentStep: 1,
+                    userType: 'delivery'
+                });
+            } else {
+                // Regular professional registration is complete in one step
+                updateRegistrationStatus({
+                    isCompleted: true,
+                    currentStep: 1,
+                    userType: 'professional'
+                });
+            }
+
             return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Registration failed'));
@@ -152,8 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw new Error('User not authenticated');
             }
 
-            // Call service to update profile (this would need to be added to AuthService)
-            // await authService.updateUserProfile(user.uid, data);
+            await userService.updateUserProfile(user.uid, data);
             return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Profile update failed'));
@@ -168,6 +249,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAuthenticating(true);
 
             await authService.signOut();
+
+            // Reset registration status on sign out
+            setRegistrationStatus({
+                isCompleted: true,
+                currentStep: 1,
+                userType: null
+            });
+
             return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Sign out failed'));
@@ -191,7 +280,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPassword,
         updateProfile,
         signOut,
-        isAuthenticated: !!user
+        isAuthenticated: !!user,
+        registrationStatus,
+        updateRegistrationStatus,
+        completeRegistration
     };
 
     return (

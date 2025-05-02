@@ -2,9 +2,9 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { GradientView } from "@/components/ui/GradientView";
-import { useAuth } from "@/contexts/authContext";
 import StyledButton from "@/components/ui/StyledButton";
 import StyledTextInput from "@/components/ui/StyledTextInput";
+import {useAuth} from "@/contexts/authContext";
 
 interface FormData {
     email: string;
@@ -31,23 +31,15 @@ export default function LoginScreen(): JSX.Element {
         auth: '' // For auth-related errors
     });
 
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
-    const { signIn, authError, error, resetErrors } = useAuth();
+    const { signIn, isAuthenticating, errorMessage, resetErrors } = useAuth();
     const router = useRouter();
-
-    // Effect to sync authError from context with formErrors.auth in the component
-    useEffect(() => {
-        if (authError) {
-            setFormErrors(prev => ({ ...prev, auth: authError }));
-        }
-    }, [authError]);
 
     // Effect to sync error from context with formErrors.auth in the component
     useEffect(() => {
-        if (error && error.message) {
-            setFormErrors(prev => ({ ...prev, auth: error.message }));
+        if (errorMessage) {
+            setFormErrors(prev => ({ ...prev, auth: errorMessage }));
         }
-    }, [error]);
+    }, [errorMessage]);
 
     // Single useEffect for component mount/unmount
     useEffect(() => {
@@ -106,7 +98,6 @@ export default function LoginScreen(): JSX.Element {
         }
 
         try {
-            setIsLoggingIn(true);
             resetErrors();
             setFormErrors(prev => ({ ...prev, auth: '' })); // Clear auth error
 
@@ -121,8 +112,6 @@ export default function LoginScreen(): JSX.Element {
                 ...prev,
                 auth: error instanceof Error ? error.message : 'Une erreur de connexion est survenue'
             }));
-        } finally {
-            setIsLoggingIn(false);
         }
     };
 
@@ -161,10 +150,10 @@ export default function LoginScreen(): JSX.Element {
                     variant="primary"
                     shadow={true}
                     onPress={handleLogin}
-                    disabled={isLoggingIn}
+                    disabled={isAuthenticating}
                 >
                     <Text className="text-darker font-cabin-medium">
-                        {isLoggingIn ? 'Connexion...' : 'Se connecter'}
+                        {isAuthenticating ? 'Connexion...' : 'Se connecter'}
                     </Text>
                 </StyledButton>
 

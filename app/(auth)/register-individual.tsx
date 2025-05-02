@@ -1,10 +1,10 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuth } from "@/contexts/authContext";
 import { GradientView } from "@/components/ui/GradientView";
 import StyledButton from "@/components/ui/StyledButton";
 import StyledTextInput from "@/components/ui/StyledTextInput";
+import {useAuth} from "@/contexts/authContext";
 
 interface FormData {
     firstName: string;
@@ -45,23 +45,16 @@ export default function RegisterIndividualScreen(): JSX.Element {
         auth: '' // For auth-related errors
     });
 
-    const [isRegistering, setIsRegistering] = useState(false);
-    const { signUpIndividual, authError, error, resetErrors } = useAuth();
+    // Get auth methods from unified context
+    const { signUpIndividual, isAuthenticating, errorMessage, resetErrors } = useAuth();
     const router = useRouter();
-
-    // Effect to sync authError from context with formErrors.auth in the component
-    useEffect(() => {
-        if (authError) {
-            setFormErrors(prev => ({ ...prev, auth: authError }));
-        }
-    }, [authError]);
 
     // Effect to sync error from context with formErrors.auth in the component
     useEffect(() => {
-        if (error && error.message) {
-            setFormErrors(prev => ({ ...prev, auth: error.message }));
+        if (errorMessage) {
+            setFormErrors(prev => ({ ...prev, auth: errorMessage }));
         }
-    }, [error]);
+    }, [errorMessage]);
 
     // Single useEffect for component mount/unmount
     useEffect(() => {
@@ -136,17 +129,11 @@ export default function RegisterIndividualScreen(): JSX.Element {
     };
 
     const handleRegister = async (): Promise<void> => {
-        // Log values for debugging
-        console.log('Password:', formData.password);
-        console.log('Confirm Password:', formData.confirmPassword);
-        console.log('Match?', formData.password === formData.confirmPassword);
-
         if (!validateForm()) {
             return;
         }
 
         try {
-            setIsRegistering(true);
             resetErrors();
             setFormErrors(prev => ({ ...prev, auth: '' })); // Clear auth error
 
@@ -160,7 +147,6 @@ export default function RegisterIndividualScreen(): JSX.Element {
 
             if (success) {
                 console.log('Registration successful, user should be redirected automatically');
-                // The navigation is handled by the RootLayoutNav component
             } else {
                 console.log('Registration failed, checking for errors...');
             }
@@ -170,8 +156,6 @@ export default function RegisterIndividualScreen(): JSX.Element {
                 ...prev,
                 auth: error instanceof Error ? error.message : 'Une erreur d\'inscription est survenue'
             }));
-        } finally {
-            setIsRegistering(false);
         }
     };
 
@@ -242,17 +226,17 @@ export default function RegisterIndividualScreen(): JSX.Element {
                         variant="primary"
                         shadow={true}
                         onPress={handleRegister}
-                        disabled={isRegistering}
+                        disabled={isAuthenticating}
                     >
                         <Text className="text-darker font-cabin-medium">
-                            {isRegistering ? 'Inscription en cours...' : 'S\'inscrire'}
+                            {isAuthenticating ? 'Inscription en cours...' : 'S\'inscrire'}
                         </Text>
                     </StyledButton>
 
                     <TouchableOpacity
                         onPress={() => router.back()}
                         className="mt-5"
-                        disabled={isRegistering}
+                        disabled={isAuthenticating}
                     >
                         <Text className="text-white text-center font-cabin-medium">Retour</Text>
                     </TouchableOpacity>

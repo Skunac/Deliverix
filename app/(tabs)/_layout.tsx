@@ -1,13 +1,42 @@
-import { Tabs } from 'expo-router';
+import {Tabs, useRouter} from 'expo-router';
 import { useColorScheme } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/languageContext';
+import {useAuth} from "@/contexts/authContext";
+import {useEffect} from "react";
 
 export default function TabsLayout() {
     const colorScheme = useColorScheme();
     const { t } = useTranslation();
     const { isRTL } = useLanguage();
+    const router = useRouter();
+    const { user, loading, registrationStatus } = useAuth();
+
+    useEffect(() => {
+        if (loading) return;
+
+        if (!user) {
+            // Not logged in - redirect to auth
+            console.log('User not authenticated, redirecting to auth');
+            router.replace('/(auth)');
+            return;
+        }
+
+        if (!registrationStatus.isCompleted) {
+            // Handle incomplete registration
+            console.log('Registration incomplete', registrationStatus);
+
+            if (registrationStatus.userType === 'delivery') {
+                if (registrationStatus.currentStep === 1) {
+                    router.replace('/register-delivery-agent-step1');
+                } else if (registrationStatus.currentStep === 2) {
+                    router.replace('/register-delivery-agent-step2');
+                }
+            }
+            // Other registration types if needed
+        }
+    }, [user, loading, registrationStatus, router]);
 
     return (
         <Tabs

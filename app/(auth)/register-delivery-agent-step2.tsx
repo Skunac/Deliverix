@@ -94,7 +94,7 @@ interface FormErrors {
 export default function RegisterDeliveryStep2Screen(): JSX.Element {
     const deliveryAgentService = new DeliveryAgentService();
     const router = useRouter();
-    const { user, error } = useAuth();
+    const { user, registrationStatus, updateRegistrationStatus, completeRegistration } = useAuth();
 
     // Form fields
     const [formData, setFormData] = useState<FormData>({
@@ -184,8 +184,31 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                 "Votre session a expiré. Veuillez vous inscrire à nouveau.",
                 [{ text: "OK", onPress: () => router.replace('/register-delivery-agent-step1') }]
             );
+            return;
         }
-    }, [user]);
+
+        // Verify the user is at the right registration step
+        if (!registrationStatus || registrationStatus.isCompleted ||
+            registrationStatus.currentStep !== 2 || registrationStatus.userType !== 'delivery') {
+            console.log('Incorrect registration state', registrationStatus);
+            Alert.alert(
+                "Erreur de navigation",
+                "Vous n'êtes pas dans la bonne étape d'inscription.",
+                [{
+                    text: "OK",
+                    onPress: () => {
+                        if (registrationStatus.isCompleted) {
+                            router.replace('/(tabs)');
+                        } else if (registrationStatus.currentStep === 1) {
+                            router.replace('/register-delivery-agent-step1');
+                        } else {
+                            router.replace('/(auth)');
+                        }
+                    }
+                }]
+            );
+        }
+    }, [user, registrationStatus]);
 
     const handleChange = (field: keyof FormData, value: any): void => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -382,7 +405,6 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
 
     const handleSubmit = async () => {
         if (!validateForm()) {
-            // Scroll to top to show errors
             return;
         }
 
@@ -476,6 +498,8 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                 termsAccepted: true,
                 termsAcceptanceDate: new Date()
             });
+
+            completeRegistration();
 
             // Success - redirect
             router.replace('/(tabs)')
@@ -855,7 +879,7 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                     </StyledButton>
 
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={() => router.replace('/(auth)/register-delivery-agent-step1')}
                         className="mt-5"
                         disabled={isSubmitting}
                     >

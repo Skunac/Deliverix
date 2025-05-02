@@ -1,10 +1,10 @@
-import {View, Text, TouchableOpacity, ScrollView, StyleSheet} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView, BackHandler} from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuth } from "@/contexts/authContext";
 import { GradientView } from "@/components/ui/GradientView";
 import StyledButton from "@/components/ui/StyledButton";
 import StyledTextInput from "@/components/ui/StyledTextInput";
+import {useAuth} from "@/contexts/authContext";
 
 type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
 
@@ -47,23 +47,15 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
         auth: '' // For auth-related errors
     });
 
-    const [isRegistering, setIsRegistering] = useState(false);
-    const { signUpProfessional, authError, error, resetErrors } = useAuth();
+    const { signUpProfessional, isAuthenticating, errorMessage, resetErrors, updateRegistrationStatus } = useAuth();
     const router = useRouter();
-
-    // Effect to sync authError from context with formErrors.auth in the component
-    useEffect(() => {
-        if (authError) {
-            setFormErrors(prev => ({ ...prev, auth: authError }));
-        }
-    }, [authError]);
 
     // Effect to sync error from context with formErrors.auth in the component
     useEffect(() => {
-        if (error && error.message) {
-            setFormErrors(prev => ({ ...prev, auth: error.message }));
+        if (errorMessage) {
+            setFormErrors(prev => ({ ...prev, auth: errorMessage }));
         }
-    }, [error]);
+    }, [errorMessage]);
 
     // Single useEffect for component mount/unmount
     useEffect(() => {
@@ -143,7 +135,6 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
         }
 
         try {
-            setIsRegistering(true);
             resetErrors();
             setFormErrors(prev => ({ ...prev, auth: '' })); // Clear auth error
 
@@ -161,8 +152,15 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
             if (success) {
                 console.log('Registration successful, proceeding to step 2');
 
+                // Update registration status before navigation
+                updateRegistrationStatus({
+                    isCompleted: false,
+                    currentStep: 2,
+                    userType: 'delivery'
+                });
+
                 // Navigate to step 2
-                router.push('/register-delivery-agent-step2');
+                router.replace('/(auth)/register-delivery-agent-step2');
             } else {
                 console.log('Registration failed, checking for errors...');
             }
@@ -172,8 +170,6 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
                 ...prev,
                 auth: error instanceof Error ? error.message : 'Une erreur d\'inscription est survenue'
             }));
-        } finally {
-            setIsRegistering(false);
         }
     };
 
@@ -248,17 +244,17 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
                         variant="primary"
                         shadow={true}
                         onPress={handleRegister}
-                        disabled={isRegistering}
+                        disabled={isAuthenticating}
                     >
                         <Text className="text-darker font-cabin-medium">
-                            {isRegistering ? 'Inscription en cours...' : 'Continuer'}
+                            {isAuthenticating ? 'Inscription en cours...' : 'Continuer'}
                         </Text>
                     </StyledButton>
 
                     <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={() => router.replace('/(auth)')}
                         className="mt-5"
-                        disabled={isRegistering}
+                        disabled={isAuthenticating}
                     >
                         <Text className="text-white text-center font-cabin-medium">Retour</Text>
                     </TouchableOpacity>
