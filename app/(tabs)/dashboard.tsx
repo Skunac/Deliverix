@@ -56,7 +56,7 @@ export default function Dashboard() {
     return (
         <GradientView>
             <View style={{ flex: 1 }}>
-                <StyledButton shadow={true} className="m-4">
+                <StyledButton shadow={true} className="m-4" onPress={() => router.push(`/create-delivery`)}>
                     <Text className="font-cabin-medium text-xl">
                         {t("delivery.orderDelivery") || "Commander une course"}
                     </Text>

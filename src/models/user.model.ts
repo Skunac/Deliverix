@@ -1,4 +1,5 @@
 import { FirestoreDocument } from './common.model';
+import {EmbeddedAddress} from "@/src/models/delivery.model";
 
 export type UserType = 'individual' | 'professional' | 'delivery';
 
@@ -7,6 +8,8 @@ export interface BaseUser extends FirestoreDocument {
     email: string;
     userType: UserType;  // Required, never undefined
     isDeliveryAgent: boolean;  // Flag to identify delivery agents
+
+    billingAddress: EmbeddedAddress; //Sera remplie a la facturation puis enregistrer
 
     // Auth-specific fields
     uid?: string;

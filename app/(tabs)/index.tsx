@@ -22,6 +22,7 @@ export default function DeliveriesScreen() {
                 setLoading(true);
                 if (user?.uid) {
                     const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
+                    console.log("userDeliveries", userDeliveries);
                     setDeliveries(userDeliveries);
                 } else {
                     setError("User ID not found");

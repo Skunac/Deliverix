@@ -45,6 +45,7 @@ export interface Delivery extends FirestoreDocument {
     expeditor: Person;
     receiver: Person;
 
+    billingAddress: EmbeddedAddress;
     pickupAddress: EmbeddedAddress;
     deliveryAddress: EmbeddedAddress;
 
@@ -55,9 +56,9 @@ export interface Delivery extends FirestoreDocument {
     packageWeight: number;
     packageDimensions: PackageDimensions;
     packageCategory: PackageCategory;
+    isFragile: boolean;
 
-    expeditorComments?: string;
-    deliveryComments?: string;
+    comment?: string;
 
     deliveryAgentId?: string;
     price: number;

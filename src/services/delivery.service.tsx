@@ -1,4 +1,4 @@
-import { Delivery, DeliveryState } from '../models/delivery.model';
+import {Delivery, DeliveryState, EmbeddedAddress} from '../models/delivery.model';
 import { DeliveryRepository } from '../firebase/repositories/delivery.repository';
 import { DeliveryAgentRepository } from '../firebase/repositories/delivery-agent.repository';
 
@@ -58,6 +58,30 @@ export class DeliveryService {
         return enrichedDeliveries;
     }
 
+    async createDelivery(delivery: Omit<Delivery, "id">): Promise<DeliveryWithAgent> {
+        // Format the pickup address
+        delivery.pickupAddress.formattedAddress = this.formatAddress(delivery.pickupAddress);
+
+        // Format the delivery address
+        delivery.deliveryAddress.formattedAddress = this.formatAddress(delivery.deliveryAddress);
+
+        // Format the billing address
+        delivery.billingAddress.formattedAddress = this.formatAddress(delivery.billingAddress);
+
+        // Create the delivery in Firestore
+        const deliveryId = await this.repository.create(delivery);
+
+        // Fetch the created delivery
+        const createdDelivery = await this.repository.getById(deliveryId);
+
+        if (!createdDelivery) {
+            throw new Error('Failed to create delivery');
+        }
+
+        // Enrich the created delivery with agent info
+        return createdDelivery;
+    }
+
     /**
      * Enriches a delivery object with agent information
      */
@@ -89,5 +113,39 @@ export class DeliveryService {
         }
 
         return enrichedDelivery;
+    }
+
+    // Helper method to format an address from components
+    private formatAddress(address: EmbeddedAddress): string {
+        const components = address.components;
+
+        // Build the formatted address from components
+        const streetAddress = [
+            components.street_number,
+            components.route
+        ].filter(Boolean).join(' ');
+
+        const cityInfo = [
+            components.postal_code,
+            components.locality
+        ].filter(Boolean).join(' ');
+
+        const regionCountry = [
+            components.administrative_area_level_1,
+            components.country
+        ].filter(Boolean).join(', ');
+
+        const formattedParts = [
+            streetAddress,
+            cityInfo,
+            regionCountry
+        ].filter(part => part.trim().length > 0);
+
+        // Add complementary address if available
+        if (address.complementaryAddress) {
+            formattedParts.splice(1, 0, address.complementaryAddress);
+        }
+
+        return formattedParts.join(', ');
     }
 }
