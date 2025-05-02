@@ -29,12 +29,11 @@ export default function TabsLayout() {
 
             if (registrationStatus.userType === 'delivery') {
                 if (registrationStatus.currentStep === 1) {
-                    router.replace('/register-delivery-agent-step1');
+                    router.replace('/(auth)/register-delivery-agent-step1');
                 } else if (registrationStatus.currentStep === 2) {
-                    router.replace('/register-delivery-agent-step2');
+                    router.replace('/(auth)/register-delivery-agent-step2');
                 }
             }
-            // Other registration types if needed
         }
     }, [user, loading, registrationStatus, router]);
 
@@ -91,33 +90,6 @@ export default function TabsLayout() {
                     title: t('common.profile'),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="payment"
-                options={{
-                    title: t('common.payment'),
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="chatbubbles" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="settings"
-                options={{
-                    title: t('common.settings'),
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="settings" size={size} color={color} />
-                    ),
-                }}
-            />
-            <Tabs.Screen
-                name="firebase-test"
-                options={{
-                    title: t('common.firebaseTest'),
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="flame" size={size} color={color} />
                     ),
                 }}
             />

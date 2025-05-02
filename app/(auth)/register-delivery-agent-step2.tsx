@@ -175,41 +175,6 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [activeDateField, setActiveDateField] = useState<keyof FormData | null>(null);
 
-    // Check if the user is logged in
-    useEffect(() => {
-        if (!user) {
-            // User not logged in, redirect to step 1
-            Alert.alert(
-                "Session expirée",
-                "Votre session a expiré. Veuillez vous inscrire à nouveau.",
-                [{ text: "OK", onPress: () => router.replace('/register-delivery-agent-step1') }]
-            );
-            return;
-        }
-
-        // Verify the user is at the right registration step
-        if (!registrationStatus || registrationStatus.isCompleted ||
-            registrationStatus.currentStep !== 2 || registrationStatus.userType !== 'delivery') {
-            console.log('Incorrect registration state', registrationStatus);
-            Alert.alert(
-                "Erreur de navigation",
-                "Vous n'êtes pas dans la bonne étape d'inscription.",
-                [{
-                    text: "OK",
-                    onPress: () => {
-                        if (registrationStatus.isCompleted) {
-                            router.replace('/(tabs)');
-                        } else if (registrationStatus.currentStep === 1) {
-                            router.replace('/register-delivery-agent-step1');
-                        } else {
-                            router.replace('/(auth)');
-                        }
-                    }
-                }]
-            );
-        }
-    }, [user, registrationStatus]);
-
     const handleChange = (field: keyof FormData, value: any): void => {
         setFormData(prev => ({ ...prev, [field]: value }));
 

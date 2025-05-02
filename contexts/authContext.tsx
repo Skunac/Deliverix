@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Delivery agent registration is multi-step
                 updateRegistrationStatus({
                     isCompleted: false,
-                    currentStep: 1,
+                    currentStep: 2,
                     userType: 'delivery'
                 });
             } else {

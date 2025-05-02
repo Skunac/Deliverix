@@ -152,13 +152,6 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
             if (success) {
                 console.log('Registration successful, proceeding to step 2');
 
-                // Update registration status before navigation
-                updateRegistrationStatus({
-                    isCompleted: false,
-                    currentStep: 2,
-                    userType: 'delivery'
-                });
-
                 // Navigate to step 2
                 router.replace('/(auth)/register-delivery-agent-step2');
             } else {
