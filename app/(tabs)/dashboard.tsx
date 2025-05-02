@@ -1,5 +1,5 @@
 import { GradientView } from "@/components/ui/GradientView";
-import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import {View, Text, FlatList, ActivityIndicator, ScrollView} from "react-native";
 import StyledButton from "@/components/ui/StyledButton";
 import React, { useEffect, useState } from "react";
 import { DeliveryService, DeliveryWithAgent } from "@/src/services/delivery.service";
@@ -91,8 +91,8 @@ export default function Dashboard() {
                         />
                     ) : (
                         <View className="p-4 bg-white bg-opacity-10 rounded-lg items-center justify-center">
-                            <Text className="text-white font-cabin-regular">
-                                {t("delivery.noOngoingDeliveries") || "Aucune course en cours"}
+                            <Text className="text-dark font-cabin-regular">
+                                Aucune course en cours
                             </Text>
                         </View>
                     )}

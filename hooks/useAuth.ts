@@ -25,6 +25,25 @@ export function useAuth() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
+    // Function to fetch the complete user profile
+    const fetchCompleteUserProfile = async (uid: string, basicUser: User) => {
+        try {
+            const userProfile = await userService.getUserById(uid);
+            if (userProfile) {
+                // Merge auth data with profile data - prioritize Firestore profile over auth
+                setUser({
+                    ...basicUser,
+                    ...userProfile,
+                    id: uid,
+                    uid: uid
+                });
+            }
+        } catch (err) {
+            console.log('Error fetching user profile:', err);
+            setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
+        }
+    };
+
     useEffect(() => {
         const unsubscribe = authService.onAuthStateChanged(async (authUser) => {
             if (authUser) {
@@ -32,18 +51,8 @@ export function useAuth() {
                     // For just authenticated users, we already have basic profile info
                     setUser(authUser);
 
-                    // But we can fetch the complete profile with any additional data
-                    const userProfile = await userService.getUserById(authUser.uid!);
-                    if (userProfile) {
-                        // Merge auth data with profile data - prioritize Firestore profile over auth
-                        setUser({
-                            ...authUser,
-                            ...userProfile,
-                            // Ensure id and uid are consistent
-                            id: authUser.uid!,
-                            uid: authUser.uid
-                        });
-                    }
+                    // Fetch the complete profile with any additional data
+                    await fetchCompleteUserProfile(authUser.uid!, authUser);
                 } catch (err) {
                     console.log('Error fetching user profile:', err);
                     setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
@@ -95,8 +104,12 @@ export function useAuth() {
 
             const newUser = await authService.createUser(email, password, userData);
 
-            // Manually update the user state to show immediately
-            if (newUser) {
+            // Manually fetch the complete user profile after registration
+            if (newUser && newUser.uid) {
+                await fetchCompleteUserProfile(newUser.uid, newUser);
+            } else {
+                // If for some reason we can't fetch the complete profile,
+                // at least set the basic user information
                 setUser(newUser as User);
             }
 
@@ -133,8 +146,12 @@ export function useAuth() {
 
             const newUser = await authService.createUser(email, password, userData, isDeliveryAgent);
 
-            // Manually update the user state to show immediately
-            if (newUser) {
+            // Manually fetch the complete user profile after registration
+            if (newUser && newUser.uid) {
+                await fetchCompleteUserProfile(newUser.uid, newUser);
+            } else {
+                // If for some reason we can't fetch the complete profile,
+                // at least set the basic user information
                 setUser(newUser as User);
             }
 
