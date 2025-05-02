@@ -1,72 +1,28 @@
 import { useState, useEffect } from 'react';
-import { authService } from '@/src/firebase/auth';
-import { UserService } from '@/src/services/user.service';
-import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
-import {
-    User,
-    IndividualUser,
-    ProfessionalUser,
-} from '@/src/models/user.model';
-import { handleAuthError, AppError } from '@/src/utils/error-handler';
-import { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import { User } from '@/src/models/user.model';
+import {AuthService} from "@/src/services/auth.service";
 
-const userService = new UserService();
-const deliveryAgentService = new DeliveryAgentService();
-
-// Convert AppError to standard Error
-const createErrorFromAppError = (appError: AppError): Error => {
-    const error = new Error(appError.message);
-    error.name = appError.code as string;
-    return error;
-};
+// Create a single instance of the AuthService
+const authService = new AuthService();
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
-    // Function to fetch the complete user profile
-    const fetchCompleteUserProfile = async (uid: string, basicUser: User) => {
-        try {
-            const userProfile = await userService.getUserById(uid);
-            if (userProfile) {
-                // Merge auth data with profile data - prioritize Firestore profile over auth
-                setUser({
-                    ...basicUser,
-                    ...userProfile,
-                    id: uid,
-                    uid: uid
-                });
-            }
-        } catch (err) {
-            console.log('Error fetching user profile:', err);
-            setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
-        }
-    };
-
+    // Set up auth state listener on component mount
     useEffect(() => {
-        const unsubscribe = authService.onAuthStateChanged(async (authUser) => {
-            if (authUser) {
-                try {
-                    // For just authenticated users, we already have basic profile info
-                    setUser(authUser);
-
-                    // Fetch the complete profile with any additional data
-                    await fetchCompleteUserProfile(authUser.uid!, authUser);
-                } catch (err) {
-                    console.log('Error fetching user profile:', err);
-                    setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
-                }
-            } else {
-                setUser(null);
-            }
-
+        const unsubscribe = authService.onAuthStateChanged((authUser) => {
+            // The new AuthService now handles the complete user profile fetching internally
+            setUser(authUser);
             setLoading(false);
         });
 
+        // Clean up subscription on unmount
         return unsubscribe;
     }, []);
 
+    // Sign in with email and password
     const signIn = async (email: string, password: string) => {
         try {
             setLoading(true);
@@ -75,8 +31,7 @@ export function useAuth() {
             return true;
         } catch (err) {
             console.log('Sign in error:', err);
-            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
-            setError(createErrorFromAppError(appError));
+            setError(err instanceof Error ? err : new Error('Authentication failed'));
             return false;
         } finally {
             setLoading(false);
@@ -94,30 +49,22 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            const userData: Partial<IndividualUser> & { userType: 'individual' } = {
+
+            // Create user data object
+            const userData = {
                 email,
                 firstName,
                 lastName,
                 phoneNumber: phone,
-                userType: 'individual'
+                userType: 'individual' as const
             };
 
-            const newUser = await authService.createUser(email, password, userData);
-
-            // Manually fetch the complete user profile after registration
-            if (newUser && newUser.uid) {
-                await fetchCompleteUserProfile(newUser.uid, newUser);
-            } else {
-                // If for some reason we can't fetch the complete profile,
-                // at least set the basic user information
-                setUser(newUser as User);
-            }
-
+            // Use the new createUser method that handles both Auth and Firestore
+            await authService.createUser(email, password, userData);
             return true;
         } catch (err) {
             console.log('Sign up error:', err);
-            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
-            setError(createErrorFromAppError(appError));
+            setError(err instanceof Error ? err : new Error('Registration failed'));
             return false;
         } finally {
             setLoading(false);
@@ -136,36 +83,29 @@ export function useAuth() {
         try {
             setLoading(true);
             setError(null);
-            const userData: Partial<ProfessionalUser> & { userType: 'professional' } = {
+
+            // Create user data object
+            const userData = {
                 email,
                 companyName,
                 contactName,
                 phoneNumber: phone,
-                userType: 'professional'
+                userType: 'professional' as const
             };
 
-            const newUser = await authService.createUser(email, password, userData, isDeliveryAgent);
-
-            // Manually fetch the complete user profile after registration
-            if (newUser && newUser.uid) {
-                await fetchCompleteUserProfile(newUser.uid, newUser);
-            } else {
-                // If for some reason we can't fetch the complete profile,
-                // at least set the basic user information
-                setUser(newUser as User);
-            }
-
+            // Use the new createUser method that handles both Auth and Firestore
+            await authService.createUser(email, password, userData, isDeliveryAgent);
             return true;
         } catch (err) {
             console.log('Sign up error:', err);
-            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
-            setError(createErrorFromAppError(appError));
+            setError(err instanceof Error ? err : new Error('Registration failed'));
             return false;
         } finally {
             setLoading(false);
         }
     };
 
+    // Sign out
     const signOut = async () => {
         try {
             setLoading(true);
@@ -175,14 +115,30 @@ export function useAuth() {
             return true;
         } catch (err) {
             console.log('Sign out error:', err);
-            const appError = handleAuthError(err as FirebaseAuthTypes.NativeFirebaseAuthError);
-            setError(createErrorFromAppError(appError));
+            setError(err instanceof Error ? err : new Error('Sign out failed'));
             return false;
         } finally {
             setLoading(false);
         }
     };
 
+    // Password reset
+    const resetPassword = async (email: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            await authService.resetPassword(email);
+            return true;
+        } catch (err) {
+            console.log('Reset password error:', err);
+            setError(err instanceof Error ? err : new Error('Password reset failed'));
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Return the hook values and methods
     return {
         user,
         loading,
@@ -191,6 +147,7 @@ export function useAuth() {
         signUpIndividual,
         signUpProfessional,
         signOut,
+        resetPassword,
         setError,
         isAuthenticated: !!user
     };

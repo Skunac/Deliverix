@@ -32,7 +32,7 @@ export interface AppError {
     originalError?: any;
 }
 
-export const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError): AppError => {
+export const handleAuthError = (error: FirebaseAuthTypes.NativeFirebaseAuthError | any): AppError => {
     let appError: AppError = {
         code: ErrorCode.UNKNOWN_ERROR,
         message: 'Une erreur inconnue s\'est produite lors de l\'authentification.'

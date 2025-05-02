@@ -1,3 +1,5 @@
+import { db, serverTimestamp } from '@/src/firebase/config';
+import { COLLECTIONS, DEFAULT_DOCUMENT_ID } from '@/src/firebase/collections';
 import {
     DeliveryAgent,
     PersonalInfo,
@@ -6,18 +8,13 @@ import {
     DriverInfo,
     CompanyType,
     VehicleType
-} from '../models/delivery-agent.model';
-import { DeliveryAgentRepository } from '../firebase/repositories/delivery-agent.repository';
-import { DeliveryAgentAdapter } from '../firebase/adapters/delivery-agent.adapter';
-import { UserService } from './user.service';
+} from '@/src/models/delivery-agent.model';
 
 export class DeliveryAgentService {
-    private repository: DeliveryAgentRepository;
-    private userService: UserService;
+    private userCollection = db.collection('users');
 
-    constructor() {
-        this.repository = new DeliveryAgentRepository();
-        this.userService = new UserService();
+    private getAgentDocRef(userId: string) {
+        return db.doc(`${COLLECTIONS.USER_DELIVERY_AGENT(userId)}/${DEFAULT_DOCUMENT_ID}`);
     }
 
     async registerAsAgent(userId: string, agentData: {
@@ -43,14 +40,17 @@ export class DeliveryAgentService {
         console.log(`Starting to register user ${userId} as delivery agent`);
 
         // Get user to ensure it exists
-        const user = await this.userService.getUserById(userId);
-        if (!user) {
+        const userDoc = await this.userCollection.doc(userId).get();
+
+        if (!userDoc.exists) {
             console.error(`User ${userId} not found during delivery agent registration`);
             throw new Error('User not found');
         }
 
+        const user = userDoc.data();
+
         // Verify this is a professional user
-        if (user.userType !== 'professional') {
+        if (user?.userType !== 'professional') {
             console.error(`User ${userId} is not a professional user`);
             throw new Error('Only professional users can be registered as delivery agents');
         }
@@ -63,9 +63,9 @@ export class DeliveryAgentService {
             lastName: agentData.personalInfo.lastName,
             email: agentData.personalInfo.email || user.email,
             phoneNumber: agentData.personalInfo.phoneNumber || user.phoneNumber || '',
-            birthDate: new Date(), // Will be filled in by the user
-            nationality: '', // Will be filled in by the user
-            birthPlace: '', // Will be filled in by the user
+            birthDate: new Date(),
+            nationality: '',
+            birthPlace: '',
             address: {
                 street: '',
                 postalCode: '',
@@ -96,7 +96,7 @@ export class DeliveryAgentService {
         };
 
         // Create default agent data
-        const defaultAgentData: Omit<DeliveryAgent, 'id'> = {
+        const defaultAgentData = {
             activeStatus: 'offline',
             approvalStatus: 'pending',
             termsAccepted: false,
@@ -119,17 +119,20 @@ export class DeliveryAgentService {
                 sms: false
             },
             lastActive: new Date(),
-            applicationDate: new Date()
+            applicationDate: new Date(),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
         };
 
         // Update user record to mark as delivery agent
-        await this.userService.updateUserProfile(userId, {
-            isDeliveryAgent: true
+        await this.userCollection.doc(userId).update({
+            isDeliveryAgent: true,
+            updatedAt: serverTimestamp()
         });
 
         // Create the agent profile
         try {
-            await this.repository.create(userId, defaultAgentData);
+            await this.getAgentDocRef(userId).set(defaultAgentData);
             console.log(`Successfully created delivery agent profile for user ${userId}`);
         } catch (error) {
             console.error(`Error creating delivery agent profile for user ${userId}:`, error);
@@ -138,70 +141,149 @@ export class DeliveryAgentService {
     }
 
     async getAgentProfile(userId: string): Promise<DeliveryAgent | null> {
-        return this.repository.getByUserId(userId);
+        try {
+            const doc = await this.getAgentDocRef(userId).get();
+
+            if (!doc.exists) {
+                console.log(`No delivery agent found for user ${userId}`);
+                return null;
+            }
+
+            return {
+                id: userId,
+                ...doc.data()
+            } as DeliveryAgent;
+        } catch (error) {
+            console.error(`Error fetching delivery agent for user ${userId}:`, error);
+            return null;
+        }
     }
 
     async updateAgentProfile(userId: string, data: Partial<DeliveryAgent>): Promise<void> {
-        return this.repository.update(userId, DeliveryAgentAdapter.toFirestore(data));
+        try {
+            const { id, ...updateData } = data;
+
+            const firestoreData = {
+                ...updateData,
+                updatedAt: serverTimestamp()
+            };
+
+            await this.getAgentDocRef(userId).update(firestoreData);
+        } catch (error) {
+            console.error(`Error updating delivery agent for user ${userId}:`, error);
+            throw error;
+        }
     }
 
     // Update personal information
     async updatePersonalInfo(userId: string, personalInfo: Partial<PersonalInfo>): Promise<void> {
-        const agent = await this.repository.getByUserId(userId);
-        if (!agent) {
-            throw new Error('Agent not found');
-        }
+        try {
+            const agentDoc = await this.getAgentDocRef(userId).get();
 
-        return this.repository.update(userId, {
-            personalInfo: {
-                ...agent.personalInfo,
-                ...personalInfo
+            if (!agentDoc.exists) {
+                throw new Error('Agent not found');
             }
-        });
+
+            const agent = agentDoc.data();
+
+            if (!agent) {
+                throw new Error('Agent data is undefined');
+            }
+
+            await this.getAgentDocRef(userId).update({
+                personalInfo: {
+                    ...agent.personalInfo,
+                    ...personalInfo
+                },
+                updatedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error(`Error updating personal info for agent ${userId}:`, error);
+            throw error;
+        }
     }
 
     // Update company information
     async updateCompanyInfo(userId: string, companyInfo: Partial<CompanyInfo>): Promise<void> {
-        const agent = await this.repository.getByUserId(userId);
-        if (!agent) {
-            throw new Error('Agent not found');
-        }
+        try {
+            const agentDoc = await this.getAgentDocRef(userId).get();
 
-        return this.repository.update(userId, {
-            companyInfo: {
-                ...agent.companyInfo,
-                ...companyInfo
+            if (!agentDoc.exists) {
+                throw new Error('Agent not found');
             }
-        });
+
+            const agent = agentDoc.data();
+
+            if (!agent) {
+                throw new Error('Agent data is undefined');
+            }
+
+            await this.getAgentDocRef(userId).update({
+                companyInfo: {
+                    ...agent.companyInfo,
+                    ...companyInfo
+                },
+                updatedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error(`Error updating company info for agent ${userId}:`, error);
+            throw error;
+        }
     }
 
     // Update vehicle information
     async updateVehicleInfo(userId: string, vehicleInfo: Partial<VehicleInfo>): Promise<void> {
-        const agent = await this.repository.getByUserId(userId);
-        if (!agent) {
-            throw new Error('Agent not found');
-        }
+        try {
+            const agentDoc = await this.getAgentDocRef(userId).get();
 
-        return this.repository.update(userId, {
-            vehicleInfo: {
-                ...agent.vehicleInfo,
-                ...vehicleInfo
+            if (!agentDoc.exists) {
+                throw new Error('Agent not found');
             }
-        });
+
+            const agent = agentDoc.data();
+
+            if (!agent) {
+                throw new Error('Agent data is undefined');
+            }
+
+            await this.getAgentDocRef(userId).update({
+                vehicleInfo: {
+                    ...agent.vehicleInfo,
+                    ...vehicleInfo
+                },
+                updatedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error(`Error updating vehicle info for agent ${userId}:`, error);
+            throw error;
+        }
     }
 
     // Update driver information
     async updateDriverInfo(userId: string, driverInfo: Partial<DriverInfo>): Promise<void> {
-        const agent = await this.repository.getByUserId(userId);
-        if (!agent) {
-            throw new Error('Agent not found');
-        }
+        try {
+            const agentDoc = await this.getAgentDocRef(userId).get();
 
-        return this.repository.update(userId, {
-            driverInfo: {
-                ...agent.driverInfo,
-                ...driverInfo
+            if (!agentDoc.exists) {
+                throw new Error('Agent not found');
             }
-        });
+
+            const agent = agentDoc.data();
+
+            if (!agent) {
+                throw new Error('Agent data is undefined');
+            }
+
+            await this.getAgentDocRef(userId).update({
+                driverInfo: {
+                    ...agent.driverInfo,
+                    ...driverInfo
+                },
+                updatedAt: serverTimestamp()
+            });
+        } catch (error) {
+            console.error(`Error updating driver info for agent ${userId}:`, error);
+            throw error;
+        }
     }
 }
