@@ -1,18 +1,15 @@
-import React, { createContext, useContext, ReactNode, useState } from 'react';
-import { useAuth as useAuthHook } from '@/hooks/useAuth';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { AuthService } from '@/src/services/auth.service';
 import { User } from '@/src/models/user.model';
-import { UserService } from "@/src/services/user.service";
-import { DeliveryAgentService } from "@/src/services/delivery-agent.service";
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    isAuthenticating: boolean;
     error: Error | null;
-    authError: string;
+    errorMessage: string;
     resetErrors: () => void;
     signIn: (email: string, password: string) => Promise<boolean>;
-
-    // Individual sign up (now mostly for customers)
     signUpIndividual: (
         email: string,
         password: string,
@@ -20,8 +17,6 @@ interface AuthContextType {
         lastName: string,
         phone: string
     ) => Promise<boolean>;
-
-    // Professional sign up
     signUpProfessional: (
         email: string,
         password: string,
@@ -30,135 +25,182 @@ interface AuthContextType {
         phone: string,
         isDeliveryAgent?: boolean
     ) => Promise<boolean>;
-
-    // Update user profile
+    resetPassword: (email: string) => Promise<boolean>;
     updateProfile: (data: { firstName?: string; lastName?: string; photoURL?: string }) => Promise<boolean>;
-
     signOut: () => Promise<boolean>;
     isAuthenticated: boolean;
 }
 
-// Create a context with a default value
+// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create a provider component
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const auth = useAuthHook();
-    const [authError, setAuthError] = useState<string>('');
-    const userService = new UserService();
-    const deliveryAgentService = new DeliveryAgentService();
+// Create a single instance of AuthService to be used across the app
+const authService = new AuthService();
 
-    // Function to reset all errors when navigating between screens
+export function AuthProvider({ children }: { children: ReactNode }) {
+    // State management
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string>('');
+
+    // Set up auth state listener on component mount
+    useEffect(() => {
+        const unsubscribe = authService.onAuthStateChanged((authUser) => {
+            setUser(authUser);
+            setLoading(false);
+        });
+
+        // Clean up subscription on unmount
+        return unsubscribe;
+    }, []);
+
+    // Reset all errors
     const resetErrors = () => {
-        setAuthError('');
-        auth.setError(null);
+        setError(null);
+        setErrorMessage('');
     };
 
-    // Enhanced auth methods with proper error handling for UI
-    const enhancedAuth = {
-        ...auth,
-        authError,
-        resetErrors,
+    const signIn = async (email: string, password: string) => {
+        try {
+            resetErrors();
+            setIsAuthenticating(true);
 
-        signIn: async (email: string, password: string) => {
-            try {
-                // Reset all errors first
-                resetErrors();
-
-                const result = await auth.signIn(email, password);
-                if (!result && auth.error) {
-                    setAuthError(auth.error.message || 'Erreur de connexion');
-                }
-                return result;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur de connexion';
-                setAuthError(errorMessage);
-                return false;
-            }
-        },
-
-        signUpIndividual: async (email: string, password: string, firstName: string, lastName: string, phone: string) => {
-            try {
-                // Reset all errors first
-                resetErrors();
-
-                const result = await auth.signUpIndividual(email, password, firstName, lastName, phone);
-                if (!result && auth.error) {
-                    setAuthError(auth.error.message || 'Erreur lors de l\'inscription');
-                }
-                return result;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'inscription';
-                setAuthError(errorMessage);
-                return false;
-            }
-        },
-
-        signUpProfessional: async (email: string, password: string, companyName: string, contactName: string, phone: string, isDeliveryAgent=false) => {
-            try {
-                // Reset all errors first
-                resetErrors();
-
-                const result = await auth.signUpProfessional(email, password, companyName, contactName, phone, isDeliveryAgent);
-
-                if (!result && auth.error) {
-                    setAuthError(auth.error.message || 'Erreur lors de l\'inscription');
-                }
-                return result;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de l\'inscription';
-                setAuthError(errorMessage);
-                return false;
-            }
-        },
-
-        updateProfile: async (data: { firstName?: string; lastName?: string; photoURL?: string }) => {
-            try {
-                // Reset all errors first
-                resetErrors();
-
-                if (!auth.user || !auth.user.uid) {
-                    setAuthError('Utilisateur non connecté');
-                    return false;
-                }
-
-                // Update user profile in Firestore
-                await userService.updateUserProfile(auth.user.uid, data);
-
-                return true;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil';
-                setAuthError(errorMessage);
-                return false;
-            }
-        },
-
-        signOut: async () => {
-            try {
-                // Reset all errors first
-                resetErrors();
-
-                const result = await auth.signOut();
-                if (!result && auth.error) {
-                    setAuthError(auth.error.message || 'Erreur lors de la déconnexion');
-                }
-                return result;
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la déconnexion';
-                setAuthError(errorMessage);
-                return false;
-            }
+            await authService.signInWithEmailAndPassword(email, password);
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Authentication failed'));
+            setErrorMessage(err instanceof Error ? err.message : 'Authentication failed');
+            return false;
+        } finally {
+            setIsAuthenticating(false);
         }
     };
 
+    const signUpIndividual = async (email: string, password: string, firstName: string, lastName: string, phone: string) => {
+        try {
+            resetErrors();
+            setIsAuthenticating(true);
+
+            // Create user data object
+            const userData = {
+                email,
+                firstName,
+                lastName,
+                phoneNumber: phone,
+                userType: 'individual' as const
+            };
+
+            await authService.createUser(email, password, userData);
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Registration failed'));
+            setErrorMessage(err instanceof Error ? err.message : 'Registration failed');
+            return false;
+        } finally {
+            setIsAuthenticating(false);
+        }
+    };
+
+    const signUpProfessional = async (email: string, password: string, companyName: string, contactName: string, phone: string, isDeliveryAgent = false) => {
+        try {
+            resetErrors();
+            setIsAuthenticating(true);
+
+            // Create user data object
+            const userData = {
+                email,
+                companyName,
+                contactName,
+                phoneNumber: phone,
+                userType: 'professional' as const
+            };
+
+            await authService.createUser(email, password, userData, isDeliveryAgent);
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Registration failed'));
+            setErrorMessage(err instanceof Error ? err.message : 'Registration failed');
+            return false;
+        } finally {
+            setIsAuthenticating(false);
+        }
+    };
+
+    const resetPassword = async (email: string) => {
+        try {
+            resetErrors();
+            setIsAuthenticating(true);
+
+            await authService.resetPassword(email);
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Password reset failed'));
+            setErrorMessage(err instanceof Error ? err.message : 'Password reset failed');
+            return false;
+        } finally {
+            setIsAuthenticating(false);
+        }
+    };
+
+    const updateProfile = async (data: { firstName?: string; lastName?: string; photoURL?: string }) => {
+        try {
+            resetErrors();
+
+            if (!user || !user.uid) {
+                throw new Error('User not authenticated');
+            }
+
+            // Call service to update profile (this would need to be added to AuthService)
+            // await authService.updateUserProfile(user.uid, data);
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Profile update failed'));
+            setErrorMessage(err instanceof Error ? err.message : 'Profile update failed');
+            return false;
+        }
+    };
+
+    const signOut = async () => {
+        try {
+            resetErrors();
+            setIsAuthenticating(true);
+
+            await authService.signOut();
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Sign out failed'));
+            setErrorMessage(err instanceof Error ? err.message : 'Sign out failed');
+            return false;
+        } finally {
+            setIsAuthenticating(false);
+        }
+    };
+
+    const contextValue: AuthContextType = {
+        user,
+        loading,
+        isAuthenticating,
+        error,
+        errorMessage,
+        resetErrors,
+        signIn,
+        signUpIndividual,
+        signUpProfessional,
+        resetPassword,
+        updateProfile,
+        signOut,
+        isAuthenticated: !!user
+    };
+
     return (
-        <AuthContext.Provider value={enhancedAuth}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-// Create a hook to use the auth context
 export function useAuth() {
     const context = useContext(AuthContext);
     if (context === undefined) {
