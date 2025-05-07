@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {View, Text, ScrollView, ActivityIndicator, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { DeliveryService } from "@/src/services/delivery.service";
@@ -11,12 +11,19 @@ import StyledButton from '@/components/ui/StyledButton';
 import { format } from 'date-fns';
 import AgentCard from "@/components/ui/AgentCard";
 import {Separator} from "@/components/ui/Separator";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
+
+// Make sure to install the required packages:
+// npm install react-native-maps react-native-maps-directions
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const deliveryService = new DeliveryService();
     const deliveryAgentService = new DeliveryAgentService();
+    const mapRef = useRef<MapView>(null);
+    const GOOGLE_MAPS_API_KEY = "AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c";
 
     const [delivery, setDelivery] = useState<Delivery | null>(null);
     const [agent, setAgent] = useState<DeliveryAgent | null>(null);
@@ -105,6 +112,32 @@ export default function DeliveryDetailsScreen() {
         );
     }
 
+    // Define the pickup and delivery coordinates
+    const pickupCoords = {
+        latitude: delivery.pickupAddress.coordinates.latitude,
+        longitude: delivery.pickupAddress.coordinates.longitude,
+    };
+
+    const deliveryCoords = {
+        latitude: delivery.deliveryAddress.coordinates.latitude,
+        longitude: delivery.deliveryAddress.coordinates.longitude,
+    };
+
+    // Create route coordinates array for the Polyline (fallback)
+    const routeCoordinates = [pickupCoords, deliveryCoords];
+
+    // Calculate the midpoint between pickup and delivery
+    const midLat = (pickupCoords.latitude + deliveryCoords.latitude) / 2;
+    const midLng = (pickupCoords.longitude + deliveryCoords.longitude) / 2;
+
+    // Calculate the distance between points (approximately)
+    const latDiff = Math.abs(pickupCoords.latitude - deliveryCoords.latitude);
+    const lngDiff = Math.abs(pickupCoords.longitude - deliveryCoords.longitude);
+
+    // Increase padding significantly (200%) to zoom out more
+    const latDelta = Math.max(latDiff * 2.0, 0.05);
+    const lngDelta = Math.max(lngDiff * 2.0, 0.05);
+
     return (
         <GradientView>
             <SafeAreaView className="flex-1 relative">
@@ -140,10 +173,53 @@ export default function DeliveryDetailsScreen() {
                     {/* Delivery Route */}
                     <SectionTitle title="Itinéraire de Livraison" />
 
-                    {/* Map Placeholder */}
-                    <View style={styles.mapPlaceholder}>
-                        <Ionicons name="map-outline" size={32} color="white" style={{ opacity: 0.6 }} />
-                        <Text className="text-white opacity-60 mt-2 font-cabin">Carte</Text>
+                    {/* Interactive Map */}
+                    <View style={styles.mapContainer}>
+                        <MapView
+                            ref={mapRef}
+                            style={styles.map}
+                            initialRegion={{
+                                latitude: midLat,
+                                longitude: midLng,
+                                latitudeDelta: latDelta,
+                                longitudeDelta: lngDelta
+                            }}
+                        >
+                            {/* Directions between markers */}
+                            <MapViewDirections
+                                origin={pickupCoords}
+                                destination={deliveryCoords}
+                                apikey={GOOGLE_MAPS_API_KEY}
+                                strokeWidth={3}
+                                strokeColor="#4285F4"
+                                mode="DRIVING"
+                            />
+                            <Marker
+                                coordinate={pickupCoords}
+                                title={"Point de collecte"}
+                                pinColor="green"
+                                tracksViewChanges={false}
+                                description={delivery.pickupAddress.formattedAddress}
+                            />
+                            <Marker
+                                coordinate={deliveryCoords}
+                                pinColor="red"
+                                tracksViewChanges={false}
+                                title={"Destination"}
+                                description={delivery.deliveryAddress.formattedAddress}
+                            />
+                        </MapView>
+                    </View>
+
+                    <View className="flex-row justify-between mt-2 mb-4">
+                        <View className="flex-row items-center">
+                            <View className="w-3 h-3 rounded-full bg-green-500 mr-2" />
+                            <Text className="text-white font-cabin-medium">Départ</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                            <View className="w-3 h-3 rounded-full bg-red-500 mr-2" />
+                            <Text className="text-white font-cabin-medium">Arrivée</Text>
+                        </View>
                     </View>
 
                     <Separator />
@@ -177,18 +253,11 @@ export default function DeliveryDetailsScreen() {
 
                     {/* Comments */}
                     <SectionTitle title="Commentaires" />
-                    <Text className="text-white font-cabin-medium mb-1">Commentaires Expéditeur:</Text>
-                    {delivery.expeditorComments ? (
-                        <Text className="text-white opacity-80 mb-3 font-cabin">{delivery.expeditorComments}</Text>
+                    <Text className="text-white font-cabin-medium mb-1">Commentaire:</Text>
+                    {delivery.comment ? (
+                        <Text className="text-white opacity-80 mb-3 font-cabin">{delivery.comment}</Text>
                     ) : (
-                        <Text className="text-white opacity-60 italic mb-3 font-cabin">Aucun commentaire de l'expéditeur</Text>
-                    )}
-
-                    <Text className="text-white font-cabin-medium mb-1">Commentaires Livraison:</Text>
-                    {delivery.deliveryComments ? (
-                        <Text className="text-white opacity-80 mb-3 font-cabin">{delivery.deliveryComments}</Text>
-                    ) : (
-                        <Text className="text-white opacity-60 italic mb-3 font-cabin">Aucun commentaire de livraison</Text>
+                        <Text className="text-white opacity-60 italic mb-3 font-cabin">Aucun commentaire</Text>
                     )}
 
                     <View className="h-8" />
@@ -288,14 +357,17 @@ function getStatusText(status: string): string {
 }
 
 const styles = StyleSheet.create({
-    mapPlaceholder: {
-        height: 120,
+    mapContainer: {
+        height: 160,
         width: '100%',
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
+        overflow: 'hidden',
+        marginBottom: 4,
+    },
+    map: {
+        width: '100%',
+        height: '100%',
     },
     actionButton: {
         paddingVertical: 4,

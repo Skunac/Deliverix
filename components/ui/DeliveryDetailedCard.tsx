@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Separator } from "@/components/ui/Separator";
@@ -6,6 +6,8 @@ import { DeliveryWithAgent } from "@/src/services/delivery.service";
 import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import MapView, { Marker } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
 
 type DeliveryDetailedCardProps = {
     delivery: DeliveryWithAgent;
@@ -14,6 +16,8 @@ type DeliveryDetailedCardProps = {
 
 const DeliveryDetailedCard = ({ delivery, onPress }: DeliveryDetailedCardProps) => {
     const { t } = useTranslation();
+    const mapRef = useRef<MapView>(null);
+
     const agentName = delivery.agentFirstName && delivery.agentLastName
         ? `${delivery.agentFirstName} ${delivery.agentLastName}`
         : t("delivery.agent.unassigned") || "Non assigné";
@@ -93,17 +97,104 @@ const DeliveryDetailedCard = ({ delivery, onPress }: DeliveryDetailedCardProps) 
         }
     }
 
+    // Define the coordinates for both markers
+    const pickupCoords = {
+        latitude: delivery.pickupAddress.coordinates.latitude,
+        longitude: delivery.pickupAddress.coordinates.longitude,
+    };
+
+    const deliveryCoords = {
+        latitude: delivery.deliveryAddress.coordinates.latitude,
+        longitude: delivery.deliveryAddress.coordinates.longitude,
+    };
+
+    // Calculate the midpoint between pickup and delivery
+    const midLat = (pickupCoords.latitude + deliveryCoords.latitude) / 2;
+    const midLng = (pickupCoords.longitude + deliveryCoords.longitude) / 2;
+
+    // Calculate the distance between points (approximately)
+    const latDiff = Math.abs(pickupCoords.latitude - deliveryCoords.latitude);
+    const lngDiff = Math.abs(pickupCoords.longitude - deliveryCoords.longitude);
+
+    // Add more padding (25%) to ensure both markers are visible with some context
+    const latDelta = Math.max(latDiff * 1.25, 0.01);
+    const lngDelta = Math.max(lngDiff * 1.25, 0.01);
+
+    // Adjust the map to show both markers after the component mounts
+    useEffect(() => {
+        // Make sure we have valid coordinates for both
+        if (!pickupCoords || !deliveryCoords) return;
+
+        // Use a small timeout to ensure the map is fully loaded
+        const timer = setTimeout(() => {
+            if (mapRef.current) {
+                // Get the current markers
+                const markers = [pickupCoords, deliveryCoords];
+
+                try {
+                    // Fit map to show all markers with medium padding
+                    mapRef.current.fitToCoordinates(markers, {
+                        edgePadding: { top: 30, right: 30, bottom: 30, left: 30 },
+                        animated: true
+                    });
+                } catch (error) {
+                    console.error("Error fitting to coordinates:", error);
+                }
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
         <TouchableOpacity
             style={styles.container}
             activeOpacity={0.8}
             onPress={onPress}
         >
-            {/* Map placeholder */}
-            <View style={styles.mapPlaceholder}>
-                <Ionicons name="map-outline" size={32} color="white" style={{ opacity: 0.6 }} />
-                <Text className="text-white opacity-60 mt-2 font-cabin">{t("delivery.map") || "Carte"}</Text>
-            </View>
+            {/* Map with both markers */}
+            <MapView
+                ref={mapRef}
+                style={styles.mapPlaceholder}
+                initialRegion={{
+                    latitude: midLat,
+                    longitude: midLng,
+                    latitudeDelta: latDelta,
+                    longitudeDelta: lngDelta
+                }}
+                mapType={"mutedStandard"}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                rotateEnabled={false}
+                pitchEnabled={false}
+                toolbarEnabled={false}
+                moveOnMarkerPress={false}
+            >
+                {/* Directions between markers */}
+                <MapViewDirections
+                    origin={pickupCoords}
+                    destination={deliveryCoords}
+                    apikey={'AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c'}
+                    strokeWidth={3}
+                    strokeColor="#4285F4"
+                    mode="DRIVING"
+                />
+                {/* Pickup marker */}
+                <Marker
+                    coordinate={pickupCoords}
+                    title={"Point de collecte"}
+                    description={delivery.pickupAddress.formattedAddress}
+                    pinColor="green"
+                />
+
+                {/* Delivery marker */}
+                <Marker
+                    coordinate={deliveryCoords}
+                    title={"Destination"}
+                    description={delivery.deliveryAddress.formattedAddress}
+                    pinColor="red"
+                />
+            </MapView>
 
             {/* Separator */}
             <Separator />

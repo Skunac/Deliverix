@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash-icon.png",
@@ -74,7 +74,8 @@
           "merchantIdentifier": "id",
           "enableGooglePay": true
         }
-      ]
+      ],
+      ["react-native-maps"]
     ],
 
     "experiments": {
