@@ -11,6 +11,8 @@ import { initStripe, useStripe } from '@stripe/stripe-react-native';
 import { db, serverTimestamp } from '@/src/firebase/config';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {formatCurrency} from "@/utils/formatters/currency-formatter";
+import {formatDate} from "@/utils/formatters/date-formatters";
 
 // Collections constants - match extension defaults
 const COLLECTIONS = {
@@ -28,41 +30,6 @@ export default function PaymentScreen() {
 
     const deliveryService = new DeliveryService();
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
-
-    // Format currency for display
-    const formatCurrency = (amount: number, currency = 'eur') => {
-        const formatter = new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: currency.toUpperCase(),
-            minimumFractionDigits: 2
-        });
-
-        return formatter.format(amount);
-    };
-
-    // Format date for display
-    const formatDate = (date: Date | any) => {
-        try {
-            // Check if the date is a Firestore Timestamp
-            if (date && typeof date.toDate === 'function') {
-                return format(date.toDate(), 'dd MMMM yyyy', { locale: fr });
-            }
-
-            // Check if it's a valid date object or convertible to one
-            if (date) {
-                const dateObj = new Date(date);
-                if (!isNaN(dateObj.getTime())) {
-                    return format(dateObj, 'dd MMMM yyyy', { locale: fr });
-                }
-            }
-
-            // Fallback
-            return 'Date not available';
-        } catch (error) {
-            console.error('Error formatting date:', error);
-            return 'Date not available';
-        }
-    };
 
     // Load delivery data and initialize Stripe
     useEffect(() => {

@@ -13,9 +13,7 @@ import AgentCard from "@/components/ui/AgentCard";
 import {Separator} from "@/components/ui/Separator";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
-
-// Make sure to install the required packages:
-// npm install react-native-maps react-native-maps-directions
+import {formatDate, formatTime} from "@/utils/formatters/date-formatters";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -123,9 +121,6 @@ export default function DeliveryDetailsScreen() {
         longitude: delivery.deliveryAddress.coordinates.longitude,
     };
 
-    // Create route coordinates array for the Polyline (fallback)
-    const routeCoordinates = [pickupCoords, deliveryCoords];
-
     // Calculate the midpoint between pickup and delivery
     const midLat = (pickupCoords.latitude + deliveryCoords.latitude) / 2;
     const midLng = (pickupCoords.longitude + deliveryCoords.longitude) / 2;
@@ -152,11 +147,11 @@ export default function DeliveryDetailsScreen() {
 
                     <InfoRow
                         label="Date Prévue"
-                        value={formatFirestoreDate(delivery.scheduledDate)}
+                        value={formatDate(delivery.scheduledDate)}
                     />
                     <InfoRow
                         label="Créneau Horaire"
-                        value={`${formatFirestoreTime(delivery.timeSlot.start)} - ${formatFirestoreTime(delivery.timeSlot.end)}`}
+                        value={`${formatTime(delivery.timeSlot.start)} - ${formatTime(delivery.timeSlot.end)}`}
                     />
 
                     <Separator />
@@ -209,17 +204,6 @@ export default function DeliveryDetailsScreen() {
                                 description={delivery.deliveryAddress.formattedAddress}
                             />
                         </MapView>
-                    </View>
-
-                    <View className="flex-row justify-between mt-2 mb-4">
-                        <View className="flex-row items-center">
-                            <View className="w-3 h-3 rounded-full bg-green-500 mr-2" />
-                            <Text className="text-white font-cabin-medium">Départ</Text>
-                        </View>
-                        <View className="flex-row items-center">
-                            <View className="w-3 h-3 rounded-full bg-red-500 mr-2" />
-                            <Text className="text-white font-cabin-medium">Arrivée</Text>
-                        </View>
                     </View>
 
                     <Separator />
@@ -288,27 +272,6 @@ export default function DeliveryDetailsScreen() {
             </SafeAreaView>
         </GradientView>
     );
-}
-
-// Helper functions
-function formatFirestoreDate(timestamp: any): string {
-    if (!timestamp) return 'N/A';
-
-    // Convert Firestore timestamp to JS Date
-    const date = timestamp.toDate ? timestamp.toDate() :
-        (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date());
-
-    return format(date, 'dd MMM yyyy');
-}
-
-function formatFirestoreTime(timestamp: any): string {
-    if (!timestamp) return 'N/A';
-
-    // Convert Firestore timestamp to JS Date
-    const date = timestamp.toDate ? timestamp.toDate() :
-        (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date());
-
-    return format(date, 'HH:mm');
 }
 
 // Helper functions for status styling

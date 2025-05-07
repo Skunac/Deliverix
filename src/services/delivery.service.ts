@@ -5,6 +5,7 @@ import {
     EmbeddedAddress
 } from '@/src/models/delivery.model';
 import { DeliveryAgentService } from './delivery-agent.service';
+import {formatAddress} from "@/utils/formatters/address-formatter";
 
 export interface DeliveryWithAgent extends Delivery {
     agentFirstName?: string;
@@ -95,13 +96,13 @@ export class DeliveryService {
     async createDelivery(delivery: Omit<Delivery, "id">): Promise<DeliveryWithAgent> {
         try {
             // Format the pickup address
-            delivery.pickupAddress.formattedAddress = this.formatAddress(delivery.pickupAddress);
+            delivery.pickupAddress.formattedAddress = formatAddress(delivery.pickupAddress);
 
             // Format the delivery address
-            delivery.deliveryAddress.formattedAddress = this.formatAddress(delivery.deliveryAddress);
+            delivery.deliveryAddress.formattedAddress = formatAddress(delivery.deliveryAddress);
 
             // Format the billing address
-            delivery.billingAddress.formattedAddress = this.formatAddress(delivery.billingAddress);
+            delivery.billingAddress.formattedAddress = formatAddress(delivery.billingAddress);
 
             // Add timestamps
             const deliveryWithTimestamps = {
@@ -180,39 +181,5 @@ export class DeliveryService {
         }
 
         return enrichedDelivery;
-    }
-
-    // Helper method to format an address from components
-    private formatAddress(address: EmbeddedAddress): string {
-        const components = address.components;
-
-        // Build the formatted address from components
-        const streetAddress = [
-            components.street_number,
-            components.route
-        ].filter(Boolean).join(' ');
-
-        const cityInfo = [
-            components.postal_code,
-            components.locality
-        ].filter(Boolean).join(' ');
-
-        const regionCountry = [
-            components.administrative_area_level_1,
-            components.country
-        ].filter(Boolean).join(', ');
-
-        const formattedParts = [
-            streetAddress,
-            cityInfo,
-            regionCountry
-        ].filter(part => part.trim().length > 0);
-
-        // Add complementary address if available
-        if (address.complementaryAddress) {
-            formattedParts.splice(1, 0, address.complementaryAddress);
-        }
-
-        return formattedParts.join(', ');
     }
 }

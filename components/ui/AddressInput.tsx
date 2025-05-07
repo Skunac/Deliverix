@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import StyledTextInput from '@/components/ui/StyledTextInput';
 import { EmbeddedAddress } from '@/src/models/delivery.model';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import {generateFormattedAddress} from "@/utils/formatters/address-formatter";
 
 interface ModernAddressInputProps {
     address: EmbeddedAddress | null;
@@ -40,23 +41,6 @@ const ModernAddressInput = ({
             latitude: lat,
             longitude: lng
         } as FirebaseFirestoreTypes.GeoPoint;
-    };
-
-    // Generate formatted address from components
-    const generateFormattedAddress = (components: {
-        street_number?: string;
-        route?: string;
-        locality?: string;
-        postal_code?: string;
-        country?: string;
-    }) => {
-        return [
-            components.street_number || '',
-            components.route || '',
-            components.locality || '',
-            components.postal_code || '',
-            components.country || ''
-        ].filter(Boolean).join(', ');
     };
 
     // Update all fields when address prop changes, but only if not manually edited

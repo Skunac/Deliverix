@@ -3,38 +3,23 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GradientView } from '@/components/ui/GradientView';
 import StyledButton from '@/components/ui/StyledButton';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useDeliveryForm } from "@/contexts/DeliveryFormContext";
 import { Alert } from 'react-native';
 import { useAuth } from '@/contexts/authContext';
 import { DeliveryService } from '@/src/services/delivery.service';
 import { Delivery } from '@/src/models/delivery.model';
 import { Ionicons } from '@expo/vector-icons';
+import {formatDate, formatTimeSlot} from "@/utils/formatters/date-formatters";
+import {useTranslation} from "react-i18next";
 
 export default function DeliveryRecapScreen() {
     const router = useRouter();
     const { user } = useAuth();
     const { formState } = useDeliveryForm();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { t } = useTranslation();
 
     const deliveryService = new DeliveryService();
-
-    // Format date for display
-    const formatDate = (date: Date | null) => {
-        if (!date) return 'Not specified';
-        return format(date, 'dd MMMM yyyy', { locale: fr });
-    };
-
-    // Format time slot for display
-    const formatTimeSlot = () => {
-        if (!formState.timeSlotStart || !formState.timeSlotEnd) return 'Not specified';
-
-        const start = format(formState.timeSlotStart, 'HH:mm');
-        const end = format(formState.timeSlotEnd, 'HH:mm');
-
-        return `${start} - ${end}`;
-    };
 
     // Simple price calculation function - matches the one in ContactInformationScreen
     const calculatePrice = () => {
@@ -210,7 +195,7 @@ export default function DeliveryRecapScreen() {
                         </View>
                         <View className="flex-1">
                             <Text className="text-gray-400">Time Slot</Text>
-                            <Text className="text-white">{formatTimeSlot()}</Text>
+                            <Text className="text-white">{formatTimeSlot(formState.timeSlotStart, formState.timeSlotEnd, t)}</Text>
                         </View>
                     </View>
 

@@ -8,6 +8,7 @@ import { fr } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
+import {formatDate, formatTime, parseTimestamp} from "@/utils/formatters/date-formatters";
 
 type DeliveryDetailedCardProps = {
     delivery: DeliveryWithAgent;
@@ -21,57 +22,6 @@ const DeliveryDetailedCard = ({ delivery, onPress }: DeliveryDetailedCardProps) 
     const agentName = delivery.agentFirstName && delivery.agentLastName
         ? `${delivery.agentFirstName} ${delivery.agentLastName}`
         : t("delivery.agent.unassigned") || "Non assigné";
-
-    /**
-     * Safely parses a timestamp of various possible formats into a Date object
-     */
-    const parseTimestamp = (timestamp: any): Date | null => {
-        try {
-            // Case 1: timestamp is null or undefined
-            if (!timestamp) {
-                return null;
-            }
-
-            // Case 2: timestamp is already a Date object
-            if (timestamp instanceof Date) {
-                return timestamp;
-            }
-            // Case 3: timestamp is a Firestore timestamp object with seconds and nanoseconds
-            else if (timestamp.seconds !== undefined && timestamp.nanoseconds !== undefined) {
-                return new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
-            }
-            // Case 4: timestamp is a number (Unix timestamp)
-            else if (typeof timestamp === 'number') {
-                // Check if it's seconds (10 digits) or milliseconds (13 digits)
-                return new Date(timestamp.toString().length < 13 ? timestamp * 1000 : timestamp);
-            }
-            // Case 5: timestamp is a string (ISO date or other format)
-            else if (typeof timestamp === 'string') {
-                return new Date(timestamp);
-            }
-
-            return null;
-        } catch (error) {
-            console.error("Error parsing date:", error, "Raw value:", timestamp);
-            return null;
-        }
-    };
-
-    /**
-     * Format just the time portion (HH'h')
-     */
-    const formatTime = (date: Date | null): string => {
-        if (!date || isNaN(date.getTime())) return "N/A";
-        return format(date, "HH'h'", { locale: fr });
-    };
-
-    /**
-     * Format just the date portion (d MMMM)
-     */
-    const formatDate = (date: Date | null): string => {
-        if (!date || isNaN(date.getTime())) return t("delivery.date.undefined") || "Date non définie";
-        return format(date, "d MMMM", { locale: fr });
-    };
 
     // Parse delivery timeSlot
     const startDate = parseTimestamp(delivery.timeSlot?.start);
