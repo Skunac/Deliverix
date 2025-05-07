@@ -201,25 +201,26 @@ const DeliveryDetailedCard = ({ delivery, onPress }: DeliveryDetailedCardProps) 
 
             {/* Delivery details */}
             <View className="flex-col">
-                <View className="flex-row justify-between items-center px-2 py-2">
-                    <Text className="text-white font-cabin">{t("delivery.step") || "Etape"}</Text>
+                {/* Changed px-2 to px-4 for more horizontal padding */}
+                <View className="flex-row justify-between items-center px-4 py-2">
+                    <Text className="text-white font-cabin-medium">{t("delivery.step") || "Etape"}</Text>
                     <Text className="text-white font-cabin-medium">
                         {t(`delivery.status.${delivery.status}`) || delivery.status}
                     </Text>
                 </View>
-                <View className="flex-row justify-between items-center px-2 py-2">
-                    <Text className="text-white font-cabin">{t("delivery.type") || "Type"}</Text>
+                <View className="flex-row justify-between items-center px-4 py-2">
+                    <Text className="text-white font-cabin-medium">{t("delivery.type") || "Type"}</Text>
                     <Text className="text-white font-cabin-medium">
                         {t(`delivery.packageCategory.${delivery.packageCategory}`) || delivery.packageCategory}
                     </Text>
                 </View>
-                <View className="flex-row justify-between items-center px-2 py-2">
-                    <Text className="text-white font-cabin">{t("delivery.by") || "Par"}</Text>
+                <View className="flex-row justify-between items-center px-4 py-2">
+                    <Text className="text-white font-cabin-medium">{t("delivery.by") || "Par"}</Text>
                     <Text className="text-white font-cabin-medium">{agentName}</Text>
                 </View>
 
-                <View className="flex-row justify-between items-center px-2 py-2">
-                    <Text className="text-white font-cabin">{t("delivery.estimatedDelivery") || "Livraison prévue :"}</Text>
+                <View className="flex-row justify-between items-center px-4 py-2">
+                    <Text className="text-white font-cabin-medium">{t("delivery.estimatedDelivery") || "Livraison prévue :"}</Text>
                     <Text className="text-white font-cabin-medium">{deliveryTimeText}</Text>
                 </View>
             </View>
