@@ -392,15 +392,6 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
 
             // Register the delivery agent using all collected data
             const success = await registerDeliveryAgent(formData);
-            if (success) {
-                // Navigate to the next step or show success message
-                router.replace('/(tabs)');
-            } else {
-                setFormErrors(prev => ({
-                    ...prev,
-                    general: 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.'
-                }));
-            }
         } catch (error) {
             console.error('Registration error:', error);
             setFormErrors(prev => ({
