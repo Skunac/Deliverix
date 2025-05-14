@@ -43,7 +43,7 @@ export default function DeliveriesScreen() {
             <GradientView>
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-                    <Text className="mt-4 text-lg text-red-500">User not authenticated</Text>
+                    <Text className="mt-4 text-lg text-red-500">Utilisateur non authentifié</Text>
                 </View>
             </GradientView>
         );
@@ -62,7 +62,7 @@ export default function DeliveriesScreen() {
             <GradientView>
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#6366f1" />
-                    <Text className="mt-4 text-gray-600">Loading deliveries...</Text>
+                    <Text className="mt-4 text-gray-600">Chargement des livraisons...</Text>
                 </View>
             </GradientView>
         );
@@ -84,9 +84,9 @@ export default function DeliveriesScreen() {
             <GradientView>
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="document-outline" size={48} color="#6b7280" />
-                    <Text className="mt-4 text-lg text-gray-700">No deliveries found</Text>
+                    <Text className="mt-4 text-lg text-gray-700">Aucune livraison trouvée</Text>
                     <Text className="mt-2 text-gray-500 text-center">
-                        You don't have any deliveries yet. They will appear here once created.
+                        Vous n'avez pas encore de livraisons. Elles apparaîtront ici une fois créées.
                     </Text>
                 </View>
             </GradientView>

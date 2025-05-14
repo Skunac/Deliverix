@@ -94,7 +94,7 @@ export default function DeliveryRecapScreen() {
         <GradientView>
             <ScrollView className="flex-1 p-4">
                 <Text className="text-white text-xl font-cabin-medium mb-6">
-                    Delivery Summary
+                    Récapitulatif de la livraison
                 </Text>
 
                 {/* Package Information */}
@@ -102,7 +102,7 @@ export default function DeliveryRecapScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="cube-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Package Details
+                            Détails du colis
                         </Text>
                     </View>
 
@@ -113,11 +113,11 @@ export default function DeliveryRecapScreen() {
 
                     <View className="flex-row mb-2">
                         <View className="flex-1 mr-2">
-                            <Text className="text-gray-400">Weight</Text>
+                            <Text className="text-gray-400">Poids</Text>
                             <Text className="text-white">{formState.packageWeight} kg</Text>
                         </View>
                         <View className="flex-1">
-                            <Text className="text-gray-400">Category</Text>
+                            <Text className="text-gray-400">Categorie</Text>
                             <Text className="text-white" style={{ textTransform: 'capitalize' }}>
                                 {formState.packageCategory.replace('_', ' ')}
                             </Text>
@@ -126,7 +126,7 @@ export default function DeliveryRecapScreen() {
 
                     <View className="flex-row mb-2">
                         <View className="flex-1">
-                            <Text className="text-gray-400">Dimensions (L×W×H)</Text>
+                            <Text className="text-gray-400">Dimensions (L×l×H)</Text>
                             <Text className="text-white">
                                 {formState.packageDimensions.length} × {formState.packageDimensions.width} × {formState.packageDimensions.height} cm
                             </Text>
@@ -135,7 +135,7 @@ export default function DeliveryRecapScreen() {
 
                     <View>
                         <Text className="text-gray-400">Fragile</Text>
-                        <Text className="text-white">{formState.isFragile ? 'Yes' : 'No'}</Text>
+                        <Text className="text-white">{formState.isFragile ? 'Oui' : 'Non'}</Text>
                     </View>
                 </View>
 
@@ -144,12 +144,12 @@ export default function DeliveryRecapScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="location-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Pickup & Delivery
+                            Ramassage et Livraison
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-3 mb-3">
-                        <Text className="text-gray-400">Pickup Address</Text>
+                        <Text className="text-gray-400">Adresse de ramassage</Text>
                         <Text className="text-white mb-1">
                             {formState.pickupAddress?.components.street_number || ''} {formState.pickupAddress?.components.route || ''}
                         </Text>
@@ -164,7 +164,7 @@ export default function DeliveryRecapScreen() {
                     </View>
 
                     <View>
-                        <Text className="text-gray-400">Delivery Address</Text>
+                        <Text className="text-gray-400">Adresse de livraison</Text>
                         <Text className="text-white mb-1">
                             {formState.deliveryAddress?.components.street_number || ''} {formState.deliveryAddress?.components.route || ''}
                         </Text>
@@ -184,7 +184,7 @@ export default function DeliveryRecapScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="calendar-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Schedule
+                            Horaire
                         </Text>
                     </View>
 
@@ -194,7 +194,7 @@ export default function DeliveryRecapScreen() {
                             <Text className="text-white">{formatDate(formState.scheduledDate)}</Text>
                         </View>
                         <View className="flex-1">
-                            <Text className="text-gray-400">Time Slot</Text>
+                            <Text className="text-gray-400">Créneau horairet</Text>
                             <Text className="text-white">{formatTimeSlot(formState.timeSlotStart, formState.timeSlotEnd, t)}</Text>
                         </View>
                     </View>
@@ -203,7 +203,7 @@ export default function DeliveryRecapScreen() {
                         <View className="border-t border-gray-700 pt-2 mt-2">
                             {formState.comment && (
                                 <View className="mb-2">
-                                    <Text className="text-gray-400">Delivery comment</Text>
+                                    <Text className="text-gray-400">Commentaire sur la livraison</Text>
                                     <Text className="text-white">{formState.comment}</Text>
                                 </View>
                             )}
@@ -216,18 +216,18 @@ export default function DeliveryRecapScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="people-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Contact Information
+                            Informations de contact
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-3 mb-3">
-                        <Text className="text-gray-400">Expeditor</Text>
+                        <Text className="text-gray-400">Expéditeur</Text>
                         <Text className="text-white">{formState.expeditor?.firstName}</Text>
                         <Text className="text-white">{formState.expeditor?.phoneNumber}</Text>
                     </View>
 
                     <View>
-                        <Text className="text-gray-400">Receiver</Text>
+                        <Text className="text-gray-400">Destinataire</Text>
                         <Text className="text-white">{formState.receiver?.firstName}</Text>
                         <Text className="text-white">{formState.receiver?.phoneNumber}</Text>
                     </View>
@@ -238,18 +238,18 @@ export default function DeliveryRecapScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="document-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Facturation information
+                            Informations de facturation
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-3 mb-3">
-                        <Text className="text-gray-400">Billing information</Text>
+                        <Text className="text-gray-400">Informations de facturation</Text>
                         <Text className="text-white">{formState.billingContact}</Text>
                         <Text className="text-white">{formState.expeditor?.phoneNumber}</Text>
                     </View>
 
                     <View>
-                        <Text className="text-gray-400">Billing Address</Text>
+                        <Text className="text-gray-400">Adresse de facturation</Text>
                         <Text className="text-white">{formState.billingAddress?.formattedAddress}</Text>
                     </View>
                 </View>
@@ -259,7 +259,7 @@ export default function DeliveryRecapScreen() {
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="cash-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Price
+                            Prix
                         </Text>
                     </View>
 
@@ -269,19 +269,17 @@ export default function DeliveryRecapScreen() {
                 </View>
 
                 {/* Navigation buttons */}
-                <View className="flex-row justify-between mb-8">
-                    <StyledButton
-                        variant="primary"
-                        shadow
-                        className="flex-1 ml-2"
-                        onPress={handleSubmit}
-                        disabled={isSubmitting}
-                    >
-                        <Text className="text-white font-cabin-medium">
-                            {isSubmitting ? 'Processing...' : 'Proceed to Payment'}
-                        </Text>
-                    </StyledButton>
-                </View>
+                <StyledButton
+                    variant="primary"
+                    shadow
+                    className="flex-1 ml-2 mb-4"
+                    onPress={handleSubmit}
+                    disabled={isSubmitting}
+                >
+                    <Text className="text-white font-cabin-medium">
+                        {isSubmitting ? 'Traitement en cours...' : 'Procéder au paiement'}
+                    </Text>
+                </StyledButton>
             </ScrollView>
         </GradientView>
     );

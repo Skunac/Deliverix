@@ -8,6 +8,7 @@ import { PackageCategory } from '@/src/models/delivery.model';
 import { Ionicons } from '@expo/vector-icons';
 import {useDeliveryForm} from "@/contexts/DeliveryFormContext";
 import {useAuth} from "@/contexts/authContext";
+import {useTranslation} from "react-i18next";
 
 const categories: { value: PackageCategory; label: string }[] = [
     { value: 'products', label: 'General Products' },
@@ -28,6 +29,7 @@ export default function PackageDetailsScreen() {
     const { formState, updateFormState, validateStep } = useDeliveryForm();
     const [errors, setErrors] = useState<string[]>([]);
     const user = useAuth();
+    const { t } = useTranslation();
 
     const handleContinue = () => {
         const stepErrors = validateStep(1);
@@ -47,7 +49,7 @@ export default function PackageDetailsScreen() {
         <GradientView>
             <ScrollView className="flex-1 p-4">
                 <Text className="text-white text-lg font-cabin-medium mb-6">
-                    Tell us about your package
+                    Parlez-nous de votre colis
                 </Text>
 
                 {/* Display validation errors if any */}
@@ -63,8 +65,8 @@ export default function PackageDetailsScreen() {
 
                 {/* Package Description */}
                 <StyledTextInput
-                    label="Package Description"
-                    placeholder="Describe your package"
+                    label="Description du colis"
+                    placeholder="Décrivez votre colis"
                     multiline
                     numberOfLines={3}
                     value={formState.packageDescription}
@@ -73,8 +75,8 @@ export default function PackageDetailsScreen() {
 
                 {/* Package Weight */}
                 <StyledTextInput
-                    label="Package Weight (kg)"
-                    placeholder="Enter weight in kg"
+                    label="Poids du colis (kg)"
+                    placeholder="Entrez le poids en kg"
                     keyboardType="numeric"
                     value={formState.packageWeight.toString() || ''}
                     onChangeText={(text) => {
@@ -84,11 +86,11 @@ export default function PackageDetailsScreen() {
                 />
 
                 {/* Package Dimensions */}
-                <Text className="text-white mb-2 font-cabin-medium">Package Dimensions (cm)</Text>
+                <Text className="text-white mb-2 font-cabin-medium">Dimensions du colis (cm)</Text>
                 <View className="flex-row justify-between mb-4">
                     <View className="flex-1 mr-2">
                         <StyledTextInput
-                            placeholder="Length"
+                            placeholder="Longueur"
                             keyboardType="numeric"
                             value={formState.packageDimensions.length.toString() || ''}
                             onChangeText={(text) => {
@@ -104,7 +106,7 @@ export default function PackageDetailsScreen() {
                     </View>
                     <View className="flex-1 mx-2">
                         <StyledTextInput
-                            placeholder="Width"
+                            placeholder="Largeur"
                             keyboardType="numeric"
                             value={formState.packageDimensions.width.toString() || ''}
                             onChangeText={(text) => {
@@ -120,7 +122,7 @@ export default function PackageDetailsScreen() {
                     </View>
                     <View className="flex-1 ml-2">
                         <StyledTextInput
-                            placeholder="Height"
+                            placeholder="Hauteur"
                             keyboardType="numeric"
                             value={formState.packageDimensions.height.toString() || ''}
                             onChangeText={(text) => {
@@ -137,7 +139,7 @@ export default function PackageDetailsScreen() {
                 </View>
 
                 {/* Package Category */}
-                <Text className="text-white mb-2 font-cabin-medium">Package Category</Text>
+                <Text className="text-white mb-2 font-cabin-medium">Catégorie du colis</Text>
                 <View className="flex-row flex-wrap mb-4">
                     {categories.map((category) => (
                         <Pressable
@@ -149,14 +151,14 @@ export default function PackageDetailsScreen() {
                             }`}
                             onPress={() => updateFormState({ packageCategory: category.value })}
                         >
-                            <Text className="text-white">{category.label}</Text>
+                            <Text className="text-white">{t(`delivery.packageCategory.${category.value}`)}</Text>
                         </Pressable>
                     ))}
                 </View>
 
                 {/* Fragile Switch */}
                 <View className="flex-row items-center justify-between mb-6 bg-gray-800 p-4 rounded-lg">
-                    <Text className="text-white font-cabin-medium">Is the package fragile?</Text>
+                    <Text className="text-white font-cabin-medium">Le colis est-il fragile ?</Text>
                     <Switch
                         value={formState.isFragile}
                         onValueChange={(value) => updateFormState({ isFragile: value })}
@@ -195,7 +197,7 @@ export default function PackageDetailsScreen() {
                     className="mb-4"
                     onPress={handleContinue}
                 >
-                    <Text className="text-white font-cabin-medium">Continue</Text>
+                    <Text className="text-white font-cabin-medium">Continuer</Text>
                 </StyledButton>
             </ScrollView>
         </GradientView>

@@ -104,18 +104,17 @@
       "failed": "Échoué"
     },
     "packageCategory": {
-      "exceptional": "Exceptionnel",
+      "exceptional": "Articles exceptionnels",
       "urgent": "Urgent",
       "expensive": "Coûteux",
       "sensitive": "Sensible",
       "urgent_mechanical_parts": "Pièces mécaniques urgentes",
       "aeronotics": "Aéronautique",
-      "rare": "Rare",
+      "rare": "Articles rares",
       "sentimental_value": "Valeur sentimentale",
-      "products": "Produits",
+      "products": "Produits généraux",
       "it_equipment": "Équipement informatique",
-      "gift": "Cadeau",
-      "electronics": "Électronique"
+      "gift": "Cadeau"
     },
     "step": "Etape",
     "type": "Type",

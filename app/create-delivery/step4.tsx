@@ -186,7 +186,7 @@ export default function FacturationScreen() {
             {loading ? (
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#5DD6FF" />
-                    <Text className="text-white mt-4 font-cabin">Loading your information...</Text>
+                    <Text className="text-white mt-4 font-cabin">Chargement de vos informations...</Text>
                 </View>
             ) : (
                 <ScrollView className="flex-1 p-4">
@@ -210,7 +210,7 @@ export default function FacturationScreen() {
                                 </Text>
                             </View>
                             <Text className="text-white text-lg font-cabin-medium">
-                                {isIndividual ? 'Personal Information' : 'Company Information'}
+                                {isIndividual ? 'Informations personnelles' : 'Informations de l\'entreprise'}
                             </Text>
                         </View>
 
@@ -218,8 +218,8 @@ export default function FacturationScreen() {
                         <View className="mb-4">
                             {isIndividual && (
                                 <StyledTextInput
-                                    label="Contact Name"
-                                    placeholder="Enter your full name"
+                                    label="Nom du contact"
+                                    placeholder="Entrez votre nom complet"
                                     value={contactName}
                                     onChangeText={handleContactNameChange}
                                 />
@@ -228,14 +228,14 @@ export default function FacturationScreen() {
                             {isProfessional && (
                                 <>
                                     <StyledTextInput
-                                        label="Company Name"
-                                        placeholder="Enter company name"
+                                        label="Nom de l'entreprise"
+                                        placeholder="Entrez le nom de l'entreprise"
                                         value={companyName}
                                         onChangeText={setCompanyName}
                                     />
                                     <StyledTextInput
-                                        label="Contact Name"
-                                        placeholder="Enter contact name"
+                                        label="Nom du contact"
+                                        placeholder="Entrez votre nom complet"
                                         value={contactName}
                                         onChangeText={handleContactNameChange}
                                     />
@@ -244,15 +244,15 @@ export default function FacturationScreen() {
 
                             <StyledTextInput
                                 label="Email"
-                                placeholder="Enter email address"
+                                placeholder="Entrez l'adresse email"
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
                             />
 
                             <StyledTextInput
-                                label="Phone Number"
-                                placeholder="Enter phone number"
+                                label="Numéro de téléphone"
+                                placeholder="Entrez le numéro de téléphone"
                                 value={phoneNumber}
                                 onChangeText={setPhoneNumber}
                                 keyboardType="phone-pad"
@@ -276,9 +276,11 @@ export default function FacturationScreen() {
                             userProfile.billingAddress.formattedAddress && (
                                 <View className="mb-5">
                                     <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
-                                        <View className="flex-row items-center">
-                                            <Ionicons name="bookmark-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                            <Text className="text-white font-cabin">Use my saved billing address</Text>
+                                        <View className="flex-row items-start flex-1 mr-3">
+                                            <Ionicons name="bookmark-outline" size={20} color="#5DD6FF" style={{ marginTop: 2 }} className="mr-2" />
+                                            <Text className="text-white font-cabin flex-shrink">
+                                                Utiliser mon adresse de facturation enregistrée
+                                            </Text>
                                         </View>
                                         <Switch
                                             value={useExistingBillingAddress}
@@ -323,7 +325,7 @@ export default function FacturationScreen() {
                                         <View className="flex-row items-center flex-1 mr-2">
                                             <Ionicons name="save-outline" size={20} color="#5DD6FF" className="mr-2" />
                                             <Text className="text-white font-cabin">
-                                                Save this as my default billing address
+                                                Enregistrer comme adresse de facturation par défaut
                                             </Text>
                                         </View>
                                         <Switch
@@ -344,8 +346,7 @@ export default function FacturationScreen() {
                         <View className="flex-row items-start">
                             <Ionicons name="information-circle" size={24} color="#5DD6FF" style={{ marginRight: 8, marginTop: 1 }} />
                             <Text className="text-white font-cabin flex-1">
-                                You will receive an invoice to this address after your delivery is complete.
-                                Payment will be processed securely through Stripe.
+                                Vous recevrez une facture à cette adresse après la livraison. Le paiement sera traité en toute sécurité via Stripe.
                             </Text>
                         </View>
                     </View>
@@ -357,7 +358,7 @@ export default function FacturationScreen() {
                         className="my-4"
                         onPress={handleContinue}
                     >
-                        <Text className="text-white font-cabin-medium">Continue to Summary</Text>
+                        <Text className="text-white font-cabin-medium">Continuer vers le récapitulatif</Text>
                     </StyledButton>
                 </ScrollView>
             )}

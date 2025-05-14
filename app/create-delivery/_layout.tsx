@@ -32,31 +32,31 @@ export default function CreateDeliveryLayout() {
             >
                 <Stack.Screen
                     name="index"
-                    options={{ title: 'Create Delivery' }}
+                    options={{ title: 'Créer une livraison' }}
                 />
                 <Stack.Screen
                     name="step1"
-                    options={{ title: 'Package Details' }}
+                    options={{ title: 'Détails du colis' }}
                 />
                 <Stack.Screen
                     name="step2"
-                    options={{ title: 'Addresses' }}
+                    options={{ title: 'Adresses' }}
                 />
                 <Stack.Screen
                     name="step3"
-                    options={{ title: 'Schedule & Comments' }}
+                    options={{ title: 'Horaire & Commentaires' }}
                 />
                 <Stack.Screen
                     name="step4"
-                    options={{ title: 'Billing Information' }}
+                    options={{ title: 'Informations de facturation' }}
                 />
                 <Stack.Screen
                     name="step5"
-                    options={{ title: 'Recapitulatif de la commande' }}
+                    options={{ title: 'Récapitulatif de la commande' }}
                 />
                 <Stack.Screen
                     name="step6"
-                    options={{ title: 'Payment' }}
+                    options={{ title: 'Paiement' }}
                 />
                 <Stack.Screen
                     name="confirmation"

@@ -195,7 +195,7 @@ export default function CombinedAddressesContactsScreen() {
             {loading ? (
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#5DD6FF" />
-                    <Text className="text-white mt-4 font-cabin">Loading your information...</Text>
+                    <Text className="text-white mt-4 font-cabin">Chargement de vos informations...</Text>
                 </View>
             ) : (
                 <ScrollView className="flex-1 p-4">
@@ -217,7 +217,7 @@ export default function CombinedAddressesContactsScreen() {
                                 <Text className="text-dark font-cabin-bold">P</Text>
                             </View>
                             <Text className="text-white text-lg font-cabin-medium">
-                                Pickup Information
+                                Informations de ramassage
                             </Text>
                         </View>
 
@@ -229,13 +229,13 @@ export default function CombinedAddressesContactsScreen() {
 
                         {/* Contact Information */}
                         <View className="mt-5 pt-5 border-t border-gray-800">
-                            <Text className="text-white font-cabin-medium mb-3">Expeditor Details</Text>
+                            <Text className="text-white font-cabin-medium mb-3">Détails de l'expéditeur</Text>
 
                             {/* "I am the expeditor" toggle */}
                             <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
                                 <View className="flex-row items-center">
                                     <Ionicons name="person-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                    <Text className="text-white font-cabin">I am the expeditor</Text>
+                                    <Text className="text-white font-cabin">Je suis l'expéditeur</Text>
                                 </View>
                                 <Switch
                                     value={formState.isUserExpeditor}
@@ -246,16 +246,16 @@ export default function CombinedAddressesContactsScreen() {
                                 />
                             </View>
 
-                            <View className="mb-4">
+                            <View>
                                 <StyledTextInput
-                                    label="Full Name"
-                                    placeholder="Enter full name"
+                                    label="Nom complet"
+                                    placeholder="Entrez le nom complet"
                                     value={formState.expeditor?.firstName || ''}
                                     onChangeText={(text) => updateExpeditor('firstName', text)}
                                 />
 
                                 <StyledTextInput
-                                    label="Phone Number"
+                                    label="Numéro de téléphone"
                                     placeholder="Enter phone number"
                                     keyboardType="phone-pad"
                                     value={formState.expeditor?.phoneNumber || ''}
@@ -263,12 +263,12 @@ export default function CombinedAddressesContactsScreen() {
                                 />
                             </View>
 
-                            {/* Save contact toggle */}
+                            {/* Save contact toggle
                             {user?.uid && (
                                 <View className="flex-row items-center justify-between mt-2 bg-darker p-3 rounded-lg">
                                     <View className="flex-row items-center">
                                         <Ionicons name="bookmark-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                        <Text className="text-white font-cabin">Save to my address book</Text>
+                                        <Text className="text-white font-cabin">Enregistrer dans mon carnet d'adresses</Text>
                                     </View>
                                     <Switch
                                         value={savePickupContact}
@@ -278,7 +278,7 @@ export default function CombinedAddressesContactsScreen() {
                                         ios_backgroundColor="#576D75"
                                     />
                                 </View>
-                            )}
+                            )}*/}
                         </View>
                     </View>
 
@@ -289,7 +289,7 @@ export default function CombinedAddressesContactsScreen() {
                                 <Text className="text-dark font-cabin-bold">D</Text>
                             </View>
                             <Text className="text-white text-lg font-cabin-medium">
-                                Delivery Information
+                                Informations de livraison
                             </Text>
                         </View>
 
@@ -301,13 +301,13 @@ export default function CombinedAddressesContactsScreen() {
 
                         {/* Contact Information */}
                         <View className="mt-5 pt-5 border-t border-gray-800">
-                            <Text className="text-white font-cabin-medium mb-3">Receiver Details</Text>
+                            <Text className="text-white font-cabin-medium mb-3">Détails du destinataire</Text>
 
                             {/* "I am the receiver" toggle */}
                             <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
                                 <View className="flex-row items-center">
                                     <Ionicons name="person-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                    <Text className="text-white font-cabin">I am the receiver</Text>
+                                    <Text className="text-white font-cabin">Je suis le destinataire</Text>
                                 </View>
                                 <Switch
                                     value={formState.isUserReceiver}
@@ -318,29 +318,29 @@ export default function CombinedAddressesContactsScreen() {
                                 />
                             </View>
 
-                            <View className="mb-4">
+                            <View>
                                 <StyledTextInput
-                                    label="Full Name"
-                                    placeholder="Enter full name"
+                                    label="Nom complet"
+                                    placeholder="Entrez le nom complet"
                                     value={formState.receiver?.firstName || ''}
                                     onChangeText={(text) => updateReceiver('firstName', text)}
                                 />
 
                                 <StyledTextInput
-                                    label="Phone Number"
-                                    placeholder="Enter phone number"
+                                    label="Numéro de téléphone"
+                                    placeholder="Entrez le numéro de téléphone"
                                     keyboardType="phone-pad"
                                     value={formState.receiver?.phoneNumber || ''}
                                     onChangeText={(text) => updateReceiver('phoneNumber', text)}
                                 />
                             </View>
 
-                            {/* Save contact toggle */}
+                            {/* Save contact toggle
                             {user?.uid && (
                                 <View className="flex-row items-center justify-between mt-2 bg-darker p-3 rounded-lg">
                                     <View className="flex-row items-center">
                                         <Ionicons name="bookmark-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                        <Text className="text-white font-cabin">Save to my address book</Text>
+                                        <Text className="text-white font-cabin">Enregistrer dans mon carnet d'adresses</Text>
                                     </View>
                                     <Switch
                                         value={saveDeliveryContact}
@@ -350,7 +350,7 @@ export default function CombinedAddressesContactsScreen() {
                                         ios_backgroundColor="#576D75"
                                     />
                                 </View>
-                            )}
+                            )}*/}
                         </View>
                     </View>
 
@@ -361,7 +361,7 @@ export default function CombinedAddressesContactsScreen() {
                         className="my-4"
                         onPress={handleContinue}
                     >
-                        <Text className="text-white font-cabin-medium">Continue</Text>
+                        <Text className="text-white font-cabin-medium">Continuer</Text>
                     </StyledButton>
                 </ScrollView>
             )}

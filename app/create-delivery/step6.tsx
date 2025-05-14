@@ -175,7 +175,7 @@ export default function PaymentScreen() {
             <GradientView>
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#2EC3F5" />
-                    <Text className="text-white mt-4">Loading delivery information...</Text>
+                    <Text className="text-white mt-4">Chargement des informations de livraison...</Text>
                 </View>
             </GradientView>
         );
@@ -187,7 +187,7 @@ export default function PaymentScreen() {
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="alert-circle-outline" size={60} color="#ff4d4d" />
                     <Text className="text-white text-lg text-center mt-4">
-                        We couldn't find this delivery. It may have been removed or there was an error.
+                        Nous n'avons pas pu trouver cette livraison. Elle a peut-être été supprimée ou une erreur est survenue.
                     </Text>
                     <StyledButton
                         variant="primary"
@@ -195,7 +195,7 @@ export default function PaymentScreen() {
                         className="w-full mt-6"
                         onPress={() => router.replace('/dashboard')}
                     >
-                        <Text className="text-white font-cabin-medium">Go to Dashboard</Text>
+                        <Text className="text-white font-cabin-medium">Aller au tableau de bord</Text>
                     </StyledButton>
                 </View>
             </GradientView>
@@ -206,7 +206,7 @@ export default function PaymentScreen() {
         <GradientView>
             <ScrollView className="flex-1 p-4">
                 <Text className="text-white text-xl font-cabin-medium mb-6">
-                    Complete Your Payment
+                    Finaliser votre paiement
                 </Text>
 
                 {/* Order Summary */}
@@ -214,38 +214,38 @@ export default function PaymentScreen() {
                     <View className="flex-row items-center mb-4">
                         <Ionicons name="receipt-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Order Summary
+                            Récapitulatif de la commande
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-2 mb-2">
-                        <Text className="text-gray-400">Delivery ID</Text>
+                        <Text className="text-gray-400">ID de livraison</Text>
                         <Text className="text-white">{delivery.id}</Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-2 mb-2">
-                        <Text className="text-gray-400">From</Text>
+                        <Text className="text-gray-400">De</Text>
                         <Text className="text-white">
                             {delivery.pickupAddress.components.locality || 'N/A'}
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-2 mb-2">
-                        <Text className="text-gray-400">To</Text>
+                        <Text className="text-gray-400">À</Text>
                         <Text className="text-white">
                             {delivery.deliveryAddress.components.locality || 'N/A'}
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-2 mb-2">
-                        <Text className="text-gray-400">Scheduled Date</Text>
+                        <Text className="text-gray-400">Date prévue</Text>
                         <Text className="text-white">
                             {formatDate(delivery.scheduledDate)}
                         </Text>
                     </View>
 
                     <View className="border-b border-gray-700 pb-2 mb-2">
-                        <Text className="text-gray-400">Package</Text>
+                        <Text className="text-gray-400">Colis</Text>
                         <Text className="text-white">
                             {delivery.packageDescription.substring(0, 50)}
                             {delivery.packageDescription.length > 50 ? '...' : ''}
@@ -253,7 +253,7 @@ export default function PaymentScreen() {
                     </View>
 
                     <View className="flex-row justify-between items-center">
-                        <Text className="text-gray-400 font-cabin-medium">Total Amount</Text>
+                        <Text className="text-gray-400 font-cabin-medium">Montant total</Text>
                         <Text className="text-white text-xl font-cabin-bold">
                             {formatCurrency(delivery.price)}
                         </Text>
@@ -265,12 +265,12 @@ export default function PaymentScreen() {
                     <View className="flex-row items-center mb-4">
                         <Ionicons name="card-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Payment Details
+                            Détails du paiement
                         </Text>
                     </View>
 
                     <Text className="text-white mb-4">
-                        Your payment will be processed securely through Stripe. Once your payment is confirmed, your delivery will be available for a delivery agent to pick up.
+                        Votre paiement sera traité en toute sécurité via Stripe. Une fois votre paiement confirmé, votre livraison sera disponible pour être prise en charge par un livreur.
                     </Text>
                 </View>
 
@@ -283,7 +283,7 @@ export default function PaymentScreen() {
                     disabled={isProcessing}
                 >
                     <Text className="text-white font-cabin-medium">
-                        {isProcessing ? 'Processing...' : `Pay ${formatCurrency(delivery.price)}`}
+                        {isProcessing ? 'Traitement en cours...' : `Payer ${formatCurrency(delivery.price)}`}
                     </Text>
                 </StyledButton>
             </ScrollView>

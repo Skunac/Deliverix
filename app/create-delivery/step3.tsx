@@ -76,7 +76,7 @@ export default function ScheduleScreen() {
         <GradientView>
             <ScrollView className="flex-1 p-4">
                 <Text className="text-white text-lg font-cabin-medium mb-6">
-                    Schedule delivery and add comments
+                    Planifier la livraison et ajouter des commentaires
                 </Text>
 
                 {/* Display validation errors if any */}
@@ -93,7 +93,7 @@ export default function ScheduleScreen() {
                 {/* Scheduled Date */}
                 <View className="bg-dark p-4 rounded-lg mb-6">
                     <Text className="text-white font-cabin-medium text-lg mb-4">
-                        Delivery Date and Time
+                        Date et heure de livraison
                     </Text>
 
                     {/* Date Picker */}
@@ -102,15 +102,15 @@ export default function ScheduleScreen() {
                         className="bg-gray-700 p-3 rounded-lg mb-6 flex-row items-center justify-between"
                     >
                         <Text className="text-white font-cabin-medium">
-                            Date: {formState.scheduledDate
+                            Date : {formState.scheduledDate
                             ? format(formState.scheduledDate, 'dd/MM/yyyy', { locale: fr })
-                            : 'Select a date'}
+                            : 'Sélectionner une date'}
                         </Text>
                         <Ionicons name="calendar" size={20} color="white" />
                     </TouchableOpacity>
 
                     {/* Time Slot */}
-                    <Text className="text-white mb-3 font-cabin-medium">Time Slot</Text>
+                    <Text className="text-white mb-3 font-cabin-medium">Créneau horaire</Text>
                     <View className="flex-row mb-2">
                         <Pressable
                             className={`flex-1 p-4 rounded-lg mr-2 items-center justify-center ${
@@ -125,7 +125,7 @@ export default function ScheduleScreen() {
                                     color="white"
                                     style={{ marginBottom: 4 }}
                                 />
-                                <Text className="text-white font-cabin-medium">Morning</Text>
+                                <Text className="text-white font-cabin-medium">Matin</Text>
                                 <Text className="text-gray-300 text-xs">8:00 - 12:00</Text>
                             </View>
                         </Pressable>
@@ -143,7 +143,7 @@ export default function ScheduleScreen() {
                                     color="white"
                                     style={{ marginBottom: 4 }}
                                 />
-                                <Text className="text-white font-cabin-medium">Afternoon</Text>
+                                <Text className="text-white font-cabin-medium">Après-midi</Text>
                                 <Text className="text-gray-300 text-xs">12:00 - 18:00</Text>
                             </View>
                         </Pressable>
@@ -161,7 +161,7 @@ export default function ScheduleScreen() {
                                     color="white"
                                     style={{ marginBottom: 4 }}
                                 />
-                                <Text className="text-white font-cabin-medium">Night</Text>
+                                <Text className="text-white font-cabin-medium">Soir</Text>
                                 <Text className="text-gray-300 text-xs">18:00 - 00:00</Text>
                             </View>
                         </Pressable>
@@ -171,12 +171,12 @@ export default function ScheduleScreen() {
                 {/* Comments */}
                 <View className="bg-dark p-4 rounded-lg mb-6">
                     <Text className="text-white font-cabin-medium text-lg mb-4">
-                        Delivery Comment
+                        Commentaire sur la livraison
                     </Text>
 
                     <StyledTextInput
-                        label="Comment"
-                        placeholder="Information for the delivery agent"
+                        label="Commentaire"
+                        placeholder="Informations pour le livreur"
                         multiline
                         numberOfLines={3}
                         value={formState.comment}
@@ -184,17 +184,14 @@ export default function ScheduleScreen() {
                     />
                 </View>
 
-                {/* Navigation buttons */}
-                <View className="flex-row justify-between mb-4">
-                    <StyledButton
-                        variant="primary"
-                        shadow
-                        className="flex-1 ml-2"
-                        onPress={handleContinue}
-                    >
-                        <Text className="text-white font-cabin-medium">Continue</Text>
-                    </StyledButton>
-                </View>
+                <StyledButton
+                    variant="primary"
+                    shadow
+                    className="flex-1 ml-2"
+                    onPress={handleContinue}
+                >
+                    <Text className="text-white font-cabin-medium">Continuer</Text>
+                </StyledButton>
             </ScrollView>
 
             {/* Date Picker Modal (conditionally rendered) */}
@@ -203,19 +200,34 @@ export default function ScheduleScreen() {
                     {Platform.OS === 'ios' && (
                         <View className="w-full bg-white p-2 flex-row justify-end">
                             <TouchableOpacity onPress={handleDonePress}>
-                                <Text className="text-blue-500 text-lg font-bold">Done</Text>
+                                <Text className="text-blue-500 text-lg font-bold">Terminé</Text>
                             </TouchableOpacity>
                         </View>
                     )}
-                    <DateTimePicker
-                        style={{ backgroundColor: 'white' }}
-                        locale="fr-FR"
-                        value={formState.scheduledDate || new Date()}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={handleDateChange}
-                        minimumDate={new Date()}
-                    />
+                    <View style={{
+                        flexDirection: 'row',
+                        backgroundColor: 'white',
+                        margin: 0,
+                        padding: 0,
+                        width: '100%'
+                    }}>
+                        <DateTimePicker
+                            locale="fr-FR"
+                            value={formState.scheduledDate || new Date()}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleDateChange}
+                            minimumDate={new Date()}
+                            style={{
+                                flex: 1,
+                                width: '100%',
+                                backgroundColor: 'white',
+                                margin: 0,
+                                padding: 0
+                            }}
+                            textColor="black"
+                        />
+                    </View>
                 </>
             )}
         </GradientView>

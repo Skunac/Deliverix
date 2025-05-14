@@ -310,10 +310,10 @@ const ModernAddressInput = ({
                 <Ionicons name="location-outline" size={22} color="#5DD6FF" className="mr-3" />
                 <View className="flex-1">
                     <Text className="text-gray-400 text-xs mb-1 font-cabin">
-                        {displayAddress ? "SELECTED ADDRESS" : "SEARCH ADDRESS"}
+                        {displayAddress ? "ADRESSE SÉLECTIONNÉE" : "RECHERCHER UNE ADRESSE"}
                     </Text>
                     <Text className="text-white font-cabin" numberOfLines={1}>
-                        {displayAddress || "Tap to search for an address"}
+                        {displayAddress || "Appuyez pour rechercher une adresse"}
                     </Text>
                 </View>
                 {displayAddress ? (
@@ -344,23 +344,23 @@ const ModernAddressInput = ({
                             color="#5DD6FF"
                         />
                         <Text className="ml-2 font-cabin" style={{ color: '#5DD6FF'}}>
-                            {isExpanded ? "Hide details" : "Edit details"}
+                            {isExpanded ? "Masquer les détails" : "Modifier les détails"}
                         </Text>
                     </TouchableOpacity>
 
                     <Animated.View style={{ maxHeight, opacity }}>
                         <View className="bg-dark p-4 rounded-lg border border-gray-700">
                             <StyledTextInput
-                                label="Street Number"
-                                placeholder="Enter street number"
+                                label="Numéro"
+                                placeholder="Entrez le numéro"
                                 value={streetNumber}
                                 onChangeText={(text) => handleFieldChange('street_number', text)}
                                 darkBackground={true}
                             />
 
                             <StyledTextInput
-                                label="Street"
-                                placeholder="Enter street name"
+                                label="Rue"
+                                placeholder="Entrez le nom de la rue"
                                 value={route}
                                 onChangeText={(text) => handleFieldChange('route', text)}
                                 darkBackground={true}
@@ -369,8 +369,8 @@ const ModernAddressInput = ({
                             <View className="flex-row">
                                 <View className="flex-1 mr-2">
                                     <StyledTextInput
-                                        label="City"
-                                        placeholder="Enter city"
+                                        label="Ville"
+                                        placeholder="Entrez la ville"
                                         value={locality}
                                         onChangeText={(text) => handleFieldChange('locality', text)}
                                         darkBackground={true}
@@ -378,8 +378,8 @@ const ModernAddressInput = ({
                                 </View>
                                 <View className="flex-1 ml-2">
                                     <StyledTextInput
-                                        label="Postal Code"
-                                        placeholder="Enter postal code"
+                                        label="Code postal"
+                                        placeholder="Entrez le code postal"
                                         value={postalCode}
                                         onChangeText={(text) => handleFieldChange('postal_code', text)}
                                         darkBackground={true}
@@ -388,24 +388,24 @@ const ModernAddressInput = ({
                             </View>
 
                             <StyledTextInput
-                                label="Country"
-                                placeholder="Enter country"
+                                label="Pays"
+                                placeholder="Entrez le pays"
                                 value={country}
                                 onChangeText={(text) => handleFieldChange('country', text)}
                                 darkBackground={true}
                             />
 
                             <StyledTextInput
-                                label="Complementary Address"
-                                placeholder="Apartment, floor, building code, etc."
+                                label="Complément d'adresse"
+                                placeholder="Appartement, étage, digicode, etc."
                                 value={complementaryAddress}
                                 onChangeText={handleComplementaryAddressChange}
                                 darkBackground={true}
                             />
 
                             <StyledTextInput
-                                label="Additional Instructions"
-                                placeholder="Special instructions for the delivery agent"
+                                label="Instructions supplémentaires"
+                                placeholder="Instructions spéciales pour le livreur"
                                 multiline
                                 numberOfLines={2}
                                 value={additionalInstructions}
@@ -429,7 +429,7 @@ const ModernAddressInput = ({
                         color="#5DD6FF"
                     />
                     <Text className="ml-2 font-cabin" style={{ color: '#5DD6FF'}}>
-                        {isExpanded ? "Hide manual entry" : "Enter address manually"}
+                        {isExpanded ? "Masquer la saisie manuelle" : "Saisir l'adresse manuellement"}
                     </Text>
                 </TouchableOpacity>
             )}
@@ -440,16 +440,16 @@ const ModernAddressInput = ({
                     {isExpanded && (
                         <View className="bg-dark p-4 rounded-lg border border-gray-700">
                             <StyledTextInput
-                                label="Street Number"
-                                placeholder="Enter street number"
+                                label="Numéro"
+                                placeholder="Entrez le numéro"
                                 value={streetNumber}
                                 onChangeText={(text) => handleFieldChange('street_number', text)}
                                 darkBackground={true}
                             />
 
                             <StyledTextInput
-                                label="Street"
-                                placeholder="Enter street name"
+                                label="Nom de la rue"
+                                placeholder="Entrez le nom de la rue"
                                 value={route}
                                 onChangeText={(text) => handleFieldChange('route', text)}
                                 darkBackground={true}
@@ -458,8 +458,8 @@ const ModernAddressInput = ({
                             <View className="flex-row">
                                 <View className="flex-1 mr-2">
                                     <StyledTextInput
-                                        label="City"
-                                        placeholder="Enter city"
+                                        label="Ville"
+                                        placeholder="Entrez la ville"
                                         value={locality}
                                         onChangeText={(text) => handleFieldChange('locality', text)}
                                         darkBackground={true}
@@ -467,8 +467,8 @@ const ModernAddressInput = ({
                                 </View>
                                 <View className="flex-1 ml-2">
                                     <StyledTextInput
-                                        label="Postal Code"
-                                        placeholder="Enter postal code"
+                                        label="Code postal"
+                                        placeholder="Entrez le code postal"
                                         value={postalCode}
                                         onChangeText={(text) => handleFieldChange('postal_code', text)}
                                         darkBackground={true}
@@ -477,24 +477,24 @@ const ModernAddressInput = ({
                             </View>
 
                             <StyledTextInput
-                                label="Country"
-                                placeholder="Enter country"
+                                label="Pays"
+                                placeholder="Entrez le pays"
                                 value={country}
                                 onChangeText={(text) => handleFieldChange('country', text)}
                                 darkBackground={true}
                             />
 
                             <StyledTextInput
-                                label="Complementary Address"
-                                placeholder="Apartment, floor, building code, etc."
+                                label="Complément d'adresse"
+                                placeholder="Appartement, étage, digicode, etc."
                                 value={complementaryAddress}
                                 onChangeText={handleComplementaryAddressChange}
                                 darkBackground={true}
                             />
 
                             <StyledTextInput
-                                label="Additional Instructions"
-                                placeholder="Special instructions for the delivery agent"
+                                label="Instructions supplémentaires"
+                                placeholder="Instructions spéciales pour le livreur"
                                 multiline
                                 numberOfLines={2}
                                 value={additionalInstructions}
@@ -520,7 +520,7 @@ const ModernAddressInput = ({
                     <View className="flex-1 p-4">
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-white text-lg font-cabin-medium">
-                                Search for an address
+                                Rechercher une adresse
                             </Text>
                             <TouchableOpacity
                                 onPress={() => setShowModal(false)}
@@ -531,7 +531,7 @@ const ModernAddressInput = ({
                         </View>
 
                         <GooglePlacesAutocomplete
-                            placeholder="Enter address"
+                            placeholder="Entrez une adresse"
                             onPress={processGooglePlacesResult}
                             fetchDetails={true}
                             query={{
