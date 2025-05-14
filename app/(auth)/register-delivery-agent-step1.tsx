@@ -1,12 +1,11 @@
-import {View, Text, TouchableOpacity, ScrollView, BackHandler} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { GradientView } from "@/components/ui/GradientView";
 import StyledButton from "@/components/ui/StyledButton";
 import StyledTextInput from "@/components/ui/StyledTextInput";
-import {useAuth} from "@/contexts/authContext";
-
-type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
+import { useDeliveryAgentRegistration } from '@/contexts/deliveryAgentRegistrationContext';
+import AuthErrorMessages from '@/components/ui/AuthErrorMessages';
 
 interface FormData {
     companyName: string;
@@ -27,12 +26,15 @@ interface FormErrors {
 }
 
 export default function RegisterDeliveryStep1Screen(): JSX.Element {
-    // Form fields
+    const router = useRouter();
+    const { step1Data, saveStep1Data, registrationError, clearRegistrationError } = useDeliveryAgentRegistration();
+
+    // Form fields - initialize with data from context if available
     const [formData, setFormData] = useState<FormData>({
-        companyName: '',
-        contactName: '',
-        email: '',
-        phone: '',
+        companyName: step1Data?.companyName || '',
+        contactName: step1Data?.contactName || '',
+        email: step1Data?.email || '',
+        phone: step1Data?.phone || '',
         password: '',
         confirmPassword: ''
     });
@@ -44,28 +46,22 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
         email: '',
         password: '',
         confirmPassword: '',
-        auth: '' // For auth-related errors
+        auth: ''
     });
 
-    const { signUpProfessional, isAuthenticating, errorMessage, resetErrors, updateRegistrationStatus } = useAuth();
-    const router = useRouter();
-
-    // Effect to sync error from context with formErrors.auth in the component
+    // Set form error from context if available
     useEffect(() => {
-        if (errorMessage) {
-            setFormErrors(prev => ({ ...prev, auth: errorMessage }));
+        if (registrationError) {
+            setFormErrors(prev => ({ ...prev, auth: registrationError }));
         }
-    }, [errorMessage]);
+    }, [registrationError]);
 
-    // Single useEffect for component mount/unmount
+    // Clear errors on mount
     useEffect(() => {
-        console.log('RegisterDeliveryStep1Screen mounted - resetting errors');
-        resetErrors();
+        clearRegistrationError();
 
-        // Cleanup on unmount
         return () => {
-            console.log('RegisterDeliveryStep1Screen unmounted - resetting errors');
-            resetErrors();
+            clearRegistrationError();
         };
     }, []);
 
@@ -129,39 +125,33 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
         return isValid;
     };
 
-    const handleRegister = async (): Promise<void> => {
+    const handleContinue = async (): Promise<void> => {
         if (!validateForm()) {
             return;
         }
 
         try {
-            resetErrors();
-            setFormErrors(prev => ({ ...prev, auth: '' })); // Clear auth error
+            // Clear previous errors
+            setFormErrors(prev => ({ ...prev, auth: '' }));
+            clearRegistrationError();
 
-            console.log("Starting delivery professional registration process");
+            // Save step 1 data to context (excluding confirmPassword)
+            saveStep1Data({
+                companyName: formData.companyName,
+                contactName: formData.contactName,
+                email: formData.email,
+                phone: formData.phone,
+                password: formData.password,
+            });
 
-            const success = await signUpProfessional(
-                formData.email,
-                formData.password,
-                formData.companyName,
-                formData.contactName,
-                formData.phone,
-                true
-            );
+            // Navigate to step 2
+            router.push('/(auth)/register-delivery-agent-step2');
 
-            if (success) {
-                console.log('Registration successful, proceeding to step 2');
-
-                // Navigate to step 2
-                router.replace('/(auth)/register-delivery-agent-step2');
-            } else {
-                console.log('Registration failed, checking for errors...');
-            }
         } catch (error) {
-            console.error('Registration failed with exception:', error);
+            console.error('Error saving step 1 data:', error);
             setFormErrors(prev => ({
                 ...prev,
-                auth: error instanceof Error ? error.message : 'Une erreur d\'inscription est survenue'
+                auth: error instanceof Error ? error.message : 'Une erreur est survenue'
             }));
         }
     };
@@ -180,11 +170,7 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
 
                     {/* Display auth error if present */}
                     {formErrors.auth ? (
-                        <View className="bg-red-500/20 p-3 rounded-md mb-4">
-                            <Text className="text-white text-center font-cabin-medium">
-                                {formErrors.auth}
-                            </Text>
-                        </View>
+                        <AuthErrorMessages error={formErrors.auth} />
                     ) : null}
 
                     <StyledTextInput
@@ -236,18 +222,16 @@ export default function RegisterDeliveryStep1Screen(): JSX.Element {
                     <StyledButton
                         variant="primary"
                         shadow={true}
-                        onPress={handleRegister}
-                        disabled={isAuthenticating}
+                        onPress={handleContinue}
                     >
                         <Text className="text-darker font-cabin-medium">
-                            {isAuthenticating ? 'Inscription en cours...' : 'Continuer'}
+                            Continuer
                         </Text>
                     </StyledButton>
 
                     <TouchableOpacity
                         onPress={() => router.replace('/(auth)')}
                         className="mt-5"
-                        disabled={isAuthenticating}
                     >
                         <Text className="text-white text-center font-cabin-medium">Retour</Text>
                     </TouchableOpacity>

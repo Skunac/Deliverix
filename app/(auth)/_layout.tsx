@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import {useAuth} from "@/contexts/authContext";
+import {DeliveryAgentRegistrationProvider} from "@/contexts/deliveryAgentRegistrationContext";
 
 export default function AuthLayout() {
     const { user, loading, registrationStatus } = useAuth();
@@ -25,5 +26,9 @@ export default function AuthLayout() {
         }
     }, [user, loading, registrationStatus, router]);
 
-    return <Stack screenOptions={{ headerShown: false, animation: 'none' }} />;
+    return(
+        <DeliveryAgentRegistrationProvider>
+            <Stack screenOptions={{ headerShown: false, animation: 'none' }} />
+        </DeliveryAgentRegistrationProvider>
+    );
 }

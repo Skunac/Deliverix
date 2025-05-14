@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, ScrollView, Alert, Image, Platform } from 'react-native';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
 import { GradientView } from "@/components/ui/GradientView";
@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {uploadFormImages} from "@/src/utils/image-helpers";
 import { StyleSheet } from 'react-native';
+import {useDeliveryAgentRegistration} from "@/contexts/deliveryAgentRegistrationContext";
 
 type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck';
 type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
@@ -95,6 +96,7 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
     const deliveryAgentService = new DeliveryAgentService();
     const router = useRouter();
     const { user, registrationStatus, updateRegistrationStatus, completeRegistration } = useAuth();
+    const { step1Data, registerDeliveryAgent, isRegistering, registrationError, clearRegistrationError } = useDeliveryAgentRegistration();
 
     // Form fields
     const [formData, setFormData] = useState<FormData>({
@@ -103,7 +105,7 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
         lastName: '',
         birthDate: new Date(1990, 0, 1),
         birthPlace: '',
-        nationality: 'Française',
+        nationality: '',
 
         // Address
         street: '',
@@ -170,6 +172,20 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
         terms: '',
         general: ''
     });
+
+    useEffect(() => {
+        if (registrationError) {
+            setFormErrors(prev => ({ ...prev, general: registrationError }));
+        }
+    }, [registrationError]);
+
+    useEffect(() => {
+        clearRegistrationError();
+
+        return () => {
+            clearRegistrationError();
+        };
+    }, []);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -373,101 +389,21 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
             return;
         }
 
-        if (!user || !user.uid) {
+        if (!step1Data) {
             setFormErrors(prev => ({
                 ...prev,
-                general: 'Session expirée. Veuillez vous reconnecter.'
+                general: 'Données de l\'étape 1 manquantes. Veuillez retourner à l\'étape 1.'
             }));
             return;
         }
 
         try {
-            setIsSubmitting(true);
+            // Clear previous errors
+            setFormErrors(prev => ({ ...prev, general: '' }));
+            clearRegistrationError();
 
-            // Get data from step 1
-            const sirenNumber = '';
-            const companyType = 'micro' as CompanyType;
-            const companyName = user.userType === 'professional' ? user.companyName : '';
-
-            // Télécharger toutes les images sur Firebase Storage
-            // Cette étape remplacera les URIs locaux par des URLs Firebase
-            const processedFormData = await uploadFormImages(formData, user.uid);
-
-            // Register the delivery agent with simplified model
-            await deliveryAgentService.registerAsAgent(user.uid, {
-                // Personal info
-                personalInfo: {
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    email: user.email,
-                    phoneNumber: user.phoneNumber || ''
-                },
-                // Company info
-                companyInfo: {
-                    name: companyName || '', // Éviter les undefined
-                    type: companyType,
-                    sirenNumber: sirenNumber
-                },
-                // Vehicle info (minimal)
-                vehicleInfo: {
-                    type: formData.vehicleType,
-                    plateNumber: formData.vehiclePlateNumber
-                }
-            });
-
-            await deliveryAgentService.updatePersonalInfo(user.uid, {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                birthDate: formData.birthDate,
-                birthPlace: formData.birthPlace,
-                nationality: formData.nationality,
-                address: {
-                    street: formData.street,
-                    postalCode: formData.postalCode,
-                    city: formData.city,
-                    country: 'France'
-                },
-                idType: formData.idType,
-                idPhotoUrl: processedFormData.idPhoto,
-                photoUrl: processedFormData.profilePhoto
-            });
-
-            await deliveryAgentService.updateVehicleInfo(user.uid, {
-                type: formData.vehicleType,
-                model: formData.vehicleModel,
-                year: formData.vehicleYear,
-                plateNumber: formData.vehiclePlateNumber,
-                registrationPhotoUrl: processedFormData.vehicleRegistrationPhoto,
-                insuranceProvider: formData.vehicleInsuranceProvider,
-                insurancePhotoUrl: processedFormData.vehicleInsurancePhoto
-            });
-
-            await deliveryAgentService.updateDriverInfo(user.uid, {
-                licenseType: processedFormData.licenseType,
-                licensePhotoUrl: formData.licensePhoto,
-                transportCertificatePhotoUrl: processedFormData.transportCertificatePhoto,
-                trainingRegistrationPhotoUrl: processedFormData.trainingRegistrationPhoto
-            });
-
-            await deliveryAgentService.updateCompanyInfo(user.uid, {
-                kbisPhotoUrl: processedFormData.kbisPhoto,
-                professionalInsuranceProvider: formData.professionalInsuranceProvider,
-                professionalInsurancePhotoUrl: processedFormData.professionalInsurancePhoto
-            });
-
-            // Update VAT and terms
-            await deliveryAgentService.updateAgentProfile(user.uid, {
-                deliveryRange: formData.deliveryRange,
-                vatApplicable: formData.vatApplicable,
-                vatNumber: formData.vatNumber,
-                termsAccepted: true,
-                termsAcceptanceDate: new Date()
-            });
-
-            completeRegistration();
-
-            // Success - redirect
-            router.replace('/(tabs)')
+            // Register the delivery agent using all collected data
+            const success = await registerDeliveryAgent(formData);
         } catch (error) {
             console.error('Registration error:', error);
             setFormErrors(prev => ({
@@ -475,13 +411,11 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                 general: error instanceof Error ? error.message : 'Une erreur est survenue lors de l\'inscription'
             }));
 
-            // Afficher un message d'erreur plus détaillé
+            // Show detailed error
             Alert.alert(
                 "Erreur lors de l'inscription",
                 `Une erreur est survenue: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
             );
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -671,21 +605,21 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                             />
                         </View>
 
-                        <StyledTextInput
-                            placeholder="Modèle"
-                            value={formData.vehicleModel}
-                            onChangeText={(text) => handleChange('vehicleModel', text)}
-                        />
-
-                        <StyledTextInput
-                            placeholder="Année"
-                            value={formData.vehicleYear.toString()}
-                            onChangeText={(text) => handleChange('vehicleYear', parseInt(text) || new Date().getFullYear())}
-                            keyboardType="number-pad"
-                        />
-
                         {formData.vehicleType !== 'bicycle' && (
                             <>
+                                <StyledTextInput
+                                    placeholder="Modèle"
+                                    value={formData.vehicleModel}
+                                    onChangeText={(text) => handleChange('vehicleModel', text)}
+                                />
+
+                                <StyledTextInput
+                                    placeholder="Année"
+                                    value={formData.vehicleYear.toString()}
+                                    onChangeText={(text) => handleChange('vehicleYear', parseInt(text) || new Date().getFullYear())}
+                                    keyboardType="number-pad"
+                                />
+
                                 <StyledTextInput
                                     placeholder="Plaque d'immatriculation"
                                     value={formData.vehiclePlateNumber}
@@ -708,12 +642,6 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
 
                                 {renderImageUpload('vehicleInsurancePhoto', 'Photo de l\'attestation d\'assurance véhicule')}
                             </>
-                        )}
-
-                        {formData.vehicleType === 'bicycle' && (
-                            <Text className="text-gray-700 mb-4">
-                                Pour un vélo, la plaque d'immatriculation et l'assurance ne sont pas requises
-                            </Text>
                         )}
                     </View>
 
@@ -785,7 +713,7 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                             keyboardType="number-pad"
                         />
 
-                        <Text className="text-sm text-gray-600 mb-4">
+                        <Text className="text-sm text-white mb-4">
                             Distance maximale (en km) que vous êtes prêt à parcourir pour une livraison à partir de votre adresse
                         </Text>
                     </View>
@@ -836,10 +764,10 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                         variant="primary"
                         shadow={true}
                         onPress={handleSubmit}
-                        disabled={isSubmitting}
+                        disabled={isRegistering}
                     >
                         <Text className="text-darker font-cabin-medium">
-                            {isSubmitting ? 'Inscription en cours...' : 'Terminer l\'inscription'}
+                            {isRegistering ? 'Inscription en cours...' : 'Terminer l\'inscription'}
                         </Text>
                     </StyledButton>
 
@@ -862,12 +790,29 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                             </TouchableOpacity>
                         </View>
                     )}
-                    <DateTimePicker
-                        value={formData[activeDateField] as Date}
-                        mode="date"
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={handleDateChange}
-                    />
+                    <View style={{
+                        flexDirection: 'row',
+                        backgroundColor: 'white',
+                        margin: 0,
+                        padding: 0,
+                        width: '100%'
+                    }}>
+                        <DateTimePicker
+                            locale="fr-FR"
+                            value={formData[activeDateField] as Date}
+                            mode="date"
+                            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                            onChange={handleDateChange}
+                            style={{
+                                flex: 1,
+                                width: '100%',
+                                backgroundColor: 'white',
+                                margin: 0,
+                                padding: 0
+                            }}
+                            textColor="black"
+                        />
+                    </View>
                 </>
             )}
         </GradientView>
