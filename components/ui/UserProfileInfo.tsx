@@ -61,52 +61,11 @@ const UserProfileInfo = ({ user }: UserProfileInfoProps) => {
         );
     };
 
-    // Render delivery agent specific information
-    const renderDeliveryAgentInfo = () => {
-        const deliveryAgent = user as any;
-        const hasPersonalInfo = deliveryAgent.personalInfo;
-
-        return (
-            <>
-                <Text className="text-2xl font-cabin-bold text-white">
-                    {hasPersonalInfo ?
-                        `${deliveryAgent.personalInfo.firstName} ${deliveryAgent.personalInfo.lastName}` :
-                        "Livreur"}
-                </Text>
-                {renderCommonInfo()}
-
-                {/* Delivery specific information */}
-                {deliveryAgent.vehicleInfo && (
-                    <View className="flex-row items-center bg-white/20 rounded-lg px-4 py-2 mt-2">
-                        <Ionicons name="car-outline" size={18} color="#0F2026" className="mr-2" />
-                        <Text className="text-white font-cabin capitalize">
-                            {deliveryAgent.vehicleInfo.make} {deliveryAgent.vehicleInfo.model}
-                        </Text>
-                    </View>
-                )}
-
-                {deliveryAgent.rating !== undefined && (
-                    <View className="flex-row items-center bg-white/20 rounded-lg px-4 py-2 mt-2">
-                        <Ionicons name="star" size={18} color="#0F2026" className="mr-2" />
-                        <Text className="text-white font-cabin">
-                            {deliveryAgent.rating.toFixed(1)} / 5
-                        </Text>
-                    </View>
-                )}
-
-                <View className="bg-dark/20 rounded-lg px-4 py-2 mt-2">
-                    <Text className="text-white font-cabin-medium">Type: Livreur</Text>
-                </View>
-            </>
-        );
-    };
-
     return (
         <View className="items-center pt-6 pb-4">
             {/* Render different user information based on user type */}
             {user.userType === 'individual' && renderIndividualInfo()}
             {user.userType === 'professional' && renderProfessionalInfo()}
-            {(user.isDeliveryAgent) && renderDeliveryAgentInfo()}
         </View>
     );
 };
