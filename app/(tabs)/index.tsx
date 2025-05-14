@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
 import { View, FlatList, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
 import { DeliveryService } from "@/src/services/delivery.service";
 import { Delivery, DeliveryState } from "@/src/models/delivery.model";
 import DeliveryCard from "@/components/ui/DeliveryCard";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
+import {useEffect, useState} from "react";
 
 type FilterOption = {
     label: string;
@@ -17,12 +17,16 @@ type FilterOption = {
 export default function DeliveriesScreen() {
     const { user } = useAuth();
     const router = useRouter();
+    const params = useLocalSearchParams();
     const deliveryService = new DeliveryService();
     const [deliveries, setDeliveries] = useState<Delivery[]>([]);
     const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<DeliveryState | 'all'>('all');
+
+    // Track if we just navigated from accepting a delivery
+    const [refreshTriggered, setRefreshTriggered] = useState(false);
 
     // Define filter options
     const filterOptions: FilterOption[] = [
@@ -32,59 +36,73 @@ export default function DeliveriesScreen() {
         { label: 'Annulées', state: 'cancelled', icon: 'close-circle-outline' }
     ];
 
-    useEffect(() => {
-        const fetchDeliveries = async () => {
-            try {
+    const fetchDeliveries = async (showLoading = true) => {
+        try {
+            if (showLoading) {
                 setLoading(true);
-                if (user?.uid) {
-                    if (user.isDeliveryAgent) {
-                        const userDeliveries = await deliveryService.getAgentDeliveries(user.uid);
-                        console.log("userDeliveries", userDeliveries);
-                        setDeliveries(userDeliveries);
-                        setFilteredDeliveries(userDeliveries);
-                    } else {
-                        const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
-                        console.log("userDeliveries", userDeliveries);
-                        setDeliveries(userDeliveries);
-                        setFilteredDeliveries(userDeliveries);
-                    }
-                } else {
-                    setError("User ID not found");
-                }
-            } catch (err) {
-                console.error("Error fetching deliveries:", err);
-                setError("Failed to load deliveries");
-            } finally {
-                setLoading(false);
             }
-        };
 
-        fetchDeliveries();
+            if (user?.uid) {
+                if (user.isDeliveryAgent) {
+                    const userDeliveries = await deliveryService.getAgentDeliveries(user.uid);
+                    console.log("Agent deliveries:", userDeliveries);
+                    setDeliveries(userDeliveries);
+                    setFilteredDeliveries(userDeliveries);
+                } else {
+                    const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
+                    console.log("User deliveries:", userDeliveries);
+                    setDeliveries(userDeliveries);
+                    setFilteredDeliveries(userDeliveries);
+                }
+            } else {
+                setError("User ID not found");
+            }
+        } catch (err) {
+            console.error("Error fetching deliveries:", err);
+            setError("Failed to load deliveries");
+        } finally {
+            setLoading(false);
+            setRefreshTriggered(false);
+        }
+    };
+
+    useEffect(() => {
+        if (user?.uid) {
+            fetchDeliveries();
+        }
     }, [user?.uid]);
 
-    // Filter deliveries when active filter changes
     useEffect(() => {
-        if (user?.isDeliveryAgent){
-            if (activeFilter === 'all') {
-                setFilteredDeliveries(deliveries);
-            } else {
-                const filtered = deliveries.filter(delivery => delivery.state === activeFilter);
-                setFilteredDeliveries(filtered);
-            }
+        if (params.refresh === "true" && !refreshTriggered) {
+            console.log("Refresh triggered from navigation params");
+            setRefreshTriggered(true);
+            fetchDeliveries(false);
+
+            router.setParams({});
+        }
+    }, [params.refresh]);
+
+    useEffect(() => {
+        if (activeFilter === 'all') {
+            setFilteredDeliveries(deliveries);
+        } else {
+            const filtered = deliveries.filter(delivery => delivery.state === activeFilter);
+            setFilteredDeliveries(filtered);
         }
     }, [activeFilter, deliveries]);
 
-    // Handle filter selection
     const handleFilterChange = (filter: DeliveryState | 'all') => {
         setActiveFilter(filter);
     };
 
     const handleDeliveryPress = (delivery: Delivery) => {
-        // Navigate to delivery details
         router.push(`/delivery/${delivery.id}`);
     };
 
-    // Separator component to add space between items
+    const handleRefresh = () => {
+        fetchDeliveries(false);
+    };
+
     const ItemSeparator = () => <View className="h-4" />;
 
     if (loading) {
@@ -104,6 +122,12 @@ export default function DeliveriesScreen() {
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
                     <Text className="mt-4 text-lg text-red-500">{error}</Text>
+                    <TouchableOpacity
+                        className="mt-6 p-3 bg-primary rounded-lg"
+                        onPress={() => fetchDeliveries()}
+                    >
+                        <Text className="text-white font-cabin-medium">Réessayer</Text>
+                    </TouchableOpacity>
                 </View>
             </GradientView>
         );
@@ -111,7 +135,7 @@ export default function DeliveriesScreen() {
 
     // Render filter tabs
     const renderFilterTabs = () => (
-        <View className="flex-row bg-dark p-2 rounded-lgmb-2">
+        <View className="flex-row bg-dark p-2 rounded-lg mb-2">
             {filterOptions.map((option) => (
                 <TouchableOpacity
                     key={option.state}
@@ -148,6 +172,15 @@ export default function DeliveriesScreen() {
                     <Text className="mt-2 text-gray-300 text-center">
                         Vous n'avez pas encore de livraisons. Elles apparaîtront ici une fois créées.
                     </Text>
+
+                    {user?.isDeliveryAgent && (
+                        <TouchableOpacity
+                            className="mt-6 p-3 bg-primary rounded-lg"
+                            onPress={() => router.push('/(tabs)/available-deliveries')}
+                        >
+                            <Text className="text-white font-cabin-medium">Voir les livraisons disponibles</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </GradientView>
         );
@@ -173,11 +206,13 @@ export default function DeliveriesScreen() {
                         renderItem={({ item }) => (
                             <DeliveryCard
                                 delivery={item}
-                                onPress={handleDeliveryPress}
+                                onPress={() => handleDeliveryPress(item)}
                             />
                         )}
                         ItemSeparatorComponent={ItemSeparator}
                         contentContainerStyle={{ padding: 16, paddingTop: 8 }}
+                        onRefresh={handleRefresh}
+                        refreshing={refreshTriggered}
                     />
                 )}
             </View>

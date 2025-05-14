@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {View, FlatList, Text, ActivityIndicator, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, FlatList, Text, ActivityIndicator, TouchableOpacity, StyleSheet, Alert} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
 import { DeliveryService } from "@/src/services/delivery.service";
@@ -28,8 +28,9 @@ export default function AvailableDeliveriesScreen() {
         }
         try {
             const deliveries = await deliveryService.getAvailableDeliveries();
-            console.log("Available deliveries:", deliveries);
+            console.log("Available deliveries:", deliveries.length);
             setAvailableDeliveries(deliveries);
+            setError(null);
         } catch (err) {
             console.error("Error fetching available deliveries:", err);
             setError("Failed to load available deliveries");
@@ -54,13 +55,51 @@ export default function AvailableDeliveriesScreen() {
 
     const handleAcceptDelivery = async (deliveryId: string) => {
         try {
-            setLoading(true);
             if (!user?.uid) {
                 throw new Error("Not logged in");
             }
-            await deliveryService.acceptDelivery(deliveryId, user.uid);
-            // Refresh the list of available deliveries
-            fetchAvailableDeliveries();
+
+            Alert.alert(
+                "Accepter cette livraison ?",
+                "Voulez-vous vraiment accepter cette livraison ? Vous serez responsable de sa prise en charge et de sa livraison.",
+                [
+                    {
+                        text: "Annuler",
+                        style: "cancel"
+                    },
+                    {
+                        text: "Accepter",
+                        onPress: async () => {
+                            try {
+                                setLoading(true);
+                                await deliveryService.acceptDelivery(deliveryId, user.uid);
+                                fetchAvailableDeliveries()
+                                setLoading(false);
+
+                                Alert.alert(
+                                    "Livraison acceptée",
+                                    "La livraison a été ajoutée à votre liste de livraisons.",
+                                    [
+                                        {
+                                            text: "OK",
+                                            onPress: () => {
+                                                router.replace({
+                                                    pathname: "/(tabs)",
+                                                    params: { refresh: "true" }
+                                                });
+                                            }
+                                        }
+                                    ]
+                                );
+                            } catch (error) {
+                                console.error("Error accepting delivery:", error);
+                                setLoading(false);
+                                Alert.alert("Erreur", "Impossible d'accepter la livraison. Veuillez réessayer.");
+                            }
+                        }
+                    }
+                ]
+            );
         } catch (err) {
             console.error("Error accepting delivery:", err);
             setError("Failed to accept delivery");
@@ -178,7 +217,7 @@ export default function AvailableDeliveriesScreen() {
                                 Prix: {item.price.toFixed(2)} €
                             </Text>
                             <Text className="text-gray-300 font-cabin">
-                                {item.pickupAddress.components.locality} → {item.deliveryAddress.components.locality}
+                                {item.pickupAddress.components.locality || 'N/A'} → {item.deliveryAddress.components.locality || 'N/A'}
                             </Text>
                         </View>
                         <TouchableOpacity
