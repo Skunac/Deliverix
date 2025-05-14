@@ -3,6 +3,7 @@ import { AuthService } from '@/src/services/auth.service';
 import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
 import { uploadFormImages } from "@/src/utils/image-helpers";
 import { useAuth } from "@/contexts/authContext";
+import { EmbeddedAddress } from '@/src/models/delivery.model';
 
 // Types for Vehicle and Company
 type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck';
@@ -26,10 +27,8 @@ interface Step2FormData {
     birthPlace: string;
     nationality: string;
 
-    // Address
-    street: string;
-    postalCode: string;
-    city: string;
+    // Address - now using EmbeddedAddress
+    address: EmbeddedAddress | null;
 
     // ID Document
     idType: 'identity_card' | 'passport' | 'residence_permit';
@@ -113,6 +112,11 @@ export const DeliveryAgentRegistrationProvider: React.FC<{ children: ReactNode }
             return false;
         }
 
+        if (!step2Data.address) {
+            setRegistrationError('Address is required. Please provide a valid address.');
+            return false;
+        }
+
         setIsRegistering(true);
         setRegistrationError(null);
 
@@ -171,12 +175,7 @@ export const DeliveryAgentRegistrationProvider: React.FC<{ children: ReactNode }
                 birthDate: step2Data.birthDate,
                 birthPlace: step2Data.birthPlace,
                 nationality: step2Data.nationality,
-                address: {
-                    street: step2Data.street,
-                    postalCode: step2Data.postalCode,
-                    city: step2Data.city,
-                    country: 'France'
-                },
+                address: step2Data.address,
                 idType: step2Data.idType,
                 idPhotoUrl: processedFormData.idPhoto,
                 photoUrl: processedFormData.profilePhoto

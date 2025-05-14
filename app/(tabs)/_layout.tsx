@@ -22,19 +22,6 @@ export default function TabsLayout() {
             router.replace('/(auth)');
             return;
         }
-
-        if (!registrationStatus.isCompleted) {
-            // Handle incomplete registration
-            console.log('Registration incomplete', registrationStatus);
-
-            if (registrationStatus.userType === 'delivery') {
-                if (registrationStatus.currentStep === 1) {
-                    router.replace('/(auth)/register-delivery-agent-step1');
-                } else if (registrationStatus.currentStep === 2) {
-                    router.replace('/(auth)/register-delivery-agent-step2');
-                }
-            }
-        }
     }, [user, loading, registrationStatus, router]);
 
     return (

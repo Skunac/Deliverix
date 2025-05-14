@@ -10,11 +10,13 @@ import {generateFormattedAddress} from "@/utils/formatters/address-formatter";
 interface ModernAddressInputProps {
     address: EmbeddedAddress | null;
     onAddressSelected: (address: EmbeddedAddress) => void;
+    isDeliveryAddress?: boolean;
 }
 
 const ModernAddressInput = ({
                                 address,
-                                onAddressSelected
+                                onAddressSelected,
+                                isDeliveryAddress = true
                             }: ModernAddressInputProps) => {
     const [showModal, setShowModal] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -394,24 +396,27 @@ const ModernAddressInput = ({
                                 onChangeText={(text) => handleFieldChange('country', text)}
                                 darkBackground={true}
                             />
+                            {isDeliveryAddress && (
+                                <View>
+                                    <StyledTextInput
+                                        label="Complément d'adresse"
+                                        placeholder="Appartement, étage, digicode, etc."
+                                        value={complementaryAddress}
+                                        onChangeText={handleComplementaryAddressChange}
+                                        darkBackground={true}
+                                    />
 
-                            <StyledTextInput
-                                label="Complément d'adresse"
-                                placeholder="Appartement, étage, digicode, etc."
-                                value={complementaryAddress}
-                                onChangeText={handleComplementaryAddressChange}
-                                darkBackground={true}
-                            />
-
-                            <StyledTextInput
-                                label="Instructions supplémentaires"
-                                placeholder="Instructions spéciales pour le livreur"
-                                multiline
-                                numberOfLines={2}
-                                value={additionalInstructions}
-                                onChangeText={handleAdditionalInstructionsChange}
-                                darkBackground={true}
-                            />
+                                    <StyledTextInput
+                                        label="Instructions supplémentaires"
+                                        placeholder="Instructions spéciales pour le livreur"
+                                        multiline
+                                        numberOfLines={2}
+                                        value={additionalInstructions}
+                                        onChangeText={handleAdditionalInstructionsChange}
+                                        darkBackground={true}
+                                    />
+                                </View>
+                            )}
                         </View>
                     </Animated.View>
                 </View>

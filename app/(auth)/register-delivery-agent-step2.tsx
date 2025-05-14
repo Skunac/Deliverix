@@ -6,17 +6,17 @@ import { GradientView } from "@/components/ui/GradientView";
 import StyledButton from "@/components/ui/StyledButton";
 import StyledTextInput from "@/components/ui/StyledTextInput";
 import { Dropdown } from 'react-native-element-dropdown';
-import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {uploadFormImages} from "@/src/utils/image-helpers";
 import { StyleSheet } from 'react-native';
-import {useDeliveryAgentRegistration} from "@/contexts/deliveryAgentRegistrationContext";
+import { useDeliveryAgentRegistration } from "@/contexts/deliveryAgentRegistrationContext";
+import { EmbeddedAddress } from '@/src/models/delivery.model';
+import ModernAddressInput from '@/components/ui/AddressInput';
+import { Ionicons } from '@expo/vector-icons';
 
 type VehicleType = 'car' | 'motorcycle' | 'bicycle' | 'scooter' | 'van' | 'truck';
-type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
 
 interface FormData {
     // Personal info
@@ -26,10 +26,8 @@ interface FormData {
     birthPlace: string;
     nationality: string;
 
-    // Address
-    street: string;
-    postalCode: string;
-    city: string;
+    // Address - now using EmbeddedAddress
+    address: EmbeddedAddress | null;
 
     // ID Document
     idType: 'identity_card' | 'passport' | 'residence_permit';
@@ -78,9 +76,7 @@ interface FormErrors {
     lastName: string;
     birthPlace: string;
     nationality: string;
-    street: string;
-    postalCode: string;
-    city: string;
+    address: string;
     idPhoto: string;
     licensePhoto: string;
     licenseType: string;
@@ -93,9 +89,8 @@ interface FormErrors {
 }
 
 export default function RegisterDeliveryStep2Screen(): JSX.Element {
-    const deliveryAgentService = new DeliveryAgentService();
     const router = useRouter();
-    const { user, registrationStatus, updateRegistrationStatus, completeRegistration } = useAuth();
+    const { user, registrationStatus } = useAuth();
     const { step1Data, registerDeliveryAgent, isRegistering, registrationError, clearRegistrationError } = useDeliveryAgentRegistration();
 
     // Form fields
@@ -107,10 +102,8 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
         birthPlace: '',
         nationality: '',
 
-        // Address
-        street: '',
-        postalCode: '',
-        city: '',
+        // Address - now using EmbeddedAddress
+        address: null,
 
         // ID Document
         idType: 'identity_card',
@@ -159,9 +152,7 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
         lastName: '',
         birthPlace: '',
         nationality: '',
-        street: '',
-        postalCode: '',
-        city: '',
+        address: '',
         idPhoto: '',
         licensePhoto: '',
         licenseType: '',
@@ -198,6 +189,13 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
         if (field in formErrors) {
             setFormErrors(prev => ({ ...prev, [field]: '' }));
         }
+    };
+
+    const handleAddressSelected = (address: EmbeddedAddress): void => {
+        handleChange('address', address);
+
+        // Clear address error
+        setFormErrors(prev => ({ ...prev, address: '' }));
     };
 
     const openDatePicker = (field: keyof FormData) => {
@@ -302,18 +300,8 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
         }
 
         // Required address
-        if (!formData.street.trim()) {
-            newErrors.street = 'L\'adresse est requise';
-            isValid = false;
-        }
-
-        if (!formData.postalCode.trim()) {
-            newErrors.postalCode = 'Le code postal est requis';
-            isValid = false;
-        }
-
-        if (!formData.city.trim()) {
-            newErrors.city = 'La ville est requise';
+        if (!formData.address || !formData.address.formattedAddress) {
+            newErrors.address = 'L\'adresse est requise';
             isValid = false;
         }
 
@@ -404,6 +392,15 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
 
             // Register the delivery agent using all collected data
             const success = await registerDeliveryAgent(formData);
+            if (success) {
+                // Navigate to the next step or show success message
+                router.replace('/(tabs)');
+            } else {
+                setFormErrors(prev => ({
+                    ...prev,
+                    general: 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.'
+                }));
+            }
         } catch (error) {
             console.error('Registration error:', error);
             setFormErrors(prev => ({
@@ -486,33 +483,23 @@ export default function RegisterDeliveryStep2Screen(): JSX.Element {
                         {renderImageUpload('profilePhoto', 'Photo de profil', false)}
                     </View>
 
-                    {/* Adresse */}
-                    <View className=" p-4 rounded-md mb-4">
+                    {/* Adresse - Now using ModernAddressInput */}
+                    <View className="p-4 rounded-md mb-4">
                         <Text className="text-lg font-cabin-bold text-white mb-3">
-                            Adresse
+                            Adresse <Text className="text-red-500">*</Text>
                         </Text>
 
-                        <StyledTextInput
-                            placeholder="Adresse"
-                            value={formData.street}
-                            onChangeText={(text) => handleChange('street', text)}
-                            error={formErrors.street}
+                        <ModernAddressInput
+                            address={formData.address}
+                            onAddressSelected={handleAddressSelected}
+                            isDeliveryAddress={false}
                         />
 
-                        <StyledTextInput
-                            placeholder="Code postal"
-                            value={formData.postalCode}
-                            onChangeText={(text) => handleChange('postalCode', text)}
-                            error={formErrors.postalCode}
-                            keyboardType="number-pad"
-                        />
-
-                        <StyledTextInput
-                            placeholder="Ville"
-                            value={formData.city}
-                            onChangeText={(text) => handleChange('city', text)}
-                            error={formErrors.city}
-                        />
+                        {formErrors.address && (
+                            <Text className="text-red-500 mt-2">
+                                {formErrors.address}
+                            </Text>
+                        )}
                     </View>
 
                     {/* Pièce d'identité */}

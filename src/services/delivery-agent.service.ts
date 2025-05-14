@@ -9,6 +9,8 @@ import {
     CompanyType,
     VehicleType
 } from '@/src/models/delivery-agent.model';
+import { EmbeddedAddress } from '@/src/models/delivery.model';
+import { createGeoPoint } from '@/utils/formatters/address-formatter';
 
 export class DeliveryAgentService {
     private userCollection = db.collection('users');
@@ -57,7 +59,22 @@ export class DeliveryAgentService {
 
         console.log(`User ${userId} found, creating delivery agent profile`);
 
-        // Create default personal info
+        // Create default embedded address
+        const defaultAddress: EmbeddedAddress = {
+            placeId: 'default',
+            formattedAddress: '',
+            coordinates: createGeoPoint(48.8566, 2.3522),
+            components: {
+                street_number: '',
+                route: '',
+                locality: '',
+                administrative_area_level_1: '',
+                country: 'France',
+                postal_code: ''
+            }
+        };
+
+        // Create default personal info with EmbeddedAddress
         const personalInfo: PersonalInfo = {
             firstName: agentData.personalInfo.firstName,
             lastName: agentData.personalInfo.lastName,
@@ -66,12 +83,7 @@ export class DeliveryAgentService {
             birthDate: new Date(),
             nationality: '',
             birthPlace: '',
-            address: {
-                street: '',
-                postalCode: '',
-                city: '',
-                country: 'France'
-            },
+            address: defaultAddress,
             idType: 'identity_card'
         };
 
@@ -175,7 +187,7 @@ export class DeliveryAgentService {
         }
     }
 
-    // Update personal information
+    // Update personal information with EmbeddedAddress support
     async updatePersonalInfo(userId: string, personalInfo: Partial<PersonalInfo>): Promise<void> {
         try {
             const agentDoc = await this.getAgentDocRef(userId).get();

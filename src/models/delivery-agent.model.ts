@@ -1,5 +1,6 @@
 import { FirestoreDocument } from './common.model';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import {EmbeddedAddress} from "@/src/models/delivery.model";
 
 export type AgentStatus = 'available' | 'busy' | 'offline' | 'pending_approval';
 export type CompanyType = 'micro' | 'sarl' | 'sas' | 'ei' | 'eirl' | 'other';
@@ -11,12 +12,7 @@ export interface PersonalInfo {
     birthDate: Date;
     nationality: string;
     birthPlace: string;
-    address: {
-        street: string;
-        postalCode: string;
-        city: string;
-        country: string;
-    };
+    address: EmbeddedAddress;
     email: string;
     phoneNumber: string;
     idType: 'identity_card' | 'passport' | 'residence_permit';
