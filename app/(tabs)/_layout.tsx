@@ -63,11 +63,21 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
+                name="available-deliveries"
+                options={{
+                    title: "Courses disponibles",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="briefcase" size={size} color={color} />
+                    ),
+                    href: user?.isDeliveryAgent ? '/(tabs)/available-deliveries' : null,
+                }}
+            />
+            <Tabs.Screen
                 name="dashboard"
                 options={{
                     title: "Dashboard",
                     tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="settings" size={size} color={color} />
+                        <Ionicons name="apps" size={size} color={color} />
                     ),
                 }}
             />

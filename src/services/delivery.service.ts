@@ -154,6 +154,65 @@ export class DeliveryService {
         }
     }
 
+
+    async getAvailableDeliveries(): Promise<Delivery[]> {
+        try {
+            const query = this.deliveriesCollection
+                .where('state', '==', 'prepaid')
+                .where('status', '==', 'waiting_for_delivery_guy')
+                .orderBy('createdAt', 'desc');
+
+            const snapshot = await query.get();
+
+            const deliveries = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Delivery[];
+
+            return deliveries;
+        } catch (error) {
+            console.error('Error fetching available deliveries:', error);
+            throw error;
+        }
+    }
+
+    async getAgentDeliveries(agentId: string): Promise<Delivery[]> {
+        try {
+            const query = this.deliveriesCollection
+                .where('deliveryAgentId', '==', agentId)
+                .orderBy('createdAt', 'desc');
+
+            const snapshot = await query.get();
+
+            const deliveries = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Delivery[];
+
+            return deliveries;
+        } catch (error) {
+            console.error('Error fetching agent deliveries:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Accept a delivery (assign it to the delivery agent)
+     */
+    async acceptDelivery(deliveryId: string, agentId: string): Promise<void> {
+        try {
+            // Update the delivery with the delivery agent's ID and new status
+            await this.updateDelivery(deliveryId, {
+                deliveryAgentId: agentId,
+                status: 'delivery_guy_accepted',
+                state: 'processing'
+            });
+        } catch (error) {
+            console.error('Error accepting delivery:', error);
+            throw error;
+        }
+    }
+
     /**
      * Enriches a delivery object with agent information
      */

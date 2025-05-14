@@ -277,22 +277,22 @@ export default function DeliveryDetailsScreen() {
 // Helper functions for status styling
 function getStatusStyle(status: string): object {
     let backgroundColor;
-    let padding = 4
+    let padding = 4;
 
     switch (status) {
-        case 'pending':
+        case 'waiting_for_delivery_guy':
             backgroundColor = '#EAB308'; // yellow-500
             break;
-        case 'accepted':
+        case 'delivery_guy_accepted':
             backgroundColor = '#3B82F6'; // blue-500
             break;
-        case 'in_progress':
-            backgroundColor = '#6366F1'; // indigo-500
+        case 'picked_up':
+            backgroundColor = '#8B5CF6'; // purple/indigo
             break;
         case 'delivered':
             backgroundColor = '#22C55E'; // green-500
             break;
-        case 'cancelled':
+        case 'failed':
             backgroundColor = '#EF4444'; // red-500
             break;
         default:
@@ -304,18 +304,18 @@ function getStatusStyle(status: string): object {
 
 function getStatusText(status: string): string {
     switch (status) {
-        case 'pending':
-            return 'En attente';
-        case 'accepted':
-            return 'Accepté';
-        case 'in_progress':
-            return 'En cours';
+        case 'waiting_for_delivery_guy':
+            return 'En attente de livreur';
+        case 'delivery_guy_accepted':
+            return 'Acceptée par le livreur';
+        case 'picked_up':
+            return 'Récupérée';
         case 'delivered':
-            return 'Livré';
-        case 'cancelled':
-            return 'Annulé';
+            return 'Livrée';
+        case 'failed':
+            return 'Échouée';
         default:
-            return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+            return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
     }
 }
 

@@ -37,10 +37,17 @@ export default function DeliveriesScreen() {
             try {
                 setLoading(true);
                 if (user?.uid) {
-                    const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
-                    console.log("userDeliveries", userDeliveries);
-                    setDeliveries(userDeliveries);
-                    setFilteredDeliveries(userDeliveries);
+                    if (user.isDeliveryAgent) {
+                        const userDeliveries = await deliveryService.getAgentDeliveries(user.uid);
+                        console.log("userDeliveries", userDeliveries);
+                        setDeliveries(userDeliveries);
+                        setFilteredDeliveries(userDeliveries);
+                    } else {
+                        const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
+                        console.log("userDeliveries", userDeliveries);
+                        setDeliveries(userDeliveries);
+                        setFilteredDeliveries(userDeliveries);
+                    }
                 } else {
                     setError("User ID not found");
                 }
@@ -57,11 +64,13 @@ export default function DeliveriesScreen() {
 
     // Filter deliveries when active filter changes
     useEffect(() => {
-        if (activeFilter === 'all') {
-            setFilteredDeliveries(deliveries);
-        } else {
-            const filtered = deliveries.filter(delivery => delivery.state === activeFilter);
-            setFilteredDeliveries(filtered);
+        if (user?.isDeliveryAgent){
+            if (activeFilter === 'all') {
+                setFilteredDeliveries(deliveries);
+            } else {
+                const filtered = deliveries.filter(delivery => delivery.state === activeFilter);
+                setFilteredDeliveries(filtered);
+            }
         }
     }, [activeFilter, deliveries]);
 
@@ -132,7 +141,7 @@ export default function DeliveriesScreen() {
     if (deliveries.length === 0) {
         return (
             <GradientView>
-                {renderFilterTabs()}
+                {user?.isDeliveryAgent && renderFilterTabs()}
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="document-outline" size={48} color="#6b7280" />
                     <Text className="mt-4 text-lg text-white">Aucune livraison trouvée</Text>
@@ -147,7 +156,7 @@ export default function DeliveriesScreen() {
     return (
         <GradientView>
             <View className="flex-1">
-                {renderFilterTabs()}
+                {user?.isDeliveryAgent && renderFilterTabs()}
 
                 {filteredDeliveries.length === 0 ? (
                     <View className="flex-1 justify-center items-center p-4">
