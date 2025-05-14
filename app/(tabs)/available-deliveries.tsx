@@ -166,7 +166,10 @@ export default function AvailableDeliveriesScreen() {
         const latDelta = Math.max(latDiff * 1.25, 0.01);
         const lngDelta = Math.max(lngDiff * 1.25, 0.01);
         return (
-            <View className="bg-white bg-opacity-10 rounded-lg overflow-hidden">
+            <TouchableOpacity
+                onPress={() => handleDeliveryPress(item)}
+                className="bg-white bg-opacity-10 rounded-lg overflow-hidden"
+            >
                 {/* Map with both markers */}
                 <MapView
                     ref={mapRef}
@@ -228,7 +231,7 @@ export default function AvailableDeliveriesScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
