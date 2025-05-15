@@ -248,7 +248,7 @@ export default function DeliveryDetailsScreen() {
                 </ScrollView>
 
                 {/* Bottom Action Bar - Stacked Vertically */}
-                <View className="absolute bottom-0 left-0 right-0 flex-col bg-slate-900/95 px-2 py-1.5 border-t border-white/10">
+                {/*<View className="absolute bottom-0 left-0 right-0 flex-col bg-slate-900/95 px-2 py-1.5 border-t border-white/10">
                     <TouchableOpacity
                         onPress={handleModifyDelivery}
                         style={styles.actionButton}
@@ -268,7 +268,7 @@ export default function DeliveryDetailsScreen() {
                         <Ionicons name="close-outline" size={14} color="#FFFFFF" />
                         <Text className="text-white text-xs font-cabin-medium ml-1">Annuler</Text>
                     </TouchableOpacity>
-                </View>
+                </View>*/}
             </SafeAreaView>
         </GradientView>
     );
