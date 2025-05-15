@@ -22,6 +22,9 @@
         "tabletImage": "./assets/images/splash-icon.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -89,6 +92,12 @@
         "projectId": "341f7ec7-b6d5-432c-9873-10d1f7635428"
       }
     },
-    "owner": "fstck"
+    "owner": "fstck",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/341f7ec7-b6d5-432c-9873-10d1f7635428"
+    }
   }
 }
