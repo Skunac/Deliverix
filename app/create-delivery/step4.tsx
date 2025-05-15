@@ -267,7 +267,7 @@ export default function FacturationScreen() {
                                 <Text className="text-dark font-cabin-bold">B</Text>
                             </View>
                             <Text className="text-white text-lg font-cabin-medium">
-                                Billing Address
+                                Adresse de facturation
                             </Text>
                         </View>
 

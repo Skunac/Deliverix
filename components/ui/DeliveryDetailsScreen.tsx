@@ -222,7 +222,7 @@ export default function DeliveryDetailsScreen() {
                     />
                     <InfoRow
                         label="Catégorie"
-                        value={delivery.packageCategory}
+                        value={getPackageCategoryText(delivery.packageCategory)}
                     />
                     <InfoRow
                         label="Poids"
@@ -316,6 +316,35 @@ function getStatusText(status: string): string {
             return 'Échouée';
         default:
             return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+    }
+}
+
+function getPackageCategoryText(category: string): string {
+    switch (category) {
+        case 'exceptional':
+            return 'Exceptionnel';
+        case 'urgent':
+            return 'Urgent';
+        case 'expensive':
+            return 'Coûteux';
+        case 'sensitive':
+            return 'Sensible';
+        case 'urgent_mechanical_parts':
+            return 'Pièces mécaniques urgentes';
+        case 'aeronotics':
+            return 'Aéronautique';
+        case 'rare':
+            return 'Objet rare';
+        case 'sentimental_value':
+            return 'Valeur sentimentale';
+        case 'products':
+            return 'Produits généraux';
+        case 'it_equipment':
+            return 'Équipement informatique';
+        case 'gift':
+            return 'Cadeau';
+        default:
+            return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
     }
 }
 
