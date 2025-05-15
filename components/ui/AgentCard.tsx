@@ -17,7 +17,7 @@ const AgentCard = ({ agent }: AgentCardProps) => {
 
     if (!agent) {
         return (
-            <View className="bg-slate-800/50 rounded-xl p-4 my-2 items-center justify-center">
+            <View className="rounded-xl p-4 my-2 items-center justify-center">
                 <Ionicons name="person-outline" size={40} color="#ffffff80" />
                 <Text className="text-white opacity-60 italic font-cabin mt-2">Aucun livreur assigné</Text>
             </View>
@@ -25,7 +25,7 @@ const AgentCard = ({ agent }: AgentCardProps) => {
     }
 
     return (
-        <View className="bg-slate-800/50 rounded-xl p-4 my-2">
+        <View className="rounded-xl p-4 my-2">
             <View className="flex-row">
                 {/* Profile Image */}
                 <View className="mr-4">
@@ -65,7 +65,7 @@ const AgentCard = ({ agent }: AgentCardProps) => {
                     {/* Vehicle Info */}
                     <View className="flex-row items-center mt-1">
                         <Ionicons name="car-outline" size={16} color="#ffffff" />
-                        <Text className="ml-1 text-white capitalize font-cabin">{agent.vehicleInfo.model}</Text>
+                        <Text className="ml-1 text-white capitalize font-cabin">{agent.vehicleInfo.type}</Text>
                     </View>
                 </View>
             </View>

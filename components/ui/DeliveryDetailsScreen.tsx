@@ -1,29 +1,31 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {View, Text, ScrollView, ActivityIndicator, StyleSheet, SafeAreaView, TouchableOpacity} from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { DeliveryService } from "@/src/services/delivery.service";
+import { DeliveryService, DeliveryWithAgent } from "@/src/services/delivery.service";
 import { Delivery } from "@/src/models/delivery.model";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
 import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
 import { DeliveryAgent } from '@/src/models/delivery-agent.model';
 import StyledButton from '@/components/ui/StyledButton';
-import { format } from 'date-fns';
 import AgentCard from "@/components/ui/AgentCard";
-import {Separator} from "@/components/ui/Separator";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import { Separator } from "@/components/ui/Separator";
+import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
-import {formatDate, formatTime} from "@/utils/formatters/date-formatters";
+import { formatDate, formatTime } from "@/utils/formatters/date-formatters";
+import { formatCurrency } from "@/utils/formatters/currency-formatter";
+import { useTranslation } from "react-i18next";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { t } = useTranslation();
     const deliveryService = new DeliveryService();
     const deliveryAgentService = new DeliveryAgentService();
     const mapRef = useRef<MapView>(null);
     const GOOGLE_MAPS_API_KEY = "AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c";
 
-    const [delivery, setDelivery] = useState<Delivery | null>(null);
+    const [delivery, setDelivery] = useState<DeliveryWithAgent | null>(null);
     const [agent, setAgent] = useState<DeliveryAgent | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,6 @@ export default function DeliveryDetailsScreen() {
                     console.log("Fetching delivery agent details for ID:", deliveryData.deliveryAgentId);
                     const agentData = await deliveryAgentService.getAgentProfile(deliveryData.deliveryAgentId);
                     setAgent(agentData);
-                    console.log('agent',agent);
                 }
             } catch (err) {
                 console.error("Error fetching delivery details:", err);
@@ -56,9 +57,13 @@ export default function DeliveryDetailsScreen() {
         }
     }, [id]);
 
-    const InfoRow = ({ label, value }: { label: string, value: string | number | React.ReactNode }) => (
-        <View className="flex-row justify-between items-center py-2">
-            <Text className="text-gray-300 font-cabin">{label}</Text>
+    // Helper component for displaying info rows with consistent styling
+    const InfoRow = ({ label, value, icon }: { label: string, value: React.ReactNode, icon?: string }) => (
+        <View className="flex-row items-center border-b py-3 border-gray-400">
+            {icon && (
+                <Ionicons name={icon as any} size={18} color="#5DD6FF" style={{ marginRight: 10 }} />
+            )}
+            <Text className="text-gray-300 font-cabin flex-1">{label}</Text>
             {typeof value === 'string' || typeof value === 'number' ? (
                 <Text className="text-white font-cabin-medium">{value}</Text>
             ) : (
@@ -67,25 +72,21 @@ export default function DeliveryDetailsScreen() {
         </View>
     );
 
-    const SectionTitle = ({ title }: { title: string }) => (
-        <Text className="text-white text-lg font-cabin-semibold mb-3">{title}</Text>
+    // Section title component
+    const SectionTitle = ({ title, icon }: { title: string, icon?: string }) => (
+        <View className="flex-row items-center mb-3 mt-4">
+            {icon && (
+                <Ionicons name={icon as any} size={20} color="#5DD6FF" style={{ marginRight: 8 }} />
+            )}
+            <Text className="text-white text-lg font-cabin-semibold">{title}</Text>
+        </View>
     );
-
-    const handleModifyDelivery = () => {
-        // Implement modify delivery functionality
-        console.log("Modify delivery");
-    };
-
-    const handleCancelDelivery = () => {
-        // Implement cancel delivery functionality
-        console.log("Cancel delivery");
-    };
 
     if (loading) {
         return (
             <GradientView>
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#2EC3F5" />
+                    <ActivityIndicator size="large" color="#5DD6FF" />
                     <Text className="mt-4 text-white font-cabin">Chargement des détails de livraison...</Text>
                 </View>
             </GradientView>
@@ -103,7 +104,7 @@ export default function DeliveryDetailsScreen() {
                         className="mt-6"
                         onPress={() => router.back()}
                     >
-                        <Text className="text-white font-cabin-medium">Retour</Text>
+                        <Text className="text-darker font-cabin-medium">Retour</Text>
                     </StyledButton>
                 </View>
             </GradientView>
@@ -135,39 +136,54 @@ export default function DeliveryDetailsScreen() {
 
     return (
         <GradientView>
-            <SafeAreaView className="flex-1 relative">
-                <ScrollView className="flex-1 p-4 pb-48">
-                    {/* Key Information */}
+            <ScrollView className="flex-1 p-4">
+                {/* Header with delivery ID and status */}
+                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
                     <View className="flex-row justify-between items-center mb-2">
-                        <Text className="text-xl text-white font-cabin-bold">Livraison #{delivery.id.substring(0, 6)}</Text>
-                        <View className="py-1 px-3 rounded-full" style={getStatusStyle(delivery.status)}>
-                            <Text className="text-white font-cabin-medium">{getStatusText(delivery.status)}</Text>
+                        <Text className="text-xl text-white font-cabin-bold">
+                            Livraison #{delivery.id.substring(0, 6)}
+                        </Text>
+                        <View
+                            className="py-1 px-3 rounded-full"
+                            style={getStatusStyle(delivery.status)}
+                        >
+                            <Text className="text-white font-cabin-medium text-xs">
+                                {getStatusText(delivery.status)}
+                            </Text>
                         </View>
                     </View>
 
                     <InfoRow
+                        label={"État"}
+                        value={t(`delivery.state.${delivery.state}`) || delivery.state}
+                        icon="albums-outline"
+                    />
+
+                    <InfoRow
+                        label="Prix"
+                        value={formatCurrency(delivery.price)}
+                        icon="cash-outline"
+                    />
+                </View>
+
+                {/* Delivery Schedule */}
+                <SectionTitle title="Horaire" icon="calendar-outline" />
+                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                    <InfoRow
                         label="Date Prévue"
                         value={formatDate(delivery.scheduledDate)}
+                        icon="today-outline"
                     />
                     <InfoRow
                         label="Créneau Horaire"
                         value={`${formatTime(delivery.timeSlot.start)} - ${formatTime(delivery.timeSlot.end)}`}
+                        icon="time-outline"
                     />
+                </View>
 
-                    <Separator />
-
-                    {/* Price Information */}
-                    <SectionTitle title="Prix" />
-                    <InfoRow
-                        label="Prix Total"
-                        value={`${delivery.price.toFixed(2)} €`}
-                    />
-
-                    <Separator />
-
-                    {/* Delivery Route */}
-                    <SectionTitle title="Itinéraire de Livraison" />
-
+                {/* Map Section */}
+                <SectionTitle title="Itinéraire" icon="map-outline" />
+                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
                     {/* Interactive Map */}
                     <View style={styles.mapContainer}>
                         <MapView
@@ -186,12 +202,12 @@ export default function DeliveryDetailsScreen() {
                                 destination={deliveryCoords}
                                 apikey={GOOGLE_MAPS_API_KEY}
                                 strokeWidth={3}
-                                strokeColor="#4285F4"
+                                strokeColor="#5DD6FF"
                                 mode="DRIVING"
                             />
                             <Marker
                                 coordinate={pickupCoords}
-                                title={"Point de collecte"}
+                                title="Point de collecte"
                                 pinColor="green"
                                 tracksViewChanges={false}
                                 description={delivery.pickupAddress.formattedAddress}
@@ -200,29 +216,57 @@ export default function DeliveryDetailsScreen() {
                                 coordinate={deliveryCoords}
                                 pinColor="red"
                                 tracksViewChanges={false}
-                                title={"Destination"}
+                                title="Destination"
                                 description={delivery.deliveryAddress.formattedAddress}
                             />
                         </MapView>
                     </View>
 
+                    <SectionTitle title="Adresses" icon="location-outline" />
+
+                    <View className="mb-3">
+                        <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-1">Point de collecte:</Text>
+                        <Text className="text-white font-cabin">
+                            {delivery.pickupAddress.formattedAddress}
+                        </Text>
+                        {delivery.pickupAddress.complementaryAddress && (
+                            <Text className="text-gray-300 font-cabin mt-1">
+                                {delivery.pickupAddress.complementaryAddress}
+                            </Text>
+                        )}
+                    </View>
+
                     <Separator />
 
-                    {/* Delivery Agent Information - Using the new AgentCard component */}
-                    <SectionTitle title="Livreur" />
+                    <View className="mt-3 mb-2">
+                        <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-1">Destination:</Text>
+                        <Text className="text-white font-cabin">
+                            {delivery.deliveryAddress.formattedAddress}
+                        </Text>
+                        {delivery.deliveryAddress.complementaryAddress && (
+                            <Text className="text-gray-300 font-cabin mt-1">
+                                {delivery.deliveryAddress.complementaryAddress}
+                            </Text>
+                        )}
+                    </View>
+                </View>
+
+                {/* Delivery Agent Information */}
+                <SectionTitle title="Livreur" icon="person-outline" />
+                <View className="bg-dark p-1 rounded-xl mb-4 border border-gray-700/50">
                     <AgentCard agent={agent} />
+                </View>
 
-                    <Separator />
-
-                    {/* Package Details */}
-                    <SectionTitle title="Détails du Colis" />
+                {/* Package Details */}
+                <SectionTitle title="Détails du Colis" icon="cube-outline" />
+                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
                     <InfoRow
                         label="Description"
                         value={delivery.packageDescription}
                     />
                     <InfoRow
                         label="Catégorie"
-                        value={getPackageCategoryText(delivery.packageCategory)}
+                        value={t(`delivery.packageCategory.${delivery.packageCategory}`) || getPackageCategoryText(delivery.packageCategory)}
                     />
                     <InfoRow
                         label="Poids"
@@ -230,76 +274,72 @@ export default function DeliveryDetailsScreen() {
                     />
                     <InfoRow
                         label="Dimensions"
-                        value={`${delivery.packageDimensions.length} x ${delivery.packageDimensions.width} x ${delivery.packageDimensions.height} cm`}
+                        value={`${delivery.packageDimensions.length} × ${delivery.packageDimensions.width} × ${delivery.packageDimensions.height} cm`}
+                    />
+                    <InfoRow
+                        label="Fragile"
+                        value={delivery.isFragile ? 'Oui' : 'Non'}
+                    />
+                </View>
+
+                {/* Contact Information */}
+                <SectionTitle title="Contacts" icon="people-outline" />
+                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                    <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-2">Expéditeur:</Text>
+                    <InfoRow
+                        label="Nom"
+                        value={delivery.expeditor.firstName}
+                    />
+                    <InfoRow
+                        label="Téléphone"
+                        value={delivery.expeditor.phoneNumber}
                     />
 
-                    <Separator />
+                    <View className="h-4" />
 
-                    {/* Comments */}
-                    <SectionTitle title="Commentaires" />
-                    <Text className="text-white font-cabin-medium mb-1">Commentaire:</Text>
-                    {delivery.comment ? (
-                        <Text className="text-white opacity-80 mb-3 font-cabin">{delivery.comment}</Text>
-                    ) : (
-                        <Text className="text-white opacity-60 italic mb-3 font-cabin">Aucun commentaire</Text>
-                    )}
+                    <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-2">Destinataire:</Text>
+                    <InfoRow
+                        label="Nom"
+                        value={delivery.receiver.firstName}
+                    />
+                    <InfoRow
+                        label="Téléphone"
+                        value={delivery.receiver.phoneNumber}
+                    />
+                </View>
 
-                    <View className="h-8" />
-                </ScrollView>
+                {/* Comments */}
+                {delivery.comment && (
+                    <>
+                        <SectionTitle title="Commentaires" icon="chatbubble-outline" />
+                        <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                            <Text className="text-white font-cabin">{delivery.comment}</Text>
+                        </View>
+                    </>
+                )}
 
-                {/* Bottom Action Bar - Stacked Vertically */}
-                {/*<View className="absolute bottom-0 left-0 right-0 flex-col bg-slate-900/95 px-2 py-1.5 border-t border-white/10">
-                    <TouchableOpacity
-                        onPress={handleModifyDelivery}
-                        style={styles.actionButton}
-                        className="flex-row justify-center bg-primary rounded-xl"
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="create-outline" size={14} color="#FFFFFF" />
-                        <Text className="text-white text-xs font-cabin-medium ml-1">Modifier</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={handleCancelDelivery}
-                        style={[styles.actionButton, {backgroundColor: '#EAB308'}]}
-                        className="flex-row justify-center rounded-xl"
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="close-outline" size={14} color="#FFFFFF" />
-                        <Text className="text-white text-xs font-cabin-medium ml-1">Annuler</Text>
-                    </TouchableOpacity>
-                </View>*/}
-            </SafeAreaView>
+                <View className="h-8" />
+            </ScrollView>
         </GradientView>
     );
 }
 
 // Helper functions for status styling
 function getStatusStyle(status: string): object {
-    let backgroundColor;
-    let padding = 4;
-
     switch (status) {
         case 'waiting_for_delivery_guy':
-            backgroundColor = '#EAB308'; // yellow-500
-            break;
+            return { backgroundColor: '#EAB308' }; // yellow
         case 'delivery_guy_accepted':
-            backgroundColor = '#3B82F6'; // blue-500
-            break;
+            return { backgroundColor: '#3B82F6' }; // blue
         case 'picked_up':
-            backgroundColor = '#8B5CF6'; // purple/indigo
-            break;
+            return { backgroundColor: '#8B5CF6' }; // purple
         case 'delivered':
-            backgroundColor = '#22C55E'; // green-500
-            break;
+            return { backgroundColor: '#22C55E' }; // green
         case 'failed':
-            backgroundColor = '#EF4444'; // red-500
-            break;
+            return { backgroundColor: '#EF4444' }; // red
         default:
-            backgroundColor = '#6B7280'; // gray-500
+            return { backgroundColor: '#6B7280' }; // gray
     }
-
-    return { backgroundColor, padding };
 }
 
 function getStatusText(status: string): string {
@@ -350,23 +390,14 @@ function getPackageCategoryText(category: string): string {
 
 const styles = StyleSheet.create({
     mapContainer: {
-        height: 160,
+        height: 180,
         width: '100%',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderRadius: 8,
         overflow: 'hidden',
-        marginBottom: 4,
+        marginBottom: 16,
     },
     map: {
         width: '100%',
         height: '100%',
-    },
-    actionButton: {
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        marginVertical: 2,
-        marginHorizontal: 16,
-        flexDirection: 'row',
-        alignItems: 'center'
     }
 });
