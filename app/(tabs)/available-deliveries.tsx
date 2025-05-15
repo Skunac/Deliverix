@@ -142,15 +142,15 @@ export default function AvailableDeliveriesScreen() {
             <GradientView>
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="briefcase-outline" size={48} color="#6b7280" />
-                    <Text className="mt-4 text-lg text-white font-cabin-medium">No available deliveries</Text>
+                    <Text className="mt-4 text-lg text-white font-cabin-medium">Aucune livraison</Text>
                     <Text className="mt-2 text-gray-300 text-center font-cabin">
-                        There are currently no deliveries available for you to accept.
+                        Il n’y a actuellement aucune livraison disponible que vous puissiez accepter.
                     </Text>
                     <TouchableOpacity
                         className="mt-6 p-3 bg-primary rounded-lg"
                         onPress={handleRefresh}
                     >
-                        <Text className="text-white font-cabin-medium">Refresh</Text>
+                        <Text className="text-white font-cabin-medium">Recharger</Text>
                     </TouchableOpacity>
                 </View>
             </GradientView>
@@ -170,8 +170,6 @@ export default function AvailableDeliveriesScreen() {
             item.deliveryAddress.obfuscatedCoordinates.latitude,
             item.deliveryAddress.obfuscatedCoordinates.longitude
         );
-
-        console.log(distance);
 
         const mapWidthInKm = latDelta * 111;
 
