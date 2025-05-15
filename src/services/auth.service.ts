@@ -22,7 +22,6 @@ export class AuthService {
             id: firebaseUser.uid,
             uid: firebaseUser.uid,
             email: firebaseUser.email || '',
-            emailVerified: firebaseUser.emailVerified,
             phoneNumber: firebaseUser.phoneNumber,
             userType: 'individual', // Default type until loaded from Firestore
             isDeliveryAgent: false, // Default value until loaded from Firestore
@@ -52,7 +51,6 @@ export class AuthService {
                 ...userData,
                 email: user.email || '',
                 uid: user.uid,
-                emailVerified: user.emailVerified,
                 isDeliveryAgent: isDeliveryAgent,
             };
 
@@ -147,7 +145,6 @@ export class AuthService {
                     id: firebaseUser.uid,
                     uid: firebaseUser.uid,
                     email: firebaseUser.email || '',
-                    emailVerified: firebaseUser.emailVerified,
                     phoneNumber: firebaseUser.phoneNumber,
                     userType: 'individual',
                     isDeliveryAgent: false,
@@ -160,7 +157,6 @@ export class AuthService {
                     id: firebaseUser.uid,
                     uid: firebaseUser.uid,
                     email: firebaseUser.email || '',
-                    emailVerified: firebaseUser.emailVerified,
                     phoneNumber: firebaseUser.phoneNumber,
                     userType: 'individual',
                     isDeliveryAgent: false,

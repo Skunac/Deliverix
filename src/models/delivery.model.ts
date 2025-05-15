@@ -20,6 +20,7 @@ export interface EmbeddedAddress {
     placeId: string;
     formattedAddress: string;
     coordinates: FirebaseFirestoreTypes.GeoPoint;
+    obfuscatedCoordinates: FirebaseFirestoreTypes.GeoPoint;
     complementaryAddress?: string;
     additionalInstructions?: string;
     components: {

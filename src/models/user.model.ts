@@ -13,7 +13,6 @@ export interface BaseUser extends FirestoreDocument {
 
     // Auth-specific fields
     uid?: string;
-    emailVerified?: boolean;
     phoneNumber?: string | null;
 }
 

@@ -4,12 +4,11 @@ import { useRouter } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
 import { DeliveryService } from "@/src/services/delivery.service";
 import { Delivery } from "@/src/models/delivery.model";
-import DeliveryCard from "@/components/ui/DeliveryCard";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import MapView, {Marker} from "react-native-maps";
-import MapViewDirections from "react-native-maps-directions";
+import MapView, {MapCircle, Marker} from "react-native-maps";
+import {calculateDistance} from "@/utils/geo-helper/distance-calculator";
 
 export default function AvailableDeliveriesScreen() {
     const { user } = useAuth();
@@ -27,7 +26,8 @@ export default function AvailableDeliveriesScreen() {
             setLoading(true);
         }
         try {
-            const deliveries = await deliveryService.getAvailableDeliveries();
+            // @ts-ignore
+            const deliveries = await deliveryService.getAvailableDeliveriesForAgent(user.id);
             console.log("Available deliveries:", deliveries.length);
             setAvailableDeliveries(deliveries);
             setError(null);
@@ -47,10 +47,6 @@ export default function AvailableDeliveriesScreen() {
     const handleRefresh = () => {
         setRefreshing(true);
         fetchAvailableDeliveries(false);
-    };
-
-    const handleDeliveryPress = (delivery: Delivery) => {
-        router.push(`/delivery/${delivery.id}`);
     };
 
     const handleAcceptDelivery = async (deliveryId: string) => {
@@ -165,12 +161,28 @@ export default function AvailableDeliveriesScreen() {
         const lngDiff = Math.abs(item.deliveryAddress.coordinates.longitude - item.deliveryAddress.coordinates.longitude);
         const latDelta = Math.max(latDiff * 1.25, 0.01);
         const lngDelta = Math.max(lngDiff * 1.25, 0.01);
+        const distance = calculateDistance(
+            item.pickupAddress.obfuscatedCoordinates.latitude,
+            item.pickupAddress.obfuscatedCoordinates.longitude,
+            item.deliveryAddress.obfuscatedCoordinates.latitude,
+            item.deliveryAddress.obfuscatedCoordinates.longitude
+        );
+
+        console.log(distance);
+
+        const mapWidthInKm = latDelta * 111;
+
+        let circleRadius = distance * 1000 * 0.1;
+
+        circleRadius = Math.max(circleRadius, 500);
+
+        console.log(`Distance: ${distance.toFixed(2)}km, Map width: ~${mapWidthInKm.toFixed(2)}km, Circle radius: ${circleRadius.toFixed(0)}m`);
+
         return (
-            <TouchableOpacity
-                onPress={() => handleDeliveryPress(item)}
+            <View
                 className="bg-white bg-opacity-10 rounded-lg overflow-hidden"
             >
-                {/* Map with both markers */}
+                {/* Map with both circles */}
                 <MapView
                     ref={mapRef}
                     style={styles.mapPlaceholder}
@@ -188,29 +200,27 @@ export default function AvailableDeliveriesScreen() {
                     toolbarEnabled={false}
                     moveOnMarkerPress={false}
                 >
-                    {/* Directions between markers */}
-                    <MapViewDirections
-                        origin={{latitude: item.pickupAddress.coordinates.latitude, longitude: item.pickupAddress.coordinates.longitude}}
-                        destination={{latitude: item.deliveryAddress.coordinates.latitude, longitude: item.deliveryAddress.coordinates.longitude}}
-                        apikey={'AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c'}
-                        strokeWidth={3}
-                        strokeColor="#4285F4"
-                        mode="DRIVING"
-                    />
-                    {/* Pickup marker */}
-                    <Marker
-                        coordinate={{latitude: item.pickupAddress.coordinates.latitude, longitude: item.pickupAddress.coordinates.longitude}}
-                        title={"Point de collecte"}
-                        description={item.pickupAddress.formattedAddress}
-                        pinColor="green"
+                    {/* Circles at obfuscated locations */}
+                    <MapCircle
+                        center={{
+                            latitude: item.pickupAddress.obfuscatedCoordinates.latitude,
+                            longitude: item.pickupAddress.obfuscatedCoordinates.longitude,
+                        }}
+                        radius={circleRadius}
+                        fillColor="rgba(0, 255, 0, 0.2)"
+                        strokeColor="rgba(0, 255, 0, 0.5)"
+                        strokeWidth={2}
                     />
 
-                    {/* Delivery marker */}
-                    <Marker
-                        coordinate={{latitude: item.deliveryAddress.coordinates.latitude, longitude: item.deliveryAddress.coordinates.longitude}}
-                        title={"Destination"}
-                        description={item.deliveryAddress.formattedAddress}
-                        pinColor="red"
+                    <MapCircle
+                        center={{
+                            latitude: item.deliveryAddress.obfuscatedCoordinates.latitude,
+                            longitude: item.deliveryAddress.obfuscatedCoordinates.longitude,
+                        }}
+                        radius={circleRadius}
+                        fillColor="rgba(255, 0, 0, 0.2)"
+                        strokeColor="rgba(255, 0, 0, 0.5)"
+                        strokeWidth={2}
                     />
                 </MapView>
                 <View className="p-3 border-t border-gray-700 bg-dark">
@@ -231,7 +241,7 @@ export default function AvailableDeliveriesScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </TouchableOpacity>
+            </View>
         );
     };
 

@@ -6,6 +6,8 @@ import {
 } from '@/src/models/delivery.model';
 import { DeliveryAgentService } from './delivery-agent.service';
 import {formatAddress} from "@/utils/formatters/address-formatter";
+import {getObfuscatedPoint} from "@/utils/obfuscate/address-obfuscation";
+import {calculateDistance} from "@/utils/geo-helper/distance-calculator";
 
 export interface DeliveryWithAgent extends Delivery {
     agentFirstName?: string;
@@ -104,6 +106,12 @@ export class DeliveryService {
             // Format the billing address
             delivery.billingAddress.formattedAddress = formatAddress(delivery.billingAddress);
 
+            // Obfuscate the coordinates of pickup
+            delivery.pickupAddress.obfuscatedCoordinates = getObfuscatedPoint(delivery.pickupAddress.coordinates.latitude, delivery.pickupAddress.coordinates.longitude, 300);
+
+            // Obfuscate the coordinates of delivery
+            delivery.deliveryAddress.obfuscatedCoordinates = getObfuscatedPoint(delivery.deliveryAddress.coordinates.latitude, delivery.deliveryAddress.coordinates.longitude, 300);
+
             // Add timestamps
             const deliveryWithTimestamps = {
                 ...delivery,
@@ -155,8 +163,27 @@ export class DeliveryService {
     }
 
 
-    async getAvailableDeliveries(): Promise<Delivery[]> {
+    async getAvailableDeliveriesForAgent(agentId: string): Promise<Delivery[]> {
         try {
+            // First get the agent profile to obtain their delivery range and location
+            const agentService = new DeliveryAgentService();
+            const agent = await agentService.getAgentProfile(agentId);
+
+            if (!agent) {
+                throw new Error('Agent not found');
+            }
+
+            // Get the agent's delivery range (defaults to 20km if not set)
+            const deliveryRange = agent.deliveryRange || 20;
+
+            // Get the agent's current location or home address coordinates if current location not available
+            const agentLocation = agent.currentLocation || agent.personalInfo.address.coordinates;
+
+            if (!agentLocation) {
+                throw new Error('Agent location not available');
+            }
+
+            // First, get deliveries that are available
             const query = this.deliveriesCollection
                 .where('state', '==', 'prepaid')
                 .where('status', '==', 'waiting_for_delivery_guy')
@@ -164,14 +191,36 @@ export class DeliveryService {
 
             const snapshot = await query.get();
 
-            const deliveries = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Delivery[];
+            const deliveriesInRange: Delivery[] = [];
 
-            return deliveries;
+            for (const doc of snapshot.docs) {
+                const delivery = { id: doc.id, ...doc.data() } as Delivery;
+
+                // Calculate distance to pickup location
+                const pickupDistance = calculateDistance(
+                    agentLocation.latitude,
+                    agentLocation.longitude,
+                    delivery.pickupAddress.coordinates.latitude,
+                    delivery.pickupAddress.coordinates.longitude
+                );
+
+                // Calculate distance to delivery location
+                const deliveryDistance = calculateDistance(
+                    agentLocation.latitude,
+                    agentLocation.longitude,
+                    delivery.deliveryAddress.coordinates.latitude,
+                    delivery.deliveryAddress.coordinates.longitude
+                );
+
+                // Both locations must be within the agent's delivery range
+                if (pickupDistance <= deliveryRange && deliveryDistance <= deliveryRange) {
+                    deliveriesInRange.push(delivery);
+                }
+            }
+
+            return deliveriesInRange;
         } catch (error) {
-            console.error('Error fetching available deliveries:', error);
+            console.error('Error fetching available deliveries for agent:', error);
             throw error;
         }
     }
