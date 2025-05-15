@@ -1,4 +1,4 @@
-{
+  {
   "cli": {
     "version": ">= 3.16.0",
     "appVersionSource": "remote"
@@ -7,57 +7,15 @@
     "development": {
       "channel": "development",
       "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug"
-      },
-      "ios": {
-        "simulator": true
-      }
-    },
-    "iap-testing": {
-      "distribution": "internal",
-      "autoIncrement": true,
-      "env": {
-        "NODE_ENV": "production"
-      },
-      "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
-      }
+      "distribution": "internal"
     },
     "preview": {
       "channel": "preview",
-      "distribution": "internal",
-      "env": {
-        "NODE_ENV": "production"
-      },
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
-      }
+      "distribution": "internal"
     },
     "production": {
       "channel": "production",
-      "autoIncrement": true,
-      "env": {
-        "NODE_ENV": "production"
-      },
-      "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "android": {
-        "track": "production"
-      }
+      "autoIncrement": true
     }
   }
 }

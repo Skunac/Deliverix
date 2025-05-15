@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "rapid-royal",
-    "slug": "rapid-royal",
+    "name": "primex",
+    "slug": "primex",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myapp",
@@ -13,7 +13,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fstck.rapidroyalstaging",
@@ -25,7 +24,6 @@
         "backgroundColor": "#ffffff"
       }
     },
-
     "android": {
       "package": "com.fstck.rapidroyalstaging",
       "googleServicesFile": "./google-services.json",
@@ -39,13 +37,11 @@
         "backgroundColor": "#ffffff"
       }
     },
-
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -75,15 +71,24 @@
           "enableGooglePay": true
         }
       ],
-      ["react-native-maps"]
+      [
+        "react-native-maps"
+      ]
     ],
-
     "experiments": {
       "typedRoutes": true
     },
-
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "341f7ec7-b6d5-432c-9873-10d1f7635428"
+      }
+    },
+    "owner": "fstck"
   }
 }
