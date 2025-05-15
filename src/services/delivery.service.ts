@@ -225,11 +225,15 @@ export class DeliveryService {
         }
     }
 
-    async getAgentDeliveries(agentId: string): Promise<Delivery[]> {
+    async getAgentDeliveries(agentId: string, state?: DeliveryState): Promise<Delivery[]> {
         try {
-            const query = this.deliveriesCollection
+            let query = this.deliveriesCollection
                 .where('deliveryAgentId', '==', agentId)
                 .orderBy('createdAt', 'desc');
+
+            if (state) {
+                query = query.where('state', '==', state);
+            }
 
             const snapshot = await query.get();
 
@@ -237,6 +241,8 @@ export class DeliveryService {
                 id: doc.id,
                 ...doc.data()
             })) as Delivery[];
+
+            console.log("Agent deliveriessssssss:", deliveries);
 
             return deliveries;
         } catch (error) {

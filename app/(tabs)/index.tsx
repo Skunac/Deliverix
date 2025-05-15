@@ -43,17 +43,15 @@ export default function DeliveriesScreen() {
             }
 
             if (user?.uid) {
+                let userDeliveries: Delivery[] = [];
                 if (user.isDeliveryAgent) {
-                    const userDeliveries = await deliveryService.getAgentDeliveries(user.uid);
-                    console.log("Agent deliveries:", userDeliveries);
-                    setDeliveries(userDeliveries);
-                    setFilteredDeliveries(userDeliveries);
+                    userDeliveries = await deliveryService.getAgentDeliveries(user.uid);
                 } else {
-                    const userDeliveries = await deliveryService.getUserDeliveries(user.uid);
-                    console.log("User deliveries:", userDeliveries);
-                    setDeliveries(userDeliveries);
-                    setFilteredDeliveries(userDeliveries);
+                    userDeliveries = await deliveryService.getUserDeliveries(user.uid);
                 }
+                console.log("Agent deliveries:", userDeliveries);
+                setDeliveries(userDeliveries);
+                setFilteredDeliveries(userDeliveries);
             } else {
                 setError("User ID not found");
             }

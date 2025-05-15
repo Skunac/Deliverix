@@ -68,7 +68,10 @@ export default function AvailableDeliveriesScreen() {
                         onPress: async () => {
                             try {
                                 setLoading(true);
-                                await deliveryService.acceptDelivery(deliveryId, user.uid);
+                                if (user?.uid) {
+                                    await deliveryService.acceptDelivery(deliveryId, user.uid);
+
+                                }
                                 fetchAvailableDeliveries()
                                 setLoading(false);
 

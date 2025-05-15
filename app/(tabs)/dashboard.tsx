@@ -23,21 +23,27 @@ export default function Dashboard() {
                 setLoading(true);
 
                 if (user && user.uid) {
-                    // Fetch all the required delivery states in parallel
-                    const [prepaidDeliveries, processingDeliveries, waitingDeliveries] = await Promise.all([
-                        deliveryService.getUserDeliveries(user.uid, 'prepaid'),
-                        deliveryService.getUserDeliveries(user.uid, 'processing'),
-                        deliveryService.getUserDeliveries(user.uid, 'waiting_for_payment')
-                    ]);
+                    if (user.isDeliveryAgent){
+                        console.log("Fetching agent deliveries");
+                        const deliveries = await deliveryService.getAgentDeliveries(user.uid, 'processing');
+                        setDeliveries(deliveries);
+                    } else {
+                        // Fetch all the required delivery states in parallel
+                        const [prepaidDeliveries, processingDeliveries, waitingDeliveries] = await Promise.all([
+                            deliveryService.getUserDeliveries(user.uid, 'prepaid'),
+                            deliveryService.getUserDeliveries(user.uid, 'processing'),
+                            deliveryService.getUserDeliveries(user.uid, 'waiting_for_payment')
+                        ]);
 
-                    // Combine the results - already enriched with agent info
-                    const allDeliveries = [
-                        ...prepaidDeliveries,
-                        ...processingDeliveries,
-                        ...waitingDeliveries
-                    ];
+                        // Combine the results - already enriched with agent info
+                        const allDeliveries = [
+                            ...prepaidDeliveries,
+                            ...processingDeliveries,
+                            ...waitingDeliveries
+                        ];
 
-                    setDeliveries(allDeliveries);
+                        setDeliveries(allDeliveries);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching deliveries:", error);
@@ -56,11 +62,13 @@ export default function Dashboard() {
     return (
         <GradientView>
             <View style={{ flex: 1 }}>
-                <StyledButton shadow={true} className="m-4" onPress={() => router.push(`/create-delivery`)}>
-                    <Text className="font-cabin-medium text-xl">
-                        {t("delivery.orderDelivery") || "Commander une course"}
-                    </Text>
-                </StyledButton>
+                {!user?.isDeliveryAgent && (
+                    <StyledButton shadow={true} className="m-4" onPress={() => router.push(`/create-delivery`)}>
+                        <Text className="font-cabin-medium text-xl">
+                            {t("delivery.orderDelivery") || "Commander une course"}
+                        </Text>
+                    </StyledButton>
+                )}
 
                 <View className="m-4" style={{ flex: 1 }}>
                     {deliveries.length > 1
