@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { DeliveryAgent } from '@/src/models/delivery-agent.model';
+import {useTranslation} from "react-i18next";
 
 interface AgentCardProps {
     agent: DeliveryAgent | null;
@@ -9,6 +10,7 @@ interface AgentCardProps {
 
 const AgentCard = ({ agent }: AgentCardProps) => {
     const [imageError, setImageError] = useState(false);
+    const { t } = useTranslation();
 
     // Testing with a simple public image
     const testImageUrl = 'https://reactnative.dev/img/tiny_logo.png';
@@ -65,7 +67,7 @@ const AgentCard = ({ agent }: AgentCardProps) => {
                     {/* Vehicle Info */}
                     <View className="flex-row items-center mt-1">
                         <Ionicons name="car-outline" size={16} color="#ffffff" />
-                        <Text className="ml-1 text-white capitalize font-cabin">{agent.vehicleInfo.type}</Text>
+                        <Text className="ml-1 text-white capitalize font-cabin">{t(`delivery.vehicleType.${agent.vehicleInfo.type}`)}</Text>
                     </View>
                 </View>
             </View>

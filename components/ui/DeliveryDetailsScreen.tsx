@@ -152,15 +152,12 @@ export default function DeliveryDetailsScreen() {
                 {/* Header with delivery ID and status */}
                 <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
                     <View className="flex-row justify-between items-center mb-2">
-                        <Text className="text-xl text-white font-cabin-bold">
-                            Livraison #{delivery.id.substring(0, 6)}
-                        </Text>
                         <View
                             className="py-1 px-3 rounded-full"
                             style={getStatusStyle(delivery.status)}
                         >
-                            <Text className="text-white font-cabin-medium text-xs">
-                                {getStatusText(delivery.status)}
+                            <Text className="text-white font-cabin-medium">
+                                {t(`delivery.status.${delivery.status}`)}
                             </Text>
                         </View>
                     </View>
@@ -292,7 +289,7 @@ export default function DeliveryDetailsScreen() {
                     />
                     <InfoRow
                         label="Catégorie"
-                        value={t(`delivery.packageCategory.${delivery.packageCategory}`) || getPackageCategoryText(delivery.packageCategory)}
+                        value={t(`delivery.packageCategory.${delivery.packageCategory}`)}
                     />
                     <InfoRow
                         label="Poids"
@@ -365,52 +362,6 @@ function getStatusStyle(status: string): object {
             return { backgroundColor: '#EF4444' }; // red
         default:
             return { backgroundColor: '#6B7280' }; // gray
-    }
-}
-
-function getStatusText(status: string): string {
-    switch (status) {
-        case 'waiting_for_delivery_guy':
-            return 'En attente de livreur';
-        case 'delivery_guy_accepted':
-            return 'Acceptée par le livreur';
-        case 'picked_up':
-            return 'Récupérée';
-        case 'delivered':
-            return 'Livrée';
-        case 'failed':
-            return 'Échouée';
-        default:
-            return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
-    }
-}
-
-function getPackageCategoryText(category: string): string {
-    switch (category) {
-        case 'exceptional':
-            return 'Exceptionnel';
-        case 'urgent':
-            return 'Urgent';
-        case 'expensive':
-            return 'Coûteux';
-        case 'sensitive':
-            return 'Sensible';
-        case 'urgent_mechanical_parts':
-            return 'Pièces mécaniques urgentes';
-        case 'aeronotics':
-            return 'Aéronautique';
-        case 'rare':
-            return 'Objet rare';
-        case 'sentimental_value':
-            return 'Valeur sentimentale';
-        case 'products':
-            return 'Produits généraux';
-        case 'it_equipment':
-            return 'Équipement informatique';
-        case 'gift':
-            return 'Cadeau';
-        default:
-            return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
     }
 }
 

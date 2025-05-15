@@ -98,10 +98,10 @@
     },
     "status": {
       "waiting_for_delivery_guy": "En attente du livreur",
-      "delivery_guy_accepted": "Accepté par le livreur",
-      "picked_up": "Récupéré",
-      "delivered": "Livré",
-      "failed": "Échoué"
+      "delivery_guy_accepted": "Acceptée par le livreur",
+      "picked_up": "Récupérée",
+      "delivered": "Livrée",
+      "failed": "Échouée"
     },
     "packageCategory": {
       "exceptional": "Articles exceptionnels",
@@ -138,6 +138,14 @@
       "from": "Du",
       "to": "au",
       "at": "à"
+    },
+    "vehicleType": {
+      "car": "moto",
+      "motorcycle": "moto",
+      "bicycle": "vélo",
+      "scooter": "scooter",
+      "van": "fourgon",
+      "truck": "camion"
     }
   }
 }

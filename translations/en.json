@@ -138,6 +138,14 @@
       "from": "From",
       "to": "to",
       "at": "at"
+    },
+    "vehicleType": {
+      "car": "Car",
+      "motorcycle": "Motorcycle",
+      "bicycle": "Bicycle",
+      "scooter": "Scooter",
+      "van": "Van",
+      "truck": "Truck"
     }
   }
 }
