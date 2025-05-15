@@ -1,5 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet, SafeAreaView } from 'react-native';
+import {
+    View,
+    Text,
+    ScrollView,
+    ActivityIndicator,
+    StyleSheet,
+    SafeAreaView,
+    TouchableOpacity,
+    Linking,
+    Platform,
+    Alert
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { DeliveryService, DeliveryWithAgent } from "@/src/services/delivery.service";
 import { Delivery } from "@/src/models/delivery.model";
@@ -15,6 +26,7 @@ import MapViewDirections from "react-native-maps-directions";
 import { formatDate, formatTime } from "@/utils/formatters/date-formatters";
 import { formatCurrency } from "@/utils/formatters/currency-formatter";
 import { useTranslation } from "react-i18next";
+import {NavigationButton} from "@/components/ui/NavigationButton";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -220,6 +232,20 @@ export default function DeliveryDetailsScreen() {
                                 description={delivery.deliveryAddress.formattedAddress}
                             />
                         </MapView>
+                    </View>
+
+                    {/* Navigation App Shortcuts */}
+                    <View className="flex-row justify-around my-3">
+                        <NavigationButton
+                            app="google"
+                            origin={pickupCoords}
+                            destination={deliveryCoords}
+                        />
+                        <NavigationButton
+                            app="waze"
+                            origin={pickupCoords}
+                            destination={deliveryCoords}
+                        />
                     </View>
 
                     <SectionTitle title="Adresses" icon="location-outline" />

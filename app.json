@@ -24,7 +24,11 @@
         "backgroundColor": "#ffffff"
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "comgooglemaps",
+          "waze"
+        ]
       }
     },
     "android": {
