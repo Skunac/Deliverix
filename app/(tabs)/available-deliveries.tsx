@@ -227,18 +227,23 @@ export default function AvailableDeliveriesScreen() {
                 <View className="p-3 border-t border-gray-700 bg-dark">
                     <View className="flex-row justify-between items-center">
                         <View>
+                            <Text>DATE d'order</Text>
                             <Text className="text-white font-cabin-medium">
-                                Prix: {item.price.toFixed(2)} €
+                                {item.price.toFixed(2)} €
                             </Text>
                             <Text className="text-gray-300 font-cabin">
                                 {item.pickupAddress.components.locality || 'N/A'} → {item.deliveryAddress.components.locality || 'N/A'}
+                            </Text>
+                            <Text className="text-gray-300 font-cabin">
+                               Pour une livraison le 15 mai 2025
+                                entre 14h et 16h
                             </Text>
                         </View>
                         <TouchableOpacity
                             className="bg-primary px-4 py-2 rounded-lg"
                             onPress={() => handleAcceptDelivery(item.id)}
                         >
-                            <Text className="text-darker font-cabin-medium">Accept</Text>
+                            <Text className="text-darker font-cabin-medium">Accepter</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

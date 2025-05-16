@@ -296,16 +296,6 @@ export default function FacturationScreen() {
                                             <Text className="text-white font-cabin">
                                                 {userProfile.billingAddress.formattedAddress}
                                             </Text>
-                                            {userProfile.billingAddress.components.postal_code && userProfile.billingAddress.components.locality && (
-                                                <Text className="text-gray-300 font-cabin mt-1">
-                                                    {userProfile.billingAddress.components.postal_code} {userProfile.billingAddress.components.locality}
-                                                </Text>
-                                            )}
-                                            {userProfile.billingAddress.components.country && (
-                                                <Text className="text-gray-300 font-cabin mt-1">
-                                                    {userProfile.billingAddress.components.country}
-                                                </Text>
-                                            )}
                                         </View>
                                     )}
                                 </View>

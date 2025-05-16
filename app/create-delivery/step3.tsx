@@ -175,12 +175,12 @@ export default function ScheduleScreen() {
                     </Text>
 
                     <StyledTextInput
-                        label="Commentaire"
                         placeholder="Informations pour le livreur"
                         multiline
-                        numberOfLines={3}
+                        numberOfLines={5}
                         value={formState.comment}
                         onChangeText={(text) => updateFormState({ comment: text })}
+                        darkBackground={true}
                     />
                 </View>
 

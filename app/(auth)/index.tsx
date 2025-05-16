@@ -10,7 +10,7 @@ export default function AuthHomeScreen() {
         <GradientView>
             <View className="flex-1 justify-center p-5">
                 <View className="items-center mb-8">
-                    <Text className="text-3xl font-cabin-bold text-white">RapidRoyal</Text>
+                    <Text className="text-3xl font-cabin-bold text-white">Primex</Text>
                 </View>
 
                 <StyledButton shadow={true} variant={"primary"} onPress={() => router.push("/(auth)/register-type")}>

@@ -55,10 +55,6 @@ export default function CreateDeliveryLayout() {
                     options={{ title: 'Récapitulatif de la commande' }}
                 />
                 <Stack.Screen
-                    name="step6"
-                    options={{ title: 'Paiement' }}
-                />
-                <Stack.Screen
                     name="confirmation"
                     options={{ title: 'Confirmation', headerBackVisible: false }}
                 />

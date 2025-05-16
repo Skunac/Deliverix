@@ -21,10 +21,14 @@ export const StyledTextInput: React.FC<StyledTextInputProps> = ({
                                                                     darkBackground = true,
                                                                     className = "",
                                                                     style,
+                                                                    multiline = false,
+                                                                    numberOfLines = 3,
                                                                     ...props
                                                                 }) => {
     const borderClass = showBorder ? "border border-gray-300" : "";
     const errorBorderClass = error ? "border-red-500" : "";
+
+    const textInputHeight = multiline ? (numberOfLines * 24) : undefined;
 
     return (
         <View className={`mb-4 ${containerClassName}`}>
@@ -37,7 +41,16 @@ export const StyledTextInput: React.FC<StyledTextInputProps> = ({
             <TextInput
                 className={`${borderClass} ${errorBorderClass} p-3 rounded-lg ${className}`}
                 placeholderTextColor="#9ca3af"
-                style={[darkBackground ? styles.darkBackground : styles.lightBackground, style]}
+                style={[
+                    darkBackground ? styles.darkBackground : styles.lightBackground,
+                    multiline ? {
+                        height: textInputHeight,
+                        textAlignVertical: 'top'
+                    } : {},
+                    style
+                ]}
+                multiline={multiline}
+                numberOfLines={multiline ? numberOfLines : undefined}
                 {...props}
             />
 
@@ -52,7 +65,7 @@ export const StyledTextInput: React.FC<StyledTextInputProps> = ({
 
 const styles = StyleSheet.create({
     darkBackground: {
-        backgroundColor: '#0D1C22',
+        backgroundColor: '#060d0f',
         color: 'white',
     },
     lightBackground: {

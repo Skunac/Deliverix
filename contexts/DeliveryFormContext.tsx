@@ -57,8 +57,16 @@ const initialState: DeliveryFormState = {
 
     // Step 3
     scheduledDate: new Date(),
-    timeSlotStart: null,
-    timeSlotEnd: null,
+    timeSlotStart: (() => {
+        const date = new Date();
+        date.setHours(8, 0, 0, 0);
+        return date;
+    })(),
+    timeSlotEnd: (() => {
+        const date = new Date();
+        date.setHours(12, 0, 0, 0);
+        return date;
+    })(),
     comment: '',
 
     // Step 4
