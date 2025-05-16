@@ -5,37 +5,34 @@ import {
     ScrollView,
     ActivityIndicator,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
-    Linking,
-    Platform,
-    Alert
+    Alert,
+    Image
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { DeliveryService, DeliveryWithAgent } from "@/src/services/delivery.service";
-import { Delivery } from "@/src/models/delivery.model";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
 import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
 import { DeliveryAgent } from '@/src/models/delivery-agent.model';
-import StyledButton from '@/components/ui/StyledButton';
-import AgentCard from "@/components/ui/AgentCard";
-import { Separator } from "@/components/ui/Separator";
 import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import { formatDate, formatTime } from "@/utils/formatters/date-formatters";
 import { formatCurrency } from "@/utils/formatters/currency-formatter";
 import { useTranslation } from "react-i18next";
-import {NavigationButton} from "@/components/ui/NavigationButton";
+import { NavigationButton } from "@/components/ui/NavigationButton";
+import { Separator } from "@/components/ui/Separator";
+import {useAuth} from "@/contexts/authContext";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const { t } = useTranslation();
+    const mapRef = useRef<MapView>(null);
     const deliveryService = new DeliveryService();
     const deliveryAgentService = new DeliveryAgentService();
-    const mapRef = useRef<MapView>(null);
     const GOOGLE_MAPS_API_KEY = "AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c";
+    const { user } = useAuth();
 
     const [delivery, setDelivery] = useState<DeliveryWithAgent | null>(null);
     const [agent, setAgent] = useState<DeliveryAgent | null>(null);
@@ -69,30 +66,23 @@ export default function DeliveryDetailsScreen() {
         }
     }, [id]);
 
-    // Helper component for displaying info rows with consistent styling
-    const InfoRow = ({ label, value, icon }: { label: string, value: React.ReactNode, icon?: string }) => (
-        <View className="flex-row items-center border-b py-3 border-gray-400">
-            {icon && (
-                <Ionicons name={icon as any} size={18} color="#5DD6FF" style={{ marginRight: 10 }} />
-            )}
-            <Text className="text-gray-300 font-cabin flex-1">{label}</Text>
-            {typeof value === 'string' || typeof value === 'number' ? (
-                <Text className="text-white font-cabin-medium">{value}</Text>
-            ) : (
-                value
-            )}
-        </View>
-    );
-
-    // Section title component
-    const SectionTitle = ({ title, icon }: { title: string, icon?: string }) => (
-        <View className="flex-row items-center mb-3 mt-4">
-            {icon && (
-                <Ionicons name={icon as any} size={20} color="#5DD6FF" style={{ marginRight: 8 }} />
-            )}
-            <Text className="text-white text-lg font-cabin-semibold">{title}</Text>
-        </View>
-    );
+    // Helper function for status styling
+    function getStatusStyle(status: string): object {
+        switch (status) {
+            case 'waiting_for_delivery_guy':
+                return { backgroundColor: '#EAB308' }; // yellow
+            case 'delivery_guy_accepted':
+                return { backgroundColor: '#3B82F6' }; // blue
+            case 'picked_up':
+                return { backgroundColor: '#8B5CF6' }; // purple
+            case 'delivered':
+                return { backgroundColor: '#22C55E' }; // green
+            case 'failed':
+                return { backgroundColor: '#EF4444' }; // red
+            default:
+                return { backgroundColor: '#6B7280' }; // gray
+        }
+    }
 
     if (loading) {
         return (
@@ -111,13 +101,12 @@ export default function DeliveryDetailsScreen() {
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
                     <Text className="mt-4 text-lg text-red-500 font-cabin">{error || "Livraison non trouvée"}</Text>
-                    <StyledButton
-                        variant="primary"
-                        className="mt-6"
+                    <TouchableOpacity
+                        className="mt-6 p-3 bg-primary rounded-lg"
                         onPress={() => router.back()}
                     >
                         <Text className="text-darker font-cabin-medium">Retour</Text>
-                    </StyledButton>
+                    </TouchableOpacity>
                 </View>
             </GradientView>
         );
@@ -149,9 +138,86 @@ export default function DeliveryDetailsScreen() {
     return (
         <GradientView>
             <ScrollView className="flex-1 p-4">
-                {/* Header with delivery ID and status */}
+                {/* Delivery Agent Information with Avatar - Top Section */}
                 <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                    <View className="flex-row justify-between items-center mb-2">
+                    <Text className="text-white text-lg font-cabin-semibold mb-3">Livreur</Text>
+
+                    <View className="flex-row">
+                        {/* Agent Information */}
+                        <View className="flex-1 mr-3">
+                            {agent ? (
+                                <>
+                                    <Text className="text-white font-cabin-semibold text-base">
+                                        {agent.personalInfo.firstName} {agent.personalInfo.lastName}
+                                    </Text>
+
+                                    {/* Rating */}
+                                    <View className="flex-row items-center mt-1">
+                                        <Ionicons name="star" size={16} color="#f59e0b" />
+                                        <Text className="ml-1 text-white font-cabin">{agent.rating.toFixed(1)} / 5</Text>
+                                    </View>
+
+                                    {/* Vehicle Info */}
+                                    <View className="flex-row items-center mt-1">
+                                        <Ionicons name="car-outline" size={16} color="#ffffff" />
+                                        <Text className="ml-1 text-white capitalize font-cabin">
+                                            {t(`delivery.vehicleType.${agent.vehicleInfo.type}`)}
+                                        </Text>
+                                    </View>
+
+                                    {/* Phone Info */}
+                                    <View className="flex-row items-center mt-1">
+                                        <Ionicons name="call-outline" size={16} color="#ffffff" />
+                                        <Text className="ml-1 text-white font-cabin">
+                                            {agent.personalInfo.phoneNumber}
+                                        </Text>
+                                    </View>
+                                </>
+                            ) : (
+                                <View className="items-start">
+                                    <Text className="text-white opacity-60 italic font-cabin mt-2">
+                                        Aucun livreur assigné
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Agent Avatar */}
+                        {agent && (
+                            <View className="items-end justify-center">
+                                {agent.personalInfo.photoUrl ? (
+                                    <Image
+                                        source={{ uri: agent.personalInfo.photoUrl }}
+                                        style={{
+                                            width: 70,
+                                            height: 70,
+                                            borderRadius: 35,
+                                            borderWidth: 2,
+                                            borderColor: '#2EC3F5'
+                                        }}
+                                    />
+                                ) : (
+                                    <View style={{
+                                        width: 70,
+                                        height: 70,
+                                        borderRadius: 35,
+                                        backgroundColor: '#1a2e35',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        borderWidth: 2,
+                                        borderColor: '#2EC3F5'
+                                    }}>
+                                        <Ionicons name="person" size={36} color="#5DD6FF" />
+                                    </View>
+                                )}
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* Status Badge and Price - Middle Section */}
+                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                    <View className="flex-row justify-between items-center">
                         <View
                             className="py-1 px-3 rounded-full"
                             style={getStatusStyle(delivery.status)}
@@ -160,40 +226,22 @@ export default function DeliveryDetailsScreen() {
                                 {t(`delivery.status.${delivery.status}`)}
                             </Text>
                         </View>
+
+                        <View>
+                            <Text className="text-white font-cabin-semibold text-right">
+                                {formatCurrency(delivery.price)}
+                            </Text>
+                        </View>
                     </View>
-
-                    <InfoRow
-                        label={"État"}
-                        value={t(`delivery.state.${delivery.state}`) || delivery.state}
-                        icon="albums-outline"
-                    />
-
-                    <InfoRow
-                        label="Prix"
-                        value={formatCurrency(delivery.price)}
-                        icon="cash-outline"
-                    />
                 </View>
 
-                {/* Delivery Schedule */}
-                <SectionTitle title="Horaire" icon="calendar-outline" />
+                {/* Delivery Details Section with Map */}
                 <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                    <InfoRow
-                        label="Date Prévue"
-                        value={formatDate(delivery.scheduledDate)}
-                        icon="today-outline"
-                    />
-                    <InfoRow
-                        label="Créneau Horaire"
-                        value={`${formatTime(delivery.timeSlot.start)} - ${formatTime(delivery.timeSlot.end)}`}
-                        icon="time-outline"
-                    />
-                </View>
+                    <Text className="text-white font-cabin-semibold text-lg mb-3">
+                        Détails de la course
+                    </Text>
 
-                {/* Map Section */}
-                <SectionTitle title="Itinéraire" icon="map-outline" />
-                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                    {/* Interactive Map */}
+                    {/* Map Section */}
                     <View style={styles.mapContainer}>
                         <MapView
                             ref={mapRef}
@@ -232,137 +280,155 @@ export default function DeliveryDetailsScreen() {
                     </View>
 
                     {/* Navigation App Shortcuts */}
-                    <View className="flex-row justify-around my-3">
-                        <NavigationButton
-                            app="google"
-                            origin={pickupCoords}
-                            destination={deliveryCoords}
-                        />
-                        <NavigationButton
-                            app="waze"
-                            origin={pickupCoords}
-                            destination={deliveryCoords}
-                        />
-                    </View>
+                    {user?.isDeliveryAgent && (
+                        <View className="flex-row justify-around my-3">
+                            <NavigationButton
+                                app="google"
+                                origin={pickupCoords}
+                                destination={deliveryCoords}
+                            />
+                            <NavigationButton
+                                app="waze"
+                                origin={pickupCoords}
+                                destination={deliveryCoords}
+                            />
+                        </View>
+                    )}
 
-                    <SectionTitle title="Adresses" icon="location-outline" />
+                    {/* Pickup Information */}
+                    <View className="bg-gray-800/50 p-3 rounded-lg mb-3">
+                        <View className="flex-row items-center mb-2">
+                            <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2">
+                                <Ionicons name="location" size={18} color="white" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium">Point de collecte</Text>
+                                <Text className="text-white font-cabin">{delivery.pickupAddress.formattedAddress}</Text>
+                                {delivery.pickupAddress.complementaryAddress && (
+                                    <Text className="text-gray-300 font-cabin">
+                                        {delivery.pickupAddress.complementaryAddress}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
 
-                    <View className="mb-3">
-                        <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-1">Point de collecte:</Text>
-                        <Text className="text-white font-cabin">
-                            {delivery.pickupAddress.formattedAddress}
-                        </Text>
-                        {delivery.pickupAddress.complementaryAddress && (
-                            <Text className="text-gray-300 font-cabin mt-1">
-                                {delivery.pickupAddress.complementaryAddress}
+                        {/* Pickup Time */}
+                        <View className="bg-black/20 p-2 rounded-lg mt-1">
+                            <Text className="text-primary font-cabin-medium text-sm">Créneau de ramassage:</Text>
+                            <Text className="text-white font-cabin">
+                                {formatDate(delivery.scheduledDate)} de {formatTime(delivery.timeSlot.start)} à {formatTime(delivery.timeSlot.end)}
                             </Text>
-                        )}
+                        </View>
+
+                        {/* Expeditor Information */}
+                        <View className="mt-2 pt-2 border-t border-gray-700">
+                            <Text className="text-primary font-cabin-medium text-sm">Contact expéditeur:</Text>
+                            <Text className="text-white font-cabin">{delivery.expeditor.firstName}</Text>
+                            <Text className="text-white font-cabin">{delivery.expeditor.phoneNumber}</Text>
+                        </View>
                     </View>
 
-                    <Separator />
+                    {/* Delivery Information */}
+                    <View className="bg-gray-800/50 p-3 rounded-lg">
+                        <View className="flex-row items-center mb-2">
+                            <View className="w-8 h-8 rounded-full bg-red-500 items-center justify-center mr-2">
+                                <Ionicons name="location" size={18} color="white" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium">Destination</Text>
+                                <Text className="text-white font-cabin">{delivery.deliveryAddress.formattedAddress}</Text>
+                                {delivery.deliveryAddress.complementaryAddress && (
+                                    <Text className="text-gray-300 font-cabin">
+                                        {delivery.deliveryAddress.complementaryAddress}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
 
-                    <View className="mt-3 mb-2">
-                        <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-1">Destination:</Text>
-                        <Text className="text-white font-cabin">
-                            {delivery.deliveryAddress.formattedAddress}
-                        </Text>
-                        {delivery.deliveryAddress.complementaryAddress && (
-                            <Text className="text-gray-300 font-cabin mt-1">
-                                {delivery.deliveryAddress.complementaryAddress}
+                        {/* Delivery Instructions */}
+                        {delivery.deliveryAddress.additionalInstructions && (
+                            <View className="bg-yellow-900/20 p-2 rounded-lg mt-1 mb-2">
+                                <Text className="text-yellow-400 font-cabin-medium text-sm">Instructions:</Text>
+                                <Text className="text-white font-cabin">{delivery.deliveryAddress.additionalInstructions}</Text>
+                            </View>
+                        )}
+
+                        {/* Pickup Time */}
+                        <View className="bg-black/20 p-2 rounded-lg mt-1">
+                            <Text className="text-primary font-cabin-medium text-sm">Créneau de livraison:</Text>
+                            <Text className="text-white font-cabin">
+                                {formatDate(delivery.scheduledDate)} de {formatTime(delivery.timeSlot.start)} à {formatTime(delivery.timeSlot.end)}
                             </Text>
-                        )}
-                    </View>
-                </View>
+                        </View>
 
-                {/* Delivery Agent Information */}
-                <SectionTitle title="Livreur" icon="person-outline" />
-                <View className="bg-dark p-1 rounded-xl mb-4 border border-gray-700/50">
-                    <AgentCard agent={agent} />
+                        {/* Receiver Information */}
+                        <View className="mt-2 pt-2 border-t border-gray-700">
+                            <Text className="text-primary font-cabin-medium text-sm">Contact destinataire:</Text>
+                            <Text className="text-white font-cabin">{delivery.receiver.firstName}</Text>
+                            <Text className="text-white font-cabin">{delivery.receiver.phoneNumber}</Text>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Package Details */}
-                <SectionTitle title="Détails du Colis" icon="cube-outline" />
                 <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                    <InfoRow
-                        label="Description"
-                        value={delivery.packageDescription}
-                    />
-                    <InfoRow
-                        label="Catégorie"
-                        value={t(`delivery.packageCategory.${delivery.packageCategory}`)}
-                    />
-                    <InfoRow
-                        label="Poids"
-                        value={`${delivery.packageWeight} kg`}
-                    />
-                    <InfoRow
-                        label="Dimensions"
-                        value={`${delivery.packageDimensions.length} × ${delivery.packageDimensions.width} × ${delivery.packageDimensions.height} cm`}
-                    />
-                    <InfoRow
-                        label="Fragile"
-                        value={delivery.isFragile ? 'Oui' : 'Non'}
-                    />
-                </View>
+                    <Text className="text-white font-cabin-semibold text-lg mb-3">
+                        Détails du Colis
+                    </Text>
 
-                {/* Contact Information */}
-                <SectionTitle title="Contacts" icon="people-outline" />
-                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                    <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-2">Expéditeur:</Text>
-                    <InfoRow
-                        label="Nom"
-                        value={delivery.expeditor.firstName}
-                    />
-                    <InfoRow
-                        label="Téléphone"
-                        value={delivery.expeditor.phoneNumber}
-                    />
-
-                    <View className="h-4" />
-
-                    <Text style={{ color: '#5DD6FF' }} className="font-cabin-medium mb-2">Destinataire:</Text>
-                    <InfoRow
-                        label="Nom"
-                        value={delivery.receiver.firstName}
-                    />
-                    <InfoRow
-                        label="Téléphone"
-                        value={delivery.receiver.phoneNumber}
-                    />
-                </View>
-
-                {/* Comments */}
-                {delivery.comment && (
-                    <>
-                        <SectionTitle title="Commentaires" icon="chatbubble-outline" />
-                        <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                            <Text className="text-white font-cabin">{delivery.comment}</Text>
+                    <View className="bg-gray-800/50 p-3 rounded-lg">
+                        <View className="flex-row mb-2">
+                            <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center mr-2">
+                                <Ionicons name="cube" size={18} color="white" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium">Description</Text>
+                                <Text className="text-white font-cabin">{delivery.packageDescription}</Text>
+                            </View>
                         </View>
-                    </>
-                )}
+
+                        <Separator />
+
+                        <View className="flex-row justify-between mt-3">
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium text-sm">Catégorie</Text>
+                                <Text className="text-white font-cabin">
+                                    {t(`delivery.packageCategory.${delivery.packageCategory}`)}
+                                </Text>
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium text-sm">Poids</Text>
+                                <Text className="text-white font-cabin">{delivery.packageWeight} kg</Text>
+                            </View>
+                        </View>
+
+                        <View className="flex-row justify-between mt-3">
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium text-sm">Dimensions</Text>
+                                <Text className="text-white font-cabin">
+                                    {delivery.packageDimensions.length} × {delivery.packageDimensions.width} × {delivery.packageDimensions.height} cm
+                                </Text>
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-primary font-cabin-medium text-sm">Fragile</Text>
+                                <Text className="text-white font-cabin">{delivery.isFragile ? 'Oui' : 'Non'}</Text>
+                            </View>
+                        </View>
+
+                        {/* Comments */}
+                        {delivery.comment && (
+                            <View className="mt-3 pt-2 border-t border-gray-700">
+                                <Text className="text-primary font-cabin-medium text-sm">Commentaire</Text>
+                                <Text className="text-white font-cabin">{delivery.comment}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
 
                 <View className="h-8" />
             </ScrollView>
         </GradientView>
     );
-}
-
-// Helper functions for status styling
-function getStatusStyle(status: string): object {
-    switch (status) {
-        case 'waiting_for_delivery_guy':
-            return { backgroundColor: '#EAB308' }; // yellow
-        case 'delivery_guy_accepted':
-            return { backgroundColor: '#3B82F6' }; // blue
-        case 'picked_up':
-            return { backgroundColor: '#8B5CF6' }; // purple
-        case 'delivered':
-            return { backgroundColor: '#22C55E' }; // green
-        case 'failed':
-            return { backgroundColor: '#EF4444' }; // red
-        default:
-            return { backgroundColor: '#6B7280' }; // gray
-    }
 }
 
 const styles = StyleSheet.create({
