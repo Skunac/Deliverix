@@ -236,7 +236,7 @@ export default function AvailableDeliveriesScreen() {
                                 {item.pickupAddress.components.locality || 'N/A'} → {item.deliveryAddress.components.locality || 'N/A'}
                             </Text>
                             <Text className="text-gray-300 font-cabin">
-                                A livré {formatTimeSlot(item.timeSlot.start,item.timeSlot.end, t).toLowerCase()}
+                                À livré {formatTimeSlot(item.timeSlot.start,item.timeSlot.end, t).toLowerCase()}
                             </Text>
                         </View>
                         <TouchableOpacity
