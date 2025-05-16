@@ -112,13 +112,14 @@ export class DeliveryService {
             // Obfuscate the coordinates of delivery
             delivery.deliveryAddress.obfuscatedCoordinates = getObfuscatedPoint(delivery.deliveryAddress.coordinates.latitude, delivery.deliveryAddress.coordinates.longitude, 300);
 
+            delivery.secretCode = this.secretCodeGenerator();
+
             // Add timestamps
             const deliveryWithTimestamps = {
                 ...delivery,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };
-
             // Create the delivery in Firestore
             const docRef = await this.deliveriesCollection.add(deliveryWithTimestamps);
 
@@ -242,7 +243,6 @@ export class DeliveryService {
                 ...doc.data()
             })) as Delivery[];
 
-            console.log("Agent deliveriessssssss:", deliveries);
 
             return deliveries;
         } catch (error) {
@@ -295,5 +295,18 @@ export class DeliveryService {
         }
 
         return enrichedDelivery;
+    }
+
+    private secretCodeGenerator(): string {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        const length = 6;
+
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            result += characters[randomIndex];
+        }
+
+        return result;
     }
 }

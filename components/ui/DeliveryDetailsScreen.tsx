@@ -22,7 +22,7 @@ import { formatCurrency } from "@/utils/formatters/currency-formatter";
 import { useTranslation } from "react-i18next";
 import { NavigationButton } from "@/components/ui/NavigationButton";
 import { Separator } from "@/components/ui/Separator";
-import {useAuth} from "@/contexts/authContext";
+import { useAuth } from "@/contexts/authContext";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -139,81 +139,83 @@ export default function DeliveryDetailsScreen() {
         <GradientView>
             <ScrollView className="flex-1 p-4">
                 {/* Delivery Agent Information with Avatar - Top Section */}
-                <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                    <Text className="text-white text-lg font-cabin-semibold mb-3">Livreur</Text>
+                {!user?.isDeliveryAgent && (
+                    <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                        <Text className="text-white text-lg font-cabin-semibold mb-3">Livreur</Text>
 
-                    <View className="flex-row">
-                        {/* Agent Information */}
-                        <View className="flex-1 mr-3">
-                            {agent ? (
-                                <>
-                                    <Text className="text-white font-cabin-semibold text-base">
-                                        {agent.personalInfo.firstName} {agent.personalInfo.lastName}
-                                    </Text>
-
-                                    {/* Rating */}
-                                    <View className="flex-row items-center mt-1">
-                                        <Ionicons name="star" size={16} color="#f59e0b" />
-                                        <Text className="ml-1 text-white font-cabin">{agent.rating.toFixed(1)} / 5</Text>
-                                    </View>
-
-                                    {/* Vehicle Info */}
-                                    <View className="flex-row items-center mt-1">
-                                        <Ionicons name="car-outline" size={16} color="#ffffff" />
-                                        <Text className="ml-1 text-white capitalize font-cabin">
-                                            {t(`delivery.vehicleType.${agent.vehicleInfo.type}`)}
+                        <View className="flex-row">
+                            {/* Agent Information */}
+                            <View className="flex-1 mr-3">
+                                {agent ? (
+                                    <>
+                                        <Text className="text-white font-cabin-semibold text-base">
+                                            {agent.personalInfo.firstName} {agent.personalInfo.lastName}
                                         </Text>
-                                    </View>
 
-                                    {/* Phone Info */}
-                                    <View className="flex-row items-center mt-1">
-                                        <Ionicons name="call-outline" size={16} color="#ffffff" />
-                                        <Text className="ml-1 text-white font-cabin">
-                                            {agent.personalInfo.phoneNumber}
-                                        </Text>
-                                    </View>
-                                </>
-                            ) : (
-                                <View className="items-start">
-                                    <Text className="text-white opacity-60 italic font-cabin mt-2">
-                                        Aucun livreur assigné
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
+                                        {/* Rating */}
+                                        <View className="flex-row items-center mt-1">
+                                            <Ionicons name="star" size={16} color="#f59e0b" />
+                                            <Text className="ml-1 text-white font-cabin">{agent.rating.toFixed(1)} / 5</Text>
+                                        </View>
 
-                        {/* Agent Avatar */}
-                        {agent && (
-                            <View className="items-end justify-center">
-                                {agent.personalInfo.photoUrl ? (
-                                    <Image
-                                        source={{ uri: agent.personalInfo.photoUrl }}
-                                        style={{
-                                            width: 70,
-                                            height: 70,
-                                            borderRadius: 35,
-                                            borderWidth: 2,
-                                            borderColor: '#2EC3F5'
-                                        }}
-                                    />
+                                        {/* Vehicle Info */}
+                                        <View className="flex-row items-center mt-1">
+                                            <Ionicons name="car-outline" size={16} color="#ffffff" />
+                                            <Text className="ml-1 text-white capitalize font-cabin">
+                                                {t(`delivery.vehicleType.${agent.vehicleInfo.type}`)}
+                                            </Text>
+                                        </View>
+
+                                        {/* Phone Info */}
+                                        <View className="flex-row items-center mt-1">
+                                            <Ionicons name="call-outline" size={16} color="#ffffff" />
+                                            <Text className="ml-1 text-white font-cabin">
+                                                {agent.personalInfo.phoneNumber}
+                                            </Text>
+                                        </View>
+                                    </>
                                 ) : (
-                                    <View style={{
-                                        width: 70,
-                                        height: 70,
-                                        borderRadius: 35,
-                                        backgroundColor: '#1a2e35',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        borderWidth: 2,
-                                        borderColor: '#2EC3F5'
-                                    }}>
-                                        <Ionicons name="person" size={36} color="#5DD6FF" />
+                                    <View className="items-start">
+                                        <Text className="text-white opacity-60 italic font-cabin mt-2">
+                                            Aucun livreur assigné
+                                        </Text>
                                     </View>
                                 )}
                             </View>
-                        )}
+
+                            {/* Agent Avatar */}
+                            {agent && (
+                                <View className="items-end justify-center">
+                                    {agent.personalInfo.photoUrl ? (
+                                        <Image
+                                            source={{ uri: agent.personalInfo.photoUrl }}
+                                            style={{
+                                                width: 70,
+                                                height: 70,
+                                                borderRadius: 35,
+                                                borderWidth: 2,
+                                                borderColor: '#2EC3F5'
+                                            }}
+                                        />
+                                    ) : (
+                                        <View style={{
+                                            width: 70,
+                                            height: 70,
+                                            borderRadius: 35,
+                                            backgroundColor: '#1a2e35',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            borderWidth: 2,
+                                            borderColor: '#2EC3F5'
+                                        }}>
+                                            <Ionicons name="person" size={36} color="#5DD6FF" />
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+                        </View>
                     </View>
-                </View>
+                )}
 
                 {/* Status Badge and Price - Middle Section */}
                 <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
@@ -223,7 +225,7 @@ export default function DeliveryDetailsScreen() {
                             style={getStatusStyle(delivery.status)}
                         >
                             <Text className="text-white font-cabin-medium">
-                                {t(`delivery.status.${delivery.status}`)}
+                                {user?.isDeliveryAgent ? t(`delivery.deliveryStatus.${delivery.status}`) : t(`delivery.status.${delivery.status}`)}
                             </Text>
                         </View>
 
@@ -234,6 +236,23 @@ export default function DeliveryDetailsScreen() {
                         </View>
                     </View>
                 </View>
+
+                {/* Secret Code Section - Display if it exists */}
+                {delivery.secretCode && (
+                    <View className="bg-primary p-4 rounded-xl mb-4 border border-primary/80">
+                        <View className="flex-row justify-between items-center">
+                            <View className="flex-row items-center">
+                                <Ionicons name="key" size={24} color="#0F2026" />
+                                <Text className="text-darker font-cabin-bold text-lg ml-2">
+                                    CODE SECRET
+                                </Text>
+                            </View>
+                            <Text className="text-darker font-cabin-bold text-xl tracking-widest">
+                                {delivery.secretCode}
+                            </Text>
+                        </View>
+                    </View>
+                )}
 
                 {/* Delivery Details Section with Map */}
                 <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">

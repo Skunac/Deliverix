@@ -46,6 +46,8 @@ export interface Delivery extends FirestoreDocument {
     expeditor: Person;
     receiver: Person;
 
+    secretCode: string;
+
     billingAddress: EmbeddedAddress;
     pickupAddress: EmbeddedAddress;
     deliveryAddress: EmbeddedAddress;

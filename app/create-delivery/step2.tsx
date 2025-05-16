@@ -101,6 +101,12 @@ export default function CombinedAddressesContactsScreen() {
     // Toggle user as expeditor
     const toggleUserAsExpeditor = (value: boolean) => {
         if (value && userProfile) {
+            // If user wants to be the expeditor, they can't be the receiver
+            if (formState.isUserReceiver) {
+                // Turn off receiver toggle
+                toggleUserAsReceiver(false);
+            }
+
             // Get name based on user type
             let name = '';
             if (userProfile.userType === 'individual' && 'firstName' in userProfile) {
@@ -132,6 +138,12 @@ export default function CombinedAddressesContactsScreen() {
     // Toggle user as receiver
     const toggleUserAsReceiver = (value: boolean) => {
         if (value && userProfile) {
+            // If user wants to be the receiver, they can't be the expeditor
+            if (formState.isUserExpeditor) {
+                // Turn off expeditor toggle
+                toggleUserAsExpeditor(false);
+            }
+
             // Get name based on user type
             let name = '';
             if (userProfile.userType === 'individual' && 'firstName' in userProfile) {
@@ -233,9 +245,11 @@ export default function CombinedAddressesContactsScreen() {
 
                             {/* "I am the expeditor" toggle */}
                             <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="person-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                    <Text className="text-white font-cabin">Je suis l'expéditeur</Text>
+                                <View className="flex-row items-center flex-1 mr-2">
+                                    <Ionicons name="person-outline" size={20} color={formState.isUserReceiver ? "#576D75" : "#5DD6FF"} className="mr-2" />
+                                    <Text className={`font-cabin ${formState.isUserReceiver ? "text-gray-500" : "text-white"}`}>
+                                        Je suis l'expéditeur
+                                    </Text>
                                 </View>
                                 <Switch
                                     value={formState.isUserExpeditor}
@@ -243,6 +257,7 @@ export default function CombinedAddressesContactsScreen() {
                                     trackColor={{ false: '#576D75', true: '#5DD6FF' }}
                                     thumbColor={formState.isUserExpeditor ? '#fff' : '#f4f3f4'}
                                     ios_backgroundColor="#576D75"
+                                    disabled={formState.isUserReceiver}
                                 />
                             </View>
 
@@ -256,29 +271,14 @@ export default function CombinedAddressesContactsScreen() {
 
                                 <StyledTextInput
                                     label="Numéro de téléphone"
-                                    placeholder="Enter phone number"
+                                    placeholder="Entrez le numéro de téléphone"
                                     keyboardType="phone-pad"
                                     value={formState.expeditor?.phoneNumber || ''}
                                     onChangeText={(text) => updateExpeditor('phoneNumber', text)}
                                 />
                             </View>
 
-                            {/* Save contact toggle
-                            {user?.uid && (
-                                <View className="flex-row items-center justify-between mt-2 bg-darker p-3 rounded-lg">
-                                    <View className="flex-row items-center">
-                                        <Ionicons name="bookmark-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                        <Text className="text-white font-cabin">Enregistrer dans mon carnet d'adresses</Text>
-                                    </View>
-                                    <Switch
-                                        value={savePickupContact}
-                                        onValueChange={setSavePickupContact}
-                                        trackColor={{ false: '#576D75', true: '#5DD6FF' }}
-                                        thumbColor={savePickupContact ? '#fff' : '#f4f3f4'}
-                                        ios_backgroundColor="#576D75"
-                                    />
-                                </View>
-                            )}*/}
+                            {/* Save contact toggle was here */}
                         </View>
                     </View>
 
@@ -305,9 +305,11 @@ export default function CombinedAddressesContactsScreen() {
 
                             {/* "I am the receiver" toggle */}
                             <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="person-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                    <Text className="text-white font-cabin">Je suis le destinataire</Text>
+                                <View className="flex-row items-center flex-1 mr-2">
+                                    <Ionicons name="person-outline" size={20} color={formState.isUserExpeditor ? "#576D75" : "#5DD6FF"} className="mr-2" />
+                                    <Text className={`font-cabin ${formState.isUserExpeditor ? "text-gray-500" : "text-white"}`}>
+                                        Je suis le destinataire
+                                    </Text>
                                 </View>
                                 <Switch
                                     value={formState.isUserReceiver}
@@ -315,6 +317,7 @@ export default function CombinedAddressesContactsScreen() {
                                     trackColor={{ false: '#576D75', true: '#5DD6FF' }}
                                     thumbColor={formState.isUserReceiver ? '#fff' : '#f4f3f4'}
                                     ios_backgroundColor="#576D75"
+                                    disabled={formState.isUserExpeditor}
                                 />
                             </View>
 
@@ -335,22 +338,6 @@ export default function CombinedAddressesContactsScreen() {
                                 />
                             </View>
 
-                            {/* Save contact toggle
-                            {user?.uid && (
-                                <View className="flex-row items-center justify-between mt-2 bg-darker p-3 rounded-lg">
-                                    <View className="flex-row items-center">
-                                        <Ionicons name="bookmark-outline" size={20} color="#5DD6FF" className="mr-2" />
-                                        <Text className="text-white font-cabin">Enregistrer dans mon carnet d'adresses</Text>
-                                    </View>
-                                    <Switch
-                                        value={saveDeliveryContact}
-                                        onValueChange={setSaveDeliveryContact}
-                                        trackColor={{ false: '#576D75', true: '#5DD6FF' }}
-                                        thumbColor={saveDeliveryContact ? '#fff' : '#f4f3f4'}
-                                        ios_backgroundColor="#576D75"
-                                    />
-                                </View>
-                            )}*/}
                         </View>
                     </View>
 
