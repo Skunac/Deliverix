@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import MapView, {MapCircle, Marker} from "react-native-maps";
 import {calculateDistance} from "@/utils/geo-helper/distance-calculator";
+import {formatDate, formatTimeSlot} from "@/utils/formatters/date-formatters";
 
 export default function AvailableDeliveriesScreen() {
     const { user } = useAuth();
@@ -227,16 +228,15 @@ export default function AvailableDeliveriesScreen() {
                 <View className="p-3 border-t border-gray-700 bg-dark">
                     <View className="flex-row justify-between items-center">
                         <View>
-                            <Text>DATE d'order</Text>
                             <Text className="text-white font-cabin-medium">
                                 {item.price.toFixed(2)} €
                             </Text>
+                            <Text className="text-gray-300 font-cabin">Commandée le {formatDate(item.createdAt)} </Text>
                             <Text className="text-gray-300 font-cabin">
                                 {item.pickupAddress.components.locality || 'N/A'} → {item.deliveryAddress.components.locality || 'N/A'}
                             </Text>
                             <Text className="text-gray-300 font-cabin">
-                               Pour une livraison le 15 mai 2025
-                                entre 14h et 16h
+                                A livré {formatTimeSlot(item.timeSlot.start,item.timeSlot.end, t).toLowerCase()}
                             </Text>
                         </View>
                         <TouchableOpacity
