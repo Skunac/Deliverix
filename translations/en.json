@@ -103,6 +103,13 @@
       "delivered": "Delivered",
       "failed": "Failed"
     },
+    "deliveryStatus": {
+      "waiting_for_delivery_guy": "Waiting",
+      "delivery_guy_accepted": "In progress",
+      "picked_up": "In progress",
+      "delivered": "Finished",
+      "failed": "Failed"
+    },
     "packageCategory": {
       "exceptional": "Exceptional",
       "urgent": "Urgent",

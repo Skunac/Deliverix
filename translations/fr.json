@@ -103,6 +103,13 @@
       "delivered": "Livrée",
       "failed": "Échouée"
     },
+    "deliveryStatus": {
+      "waiting_for_delivery_guy": "En attente",
+      "delivery_guy_accepted": "En cours",
+      "picked_up": "En cours",
+      "delivered": "Terminée",
+      "failed": "Annulée"
+    },
     "packageCategory": {
       "exceptional": "Articles exceptionnels",
       "urgent": "Urgent",

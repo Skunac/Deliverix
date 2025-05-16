@@ -204,6 +204,7 @@ export default function DeliveriesScreen() {
                         renderItem={({ item }) => (
                             <DeliveryCard
                                 delivery={item}
+                                variant={user?.isDeliveryAgent ? 'deliveryGuy' : 'user'}
                                 onPress={() => handleDeliveryPress(item)}
                             />
                         )}

@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import MapView, {MapCircle, Marker} from "react-native-maps";
 import {calculateDistance} from "@/utils/geo-helper/distance-calculator";
 import {formatDate, formatTimeSlot} from "@/utils/formatters/date-formatters";
+import DeliveryCard from "@/components/ui/DeliveryCard";
 
 export default function AvailableDeliveriesScreen() {
     const { user } = useAuth();
@@ -178,8 +179,6 @@ export default function AvailableDeliveriesScreen() {
 
         circleRadius = Math.max(circleRadius, 500);
 
-        console.log(`Distance: ${distance.toFixed(2)}km, Map width: ~${mapWidthInKm.toFixed(2)}km, Circle radius: ${circleRadius.toFixed(0)}m`);
-
         return (
             <View
                 className="bg-white bg-opacity-10 rounded-lg overflow-hidden"
@@ -257,7 +256,13 @@ export default function AvailableDeliveriesScreen() {
                 <FlatList
                     data={availableDeliveries}
                     keyExtractor={(item) => item.id}
-                    renderItem={renderDeliveryItem}
+                    renderItem={({ item }) => (
+                        <DeliveryCard
+                            delivery={item}
+                            variant={'available'}
+                            onAccept={() => handleAcceptDelivery(item.id)}
+                        />
+                    )}
                     ItemSeparatorComponent={ItemSeparator}
                     contentContainerStyle={{ paddingBottom: 20 }}
                     onRefresh={handleRefresh}
