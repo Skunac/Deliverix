@@ -7,7 +7,9 @@ import {
     StyleSheet,
     TouchableOpacity,
     Alert,
-    Image
+    Image,
+    Share,
+    Linking
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { DeliveryService, DeliveryWithAgent } from "@/src/services/delivery.service";
@@ -86,6 +88,90 @@ export default function DeliveryDetailsScreen() {
         }
     }
 
+    const handleCodeSubmit = () => {
+        if (secretCode === '') {
+            Alert.alert('Erreur', 'Veuillez entrer le code secret.');
+            return;
+        }
+
+        if (!delivery) {
+            Alert.alert('Erreur', 'Détails de livraison non disponibles.');
+            return;
+        }
+
+        if (secretCode === delivery.secretCode) {
+            try {
+                deliveryService.agentValidateDelivery(delivery.id);
+                Alert.alert('Succès', 'La livraison a été validée avec succès.');
+            } catch (error) {
+                console.error("Error validating delivery:", error);
+                Alert.alert('Erreur', 'Échec de la validation de la livraison.');
+            }
+        } else {
+            Alert.alert('Erreur', 'Le code secret est incorrect.');
+        }
+    }
+
+    const handleShareSecretCode = async () => {
+        if (!delivery || !delivery.secretCode || !delivery.receiver) {
+            Alert.alert('Erreur', 'Informations manquantes pour le partage.');
+            return;
+        }
+
+        const message = `Bonjour ${delivery.receiver.firstName},
+
+        Votre livraison est en cours de traitement. Voici votre code secret à donner au livreur pour valider la réception de votre colis :
+        
+        🔑 CODE SECRET : ${delivery.secretCode}
+        
+        Ce code est nécessaire pour confirmer que vous avez bien reçu votre colis. Ne le partagez qu'avec le livreur officiel.
+        
+        Détails de la livraison :
+        📦 ${delivery.packageDescription}
+        📍 ${delivery.deliveryAddress.formattedAddress}
+        📅 ${formatDate(delivery.scheduledDate)} entre ${formatTime(delivery.timeSlot.start)} et ${formatTime(delivery.timeSlot.end)}
+        
+        Merci pour votre confiance !`;
+
+        try {
+            const result = await Share.share({
+                message: message,
+                title: 'Code secret de livraison'
+            });
+
+            if (result.action === Share.sharedAction) {
+                console.log('Secret code shared successfully');
+            }
+        } catch (error) {
+            console.error('Error sharing secret code:', error);
+            Alert.alert('Erreur', 'Impossible de partager le code secret.');
+        }
+    };
+
+    const handleSendSMS = () => {
+        if ( !delivery || !delivery.secretCode || !delivery.receiver?.phoneNumber) {
+            Alert.alert('Erreur', 'Numéro de téléphone du destinataire manquant.');
+            return;
+        }
+
+        const message = `Bonjour ${delivery.receiver.firstName}, votre code secret de livraison est : ${delivery.secretCode}. Donnez ce code au livreur pour valider la réception de votre colis. Livraison prévue le ${formatDate(delivery.scheduledDate)} entre ${formatTime(delivery.timeSlot.start)} et ${formatTime(delivery.timeSlot.end)}.`;
+
+        const smsUrl = `sms:${delivery.receiver.phoneNumber}?body=${encodeURIComponent(message)}`;
+
+        Linking.canOpenURL(smsUrl)
+            .then((supported) => {
+                if (supported) {
+                    return Linking.openURL(smsUrl);
+                } else {
+                    Alert.alert('Erreur', 'Impossible d\'ouvrir l\'application SMS.');
+                }
+            })
+            .catch((error) => {
+                console.error('Error opening SMS:', error);
+                Alert.alert('Erreur', 'Erreur lors de l\'ouverture de l\'application SMS.');
+            });
+    };
+
     if (loading) {
         return (
             <GradientView>
@@ -136,25 +222,6 @@ export default function DeliveryDetailsScreen() {
     // Increase padding significantly (200%) to zoom out more
     const latDelta = Math.max(latDiff * 2.0, 0.05);
     const lngDelta = Math.max(lngDiff * 2.0, 0.05);
-
-    const handleCodeSubmit = () => {
-        if (secretCode === '') {
-            Alert.alert('Erreur', 'Veuillez entrer le code secret.');
-            return;
-        }
-
-        if (secretCode === delivery.secretCode) {
-            try {
-                deliveryService.agentValidateDelivery(delivery.id);
-                Alert.alert('Succès', 'La livraison a été validée avec succès.');
-            } catch (error) {
-                console.error("Error validating delivery:", error);
-                Alert.alert('Erreur', 'Échec de la validation de la livraison.');
-            }
-        } else {
-            Alert.alert('Erreur', 'Le code secret est incorrect.');
-        }
-    }
 
     return (
         <GradientView>
@@ -259,9 +326,9 @@ export default function DeliveryDetailsScreen() {
                 </View>
 
                 {/* Secret Code Section - Display if it exists */}
-                {delivery.secretCode && !user?.isDeliveryAgent && (
+                {delivery.secretCode && !user?.isDeliveryAgent && delivery.status !== 'delivered' && (
                     <View className="bg-primary p-4 rounded-xl mb-4 border border-primary/80">
-                        <View className="flex-row justify-between items-center">
+                        <View className="flex-row justify-between items-center mb-3">
                             <View className="flex-row items-center">
                                 <Ionicons name="key" size={24} color="#0F2026" />
                                 <Text className="text-darker font-cabin-bold text-lg ml-2">
@@ -271,6 +338,32 @@ export default function DeliveryDetailsScreen() {
                             <Text className="text-darker font-cabin-bold text-xl tracking-widest">
                                 {delivery.secretCode}
                             </Text>
+                        </View>
+
+                        {/* Information message */}
+                        <View className="bg-darker/20 p-3 rounded-lg mb-3">
+                            <Text className="text-darker font-cabin text-sm">
+                                Ce code doit être donné par le destinataire au livreur pour valider la réception du colis.
+                            </Text>
+                        </View>
+
+                        {/* Share buttons */}
+                        <View className="flex-row space-x-2">
+                            <TouchableOpacity
+                                onPress={handleSendSMS}
+                                className="flex-1 bg-darker p-3 rounded-lg flex-row items-center justify-center mr-2"
+                            >
+                                <Ionicons name="chatbubble-outline" size={18} color="#5DD6FF" />
+                                <Text className="text-primary font-cabin-medium ml-2">Envoyer SMS</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={handleShareSecretCode}
+                                className="flex-1 bg-darker p-3 rounded-lg flex-row items-center justify-center ml-2"
+                            >
+                                <Ionicons name="share-outline" size={18} color="#5DD6FF" />
+                                <Text className="text-primary font-cabin-medium ml-2">Partager</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 )}
