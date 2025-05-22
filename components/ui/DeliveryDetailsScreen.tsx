@@ -275,7 +275,7 @@ export default function DeliveryDetailsScreen() {
                     </View>
                 )}
 
-                {user?.isDeliveryAgent && (
+                {user?.isDeliveryAgent && delivery.status !== 'delivered' && (
                     <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
                         <StyledTextInput
                             label="Code secret donné par le destinataire"
