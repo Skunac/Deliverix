@@ -7,6 +7,7 @@ import "@/global.css";
 import "@/config/i18nConfig";
 import { LanguageProvider } from "@/contexts/languageContext";
 import {AuthProvider} from "@/contexts/authContext";
+import {QueryProvider} from "@/contexts/queryContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -32,24 +33,26 @@ export default function RootLayout() {
     }
 
     return (
-        <LanguageProvider>
-            <AuthProvider>
-                <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                    <Stack.Screen
-                        name="delivery/[id]"
-                        options={{
-                            headerShown: false,
-                            animation: 'slide_from_right',
-                            animationDuration: 300,
-                            animationTypeForReplace: 'push',
-                            gestureEnabled: true,
-                            gestureDirection: 'horizontal'
-                        }}
-                    />
-                </Stack>
-            </AuthProvider>
-        </LanguageProvider>
+        <QueryProvider>
+            <LanguageProvider>
+                <AuthProvider>
+                    <Stack screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                        <Stack.Screen
+                            name="delivery/[id]"
+                            options={{
+                                headerShown: false,
+                                animation: 'slide_from_right',
+                                animationDuration: 300,
+                                animationTypeForReplace: 'push',
+                                gestureEnabled: true,
+                                gestureDirection: 'horizontal'
+                            }}
+                        />
+                    </Stack>
+                </AuthProvider>
+            </LanguageProvider>
+        </QueryProvider>
     );
 }

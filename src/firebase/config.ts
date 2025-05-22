@@ -1,5 +1,5 @@
 import { initializeApp } from '@react-native-firebase/app';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { collection, doc, getDoc, getDocs, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import storage from '@react-native-firebase/storage';
 
@@ -25,6 +25,21 @@ export const firebaseAuth = auth();
 
 console.log("Creating Storage instance");
 export const firebaseStorage = storage();
+
+export {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    orderBy,
+    limit
+};
 
 // Log Firebase initialization status
 console.log("Firebase initialized:", {

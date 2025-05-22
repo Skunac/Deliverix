@@ -1,5 +1,4 @@
 import { db, serverTimestamp } from '@/src/firebase/config';
-import { COLLECTIONS, DEFAULT_DOCUMENT_ID } from '@/src/firebase/collections';
 import {
     DeliveryAgent,
     PersonalInfo,
@@ -16,7 +15,7 @@ export class DeliveryAgentService {
     private userCollection = db.collection('users');
 
     private getAgentDocRef(userId: string) {
-        return db.doc(`${COLLECTIONS.USER_DELIVERY_AGENT(userId)}/${DEFAULT_DOCUMENT_ID}`);
+        return db.doc(`users/${userId}/deliveryAgent/default`);
     }
 
     async registerAsAgent(userId: string, agentData: {
@@ -71,7 +70,8 @@ export class DeliveryAgentService {
                 administrative_area_level_1: '',
                 country: 'France',
                 postal_code: ''
-            }
+            },
+            obfuscatedCoordinates: createGeoPoint(48.8566, 2.3522),
         };
 
         // Create default personal info with EmbeddedAddress

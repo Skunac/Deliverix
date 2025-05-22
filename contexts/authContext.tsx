@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { AuthService } from '@/src/services/auth.service';
 import { User } from '@/src/models/user.model';
 import { UserService } from "@/src/services/user.service";
+import {queryClient} from "@/contexts/queryContext";
+import {enhancedDeliveryService} from "@/src/services/delivery.service.enhanced";
 
 interface RegistrationStatus {
     isCompleted: boolean;
@@ -87,6 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clean up subscription on unmount
         return unsubscribe;
     }, []);
+
+    useEffect(() => {
+        // Clean up queries when user logs out (becomes null)
+        if (!user && !loading) {
+            console.log('🧹 User is null - ensuring query cleanup');
+            queryClient.clear();
+
+            // Cleanup Firestore listeners
+            if (typeof enhancedDeliveryService?.cleanup === 'function') {
+                enhancedDeliveryService.cleanup();
+            }
+        }
+    }, [user, loading]);
 
     // Reset all errors
     const resetErrors = () => {
@@ -247,6 +262,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             resetErrors();
             setIsAuthenticating(true);
+
+            console.log('🧹 Clearing React Query cache before logout...');
+            queryClient.clear();
+
+            if (typeof enhancedDeliveryService?.cleanup === 'function') {
+                enhancedDeliveryService.cleanup();
+            }
 
             await authService.signOut();
 
