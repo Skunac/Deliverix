@@ -256,8 +256,12 @@ export class DeliveryService {
                 ...doc.data()
             })) as Delivery[];
 
+            const enrichedDeliveries = await Promise.all(
+                deliveries.map(delivery => this.enrichDeliveryWithAgentInfo(delivery))
+            );
 
-            return deliveries;
+
+            return enrichedDeliveries;
         } catch (error) {
             console.error('Error fetching agent deliveries:', error);
             throw error;

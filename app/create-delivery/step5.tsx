@@ -167,8 +167,8 @@ export default function DeliveryRecapScreen() {
 
             // 6. Show success message and navigate
             Alert.alert(
-                'Payment Successful',
-                'Your payment has been processed successfully.',
+                'Paiment réussi',
+                'Votre paiment à été effectué avec succès.',
                 [
                     {
                         text: 'OK',

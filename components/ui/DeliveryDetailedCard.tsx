@@ -19,6 +19,8 @@ const DeliveryDetailedCard = ({ delivery, onPress }: DeliveryDetailedCardProps) 
     const { t } = useTranslation();
     const mapRef = useRef<MapView>(null);
 
+    console.log("DeliveryDetailedCard delivery:", delivery);
+
     const agentName = delivery.agentFirstName && delivery.agentLastName
         ? `${delivery.agentFirstName} ${delivery.agentLastName}`
         : t("delivery.agent.unassigned") || "Non assigné";

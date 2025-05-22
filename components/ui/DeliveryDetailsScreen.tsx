@@ -102,7 +102,16 @@ export default function DeliveryDetailsScreen() {
         if (secretCode === delivery.secretCode) {
             try {
                 deliveryService.agentValidateDelivery(delivery.id);
-                Alert.alert('Succès', 'La livraison a été validée avec succès.');
+                Alert.alert(
+                    'Succès',
+                    'La livraison a été validée avec succès.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => router.replace('/dashboard')
+                        }
+                    ]
+                );
             } catch (error) {
                 console.error("Error validating delivery:", error);
                 Alert.alert('Erreur', 'Échec de la validation de la livraison.');
