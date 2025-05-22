@@ -23,6 +23,8 @@ import { useTranslation } from "react-i18next";
 import { NavigationButton } from "@/components/ui/NavigationButton";
 import { Separator } from "@/components/ui/Separator";
 import { useAuth } from "@/contexts/authContext";
+import StyledTextInput from "@/components/ui/StyledTextInput";
+import StyledButton from "@/components/ui/StyledButton";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -33,11 +35,11 @@ export default function DeliveryDetailsScreen() {
     const deliveryAgentService = new DeliveryAgentService();
     const GOOGLE_MAPS_API_KEY = "AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c";
     const { user } = useAuth();
-
     const [delivery, setDelivery] = useState<DeliveryWithAgent | null>(null);
     const [agent, setAgent] = useState<DeliveryAgent | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [secretCode, setSecretCode] = useState<string>('');
 
     useEffect(() => {
         const fetchDeliveryDetails = async () => {
@@ -134,6 +136,25 @@ export default function DeliveryDetailsScreen() {
     // Increase padding significantly (200%) to zoom out more
     const latDelta = Math.max(latDiff * 2.0, 0.05);
     const lngDelta = Math.max(lngDiff * 2.0, 0.05);
+
+    const handleCodeSubmit = () => {
+        if (secretCode === '') {
+            Alert.alert('Erreur', 'Veuillez entrer le code secret.');
+            return;
+        }
+
+        if (secretCode === delivery.secretCode) {
+            try {
+                deliveryService.agentValidateDelivery(delivery.id);
+                Alert.alert('Succès', 'La livraison a été validée avec succès.');
+            } catch (error) {
+                console.error("Error validating delivery:", error);
+                Alert.alert('Erreur', 'Échec de la validation de la livraison.');
+            }
+        } else {
+            Alert.alert('Erreur', 'Le code secret est incorrect.');
+        }
+    }
 
     return (
         <GradientView>
@@ -238,7 +259,7 @@ export default function DeliveryDetailsScreen() {
                 </View>
 
                 {/* Secret Code Section - Display if it exists */}
-                {delivery.secretCode && (
+                {delivery.secretCode && !user?.isDeliveryAgent && (
                     <View className="bg-primary p-4 rounded-xl mb-4 border border-primary/80">
                         <View className="flex-row justify-between items-center">
                             <View className="flex-row items-center">
@@ -251,6 +272,20 @@ export default function DeliveryDetailsScreen() {
                                 {delivery.secretCode}
                             </Text>
                         </View>
+                    </View>
+                )}
+
+                {user?.isDeliveryAgent && (
+                    <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                        <StyledTextInput
+                            label="Code secret donné par le destinataire"
+                            placeholder="Code secret"
+                            value={secretCode}
+                            onChangeText={setSecretCode}
+                        />
+                        <StyledButton variant="primary" onPress={handleCodeSubmit}>
+                            <Text className="text-white font-cabin-medium">Envoyer le code</Text>
+                        </StyledButton>
                     </View>
                 )}
 

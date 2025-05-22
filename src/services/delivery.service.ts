@@ -154,6 +154,19 @@ export class DeliveryService {
         }
     }
 
+    async agentValidateDelivery(deliveryId: string): Promise<void> {
+        try {
+            // Update the delivery with the agent's validation
+            await this.updateDelivery(deliveryId, {
+                status: 'delivered',
+                state: 'completed',
+            });
+        } catch (error) {
+            console.error('Error validating delivery:', error);
+            throw error;
+        }
+    }
+
     async deleteDelivery(deliveryId: string): Promise<void> {
         try {
             await this.deliveriesCollection.doc(deliveryId).delete();
