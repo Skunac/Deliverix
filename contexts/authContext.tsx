@@ -36,6 +36,7 @@ interface AuthContextType {
     ) => Promise<boolean>;
     resetPassword: (email: string) => Promise<boolean>;
     updateProfile: (data: { firstName?: string; lastName?: string; photoURL?: string }) => Promise<boolean>;
+    refreshUserProfile: () => Promise<void>;
     signOut: () => Promise<boolean>;
     isAuthenticated: boolean;
 
@@ -258,6 +259,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const refreshUserProfile = async () => {
+        if (!user?.uid) {
+            console.log('No user to refresh');
+            return;
+        }
+
+        try {
+            console.log('Refreshing user profile...');
+            const updatedUser = await userService.getUserById(user.uid);
+            if (updatedUser) {
+                setUser(updatedUser);
+                console.log('User profile refreshed successfully');
+            }
+        } catch (error) {
+            console.error('Error refreshing user profile:', error);
+        }
+    };
+
     const signOut = async () => {
         try {
             resetErrors();
@@ -305,6 +324,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         registrationStatus,
         updateRegistrationStatus,
+        refreshUserProfile,
         completeRegistration
     };
 
