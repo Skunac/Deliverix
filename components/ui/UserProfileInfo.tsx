@@ -54,7 +54,7 @@ const UserProfileInfo = ({ user }: UserProfileInfoProps) => {
                     {professionalUser.companyName}
                 </Text>
                 <Text className="text-xl font-cabin-medium text-white mb-1">
-                    Contact: {professionalUser.contactName}
+                    {professionalUser.contactName}
                 </Text>
                 {renderCommonInfo()}
             </>
