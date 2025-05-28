@@ -1,27 +1,27 @@
 import React, {useEffect, useState} from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GradientView } from '@/components/ui/GradientView';
 import StyledButton from '@/components/ui/StyledButton';
 import { useDeliveryForm } from "@/contexts/DeliveryFormContext";
 import { Alert } from 'react-native';
 import { useAuth } from '@/contexts/authContext';
-import { DeliveryService } from '@/src/services/delivery.service';
 import { Delivery } from '@/src/models/delivery.model';
 import { Ionicons } from '@expo/vector-icons';
 import {formatDate, formatTimeSlot} from "@/utils/formatters/date-formatters";
 import { db, serverTimestamp } from '@/src/firebase/config';
 import {useTranslation} from "react-i18next";
 import {initPaymentSheet, initStripe, presentPaymentSheet} from "@stripe/stripe-react-native";
+import { useCreateDelivery } from "@/hooks/useDeliveryQueries";
 
 export default function DeliveryRecapScreen() {
     const router = useRouter();
     const { user } = useAuth();
-    const { formState } = useDeliveryForm();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { formState, resetForm } = useDeliveryForm();
     const { t } = useTranslation();
 
-    const deliveryService = new DeliveryService();
+    // React Query mutation for creating delivery
+    const createDeliveryMutation = useCreateDelivery();
 
     // Simple price calculation function - matches the one in ContactInformationScreen
     const calculatePrice = () => {
@@ -51,7 +51,7 @@ export default function DeliveryRecapScreen() {
         }).catch(error => {
             console.error('Failed to initialize Stripe:', error);
         });
-    }, [])
+    }, []);
 
     const handleSubmit = async () => {
         if (!user?.uid) {
@@ -60,8 +60,6 @@ export default function DeliveryRecapScreen() {
         }
 
         try {
-            setIsSubmitting(true);
-
             // Prepare delivery data
             const deliveryData: Omit<Delivery, "id"> = {
                 creator: user.uid,
@@ -86,11 +84,12 @@ export default function DeliveryRecapScreen() {
                 price: parseFloat(calculatePrice()),
             };
 
-            // Create delivery in the database
-            const delivery = await deliveryService.createDelivery(deliveryData);
+            // Create delivery using React Query mutation
+            const delivery = await createDeliveryMutation.mutateAsync(deliveryData);
 
             const amountInCents = Math.round(delivery.price * 100);
 
+            // Create Stripe checkout session
             const checkoutSessionRef = await db
                 .collection('customers')
                 .doc(user.uid)
@@ -106,7 +105,7 @@ export default function DeliveryRecapScreen() {
                     }
                 });
 
-            // 2. Listen for the extension to populate the client secret
+            // Listen for the extension to populate the client secret
             const checkoutSessionData = await new Promise<any>((resolve, reject) => {
                 const unsubscribe = checkoutSessionRef.onSnapshot(
                     (doc) => {
@@ -129,7 +128,7 @@ export default function DeliveryRecapScreen() {
                 }, 15000);
             });
 
-            // 3. Initialize the payment sheet
+            // Initialize the payment sheet
             const { error: initError } = await initPaymentSheet({
                 paymentIntentClientSecret: checkoutSessionData.paymentIntentClientSecret,
                 merchantDisplayName: 'Primex',
@@ -145,19 +144,18 @@ export default function DeliveryRecapScreen() {
                 throw new Error(initError.message);
             }
 
-            // 4. Present the payment sheet
+            // Present the payment sheet
             const { error: presentError } = await presentPaymentSheet();
 
             if (presentError) {
                 if (presentError.code === 'Canceled') {
                     // User cancelled the payment - not an error
-                    setIsSubmitting(false);
                     return;
                 }
                 throw new Error(presentError.message);
             }
 
-            // 5. Payment successful - update delivery status
+            // Payment successful - update delivery status
             await db.collection('deliveries').doc(delivery.id).update({
                 state: 'prepaid',
                 paymentDate: serverTimestamp(),
@@ -165,7 +163,10 @@ export default function DeliveryRecapScreen() {
                 paymentStatus: 'succeeded'
             });
 
-            // 6. Show success message and navigate
+            // Reset the form after successful creation
+            resetForm();
+
+            // Show success message and navigate
             Alert.alert(
                 'Paiment réussi',
                 'Votre paiment à été effectué avec succès.',
@@ -179,10 +180,11 @@ export default function DeliveryRecapScreen() {
         } catch (error) {
             console.error('Error creating delivery:', error);
             Alert.alert('Error', 'Failed to create delivery. Please try again.');
-        } finally {
-            setIsSubmitting(false);
         }
     };
+
+    // Show loading state during mutation
+    const isSubmitting = createDeliveryMutation.isPending;
 
     return (
         <GradientView>
@@ -371,6 +373,15 @@ export default function DeliveryRecapScreen() {
                         Votre paiement sera traité en toute sécurité via Stripe. Une fois votre paiement confirmé, votre livraison sera disponible pour être prise en charge par un livreur.
                     </Text>
                 </View>
+
+                {/* Show mutation error if any */}
+                {createDeliveryMutation.error && (
+                    <View className="bg-red-500/20 p-4 rounded-lg mb-4">
+                        <Text className="text-red-400 font-cabin text-center">
+                            {createDeliveryMutation.error.message || 'Erreur lors de la création de la livraison'}
+                        </Text>
+                    </View>
+                )}
 
                 {/* Navigation buttons */}
                 <StyledButton

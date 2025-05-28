@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -12,7 +12,6 @@ import {
     Linking
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { DeliveryService, DeliveryWithAgent } from "@/src/services/delivery.service";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
 import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
@@ -27,48 +26,64 @@ import { Separator } from "@/components/ui/Separator";
 import { useAuth } from "@/contexts/authContext";
 import StyledTextInput from "@/components/ui/StyledTextInput";
 import StyledButton from "@/components/ui/StyledButton";
+import {
+    useDelivery,
+    useValidateDelivery,
+    useDeliveryQueryCleanup
+} from "@/hooks/useDeliveryQueries";
+import { useEffect } from 'react';
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const { t } = useTranslation();
     const mapRef = useRef<MapView>(null);
-    const deliveryService = new DeliveryService();
     const deliveryAgentService = new DeliveryAgentService();
     const GOOGLE_MAPS_API_KEY = "AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c";
     const { user } = useAuth();
-    const [delivery, setDelivery] = useState<DeliveryWithAgent | null>(null);
+
+    // Local state for agent details and secret code
     const [agent, setAgent] = useState<DeliveryAgent | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [agentLoading, setAgentLoading] = useState(false);
     const [secretCode, setSecretCode] = useState<string>('');
 
-    useEffect(() => {
-        const fetchDeliveryDetails = async () => {
-            try {
-                setLoading(true);
-                // Fetch the delivery details
-                const deliveryData = await deliveryService.getDeliveryById(id as string);
-                setDelivery(deliveryData);
+    // Ensure query cleanup on auth changes
+    useDeliveryQueryCleanup();
 
-                // If there's a delivery agent, fetch their details
-                if (deliveryData?.deliveryAgentId) {
-                    console.log("Fetching delivery agent details for ID:", deliveryData.deliveryAgentId);
-                    const agentData = await deliveryAgentService.getAgentProfile(deliveryData.deliveryAgentId);
+    // Use React Query for delivery data
+    const {
+        data: delivery,
+        isLoading,
+        error,
+        refetch
+    } = useDelivery(id as string, true); // Enable real-time updates
+
+    // Use React Query mutation for delivery validation
+    const validateDeliveryMutation = useValidateDelivery();
+
+    // Fetch agent details when delivery data changes
+    useEffect(() => {
+        const fetchAgentDetails = async () => {
+            if (delivery?.deliveryAgentId && delivery.deliveryAgentId !== agent?.id) {
+                try {
+                    setAgentLoading(true);
+                    console.log("Fetching delivery agent details for ID:", delivery.deliveryAgentId);
+                    const agentData = await deliveryAgentService.getAgentProfile(delivery.deliveryAgentId);
                     setAgent(agentData);
+                } catch (err) {
+                    console.error("Error fetching agent details:", err);
+                    // Don't show error for agent fetch failure, just continue without agent info
+                } finally {
+                    setAgentLoading(false);
                 }
-            } catch (err) {
-                console.error("Error fetching delivery details:", err);
-                setError("Échec du chargement des détails de livraison");
-            } finally {
-                setLoading(false);
+            } else if (!delivery?.deliveryAgentId) {
+                // Clear agent if no agent is assigned
+                setAgent(null);
             }
         };
 
-        if (id) {
-            fetchDeliveryDetails();
-        }
-    }, [id]);
+        fetchAgentDetails();
+    }, [delivery?.deliveryAgentId, agent?.id]);
 
     // Helper function for status styling
     function getStatusStyle(status: string): object {
@@ -88,7 +103,7 @@ export default function DeliveryDetailsScreen() {
         }
     }
 
-    const handleCodeSubmit = () => {
+    const handleCodeSubmit = async () => {
         if (secretCode === '') {
             Alert.alert('Erreur', 'Veuillez entrer le code secret.');
             return;
@@ -101,7 +116,7 @@ export default function DeliveryDetailsScreen() {
 
         if (secretCode === delivery.secretCode) {
             try {
-                deliveryService.agentValidateDelivery(delivery.id);
+                await validateDeliveryMutation.mutateAsync(delivery.id);
                 Alert.alert(
                     'Succès',
                     'La livraison a été validée avec succès.',
@@ -119,7 +134,7 @@ export default function DeliveryDetailsScreen() {
         } else {
             Alert.alert('Erreur', 'Le code secret est incorrect.');
         }
-    }
+    };
 
     const handleShareSecretCode = async () => {
         if (!delivery || !delivery.secretCode || !delivery.receiver) {
@@ -158,7 +173,7 @@ export default function DeliveryDetailsScreen() {
     };
 
     const handleSendSMS = () => {
-        if ( !delivery || !delivery.secretCode || !delivery.receiver?.phoneNumber) {
+        if (!delivery || !delivery.secretCode || !delivery.receiver?.phoneNumber) {
             Alert.alert('Erreur', 'Numéro de téléphone du destinataire manquant.');
             return;
         }
@@ -181,7 +196,12 @@ export default function DeliveryDetailsScreen() {
             });
     };
 
-    if (loading) {
+    const handleRefresh = () => {
+        refetch();
+    };
+
+    // Loading state
+    if (isLoading) {
         return (
             <GradientView>
                 <View className="flex-1 justify-center items-center">
@@ -192,17 +212,26 @@ export default function DeliveryDetailsScreen() {
         );
     }
 
+    // Error state
     if (error || !delivery) {
         return (
             <GradientView>
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-                    <Text className="mt-4 text-lg text-red-500 font-cabin">{error || "Livraison non trouvée"}</Text>
+                    <Text className="mt-4 text-lg text-red-500 font-cabin">
+                        {error?.message || "Livraison non trouvée"}
+                    </Text>
                     <TouchableOpacity
                         className="mt-6 p-3 bg-primary rounded-lg"
+                        onPress={handleRefresh}
+                    >
+                        <Text className="text-darker font-cabin-medium">Réessayer</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        className="mt-4 p-3 bg-gray-600 rounded-lg"
                         onPress={() => router.back()}
                     >
-                        <Text className="text-darker font-cabin-medium">Retour</Text>
+                        <Text className="text-white font-cabin-medium">Retour</Text>
                     </TouchableOpacity>
                 </View>
             </GradientView>
@@ -238,7 +267,12 @@ export default function DeliveryDetailsScreen() {
                 {/* Delivery Agent Information with Avatar - Top Section */}
                 {!user?.isDeliveryAgent && (
                     <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
-                        <Text className="text-white text-lg font-cabin-semibold mb-3">Livreur</Text>
+                        <View className="flex-row justify-between items-center mb-3">
+                            <Text className="text-white text-lg font-cabin-semibold">Livreur</Text>
+                            {agentLoading && (
+                                <ActivityIndicator size="small" color="#5DD6FF" />
+                            )}
+                        </View>
 
                         <View className="flex-row">
                             {/* Agent Information */}
@@ -377,6 +411,7 @@ export default function DeliveryDetailsScreen() {
                     </View>
                 )}
 
+                {/* Agent Code Input Section */}
                 {user?.isDeliveryAgent && delivery.status !== 'delivered' && (
                     <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
                         <StyledTextInput
@@ -385,8 +420,24 @@ export default function DeliveryDetailsScreen() {
                             value={secretCode}
                             onChangeText={setSecretCode}
                         />
-                        <StyledButton variant="primary" onPress={handleCodeSubmit}>
-                            <Text className="text-white font-cabin-medium">Envoyer le code</Text>
+
+                        {/* Show validation error if any */}
+                        {validateDeliveryMutation.error && (
+                            <View className="bg-red-500/20 p-3 rounded-lg mb-3">
+                                <Text className="text-red-400 font-cabin text-center">
+                                    {validateDeliveryMutation.error.message || 'Erreur lors de la validation'}
+                                </Text>
+                            </View>
+                        )}
+
+                        <StyledButton
+                            variant="primary"
+                            onPress={handleCodeSubmit}
+                            disabled={validateDeliveryMutation.isPending}
+                        >
+                            <Text className="text-white font-cabin-medium">
+                                {validateDeliveryMutation.isPending ? 'Validation en cours...' : 'Valider la livraison'}
+                            </Text>
                         </StyledButton>
                     </View>
                 )}
@@ -509,7 +560,7 @@ export default function DeliveryDetailsScreen() {
                             </View>
                         )}
 
-                        {/* Pickup Time */}
+                        {/* Delivery Time */}
                         <View className="bg-black/20 p-2 rounded-lg mt-1">
                             <Text className="text-primary font-cabin-medium text-sm">Créneau de livraison:</Text>
                             <Text className="text-white font-cabin">

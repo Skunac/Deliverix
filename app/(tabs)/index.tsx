@@ -1,12 +1,16 @@
 import { View, FlatList, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
-import { DeliveryService } from "@/src/services/delivery.service";
-import { Delivery, DeliveryState } from "@/src/models/delivery.model";
+import { DeliveryState } from "@/src/models/delivery.model";
 import DeliveryCard from "@/components/ui/DeliveryCard";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
+import {
+    useUserDeliveries,
+    useAgentDeliveries,
+    useDeliveryQueryCleanup
+} from "@/hooks/useDeliveryQueries";
 
 type FilterOption = {
     label: string;
@@ -18,15 +22,54 @@ export default function DeliveriesScreen() {
     const { user } = useAuth();
     const router = useRouter();
     const params = useLocalSearchParams();
-    const deliveryService = new DeliveryService();
-    const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-    const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [activeFilter, setActiveFilter] = useState<DeliveryState | 'all'>('all');
 
     // Track if we just navigated from accepting a delivery
     const [refreshTriggered, setRefreshTriggered] = useState(false);
+
+    // Determine user type and ID
+    const isDeliveryAgent = user?.isDeliveryAgent;
+    const userId = user?.uid || user?.id;
+
+    // For regular users: fetch all their deliveries
+    const {
+        data: userDeliveries = [],
+        isLoading: isLoadingUserDeliveries,
+        error: userDeliveriesError,
+        refetch: refetchUserDeliveries,
+        isRefetching: isRefetchingUserDeliveries
+    } = useUserDeliveries(
+        userId || '',
+        {
+            enableRealtime: true
+        }
+    );
+
+    // For delivery agents: fetch all their deliveries
+    const {
+        data: agentDeliveries = [],
+        isLoading: isLoadingAgentDeliveries,
+        error: agentDeliveriesError,
+        refetch: refetchAgentDeliveries,
+        isRefetching: isRefetchingAgentDeliveries
+    } = useAgentDeliveries(
+        userId || '',
+        {
+            enableRealtime: true
+        }
+    );
+
+    // Determine which data to use
+    const allDeliveries = isDeliveryAgent ? agentDeliveries : userDeliveries;
+    const isLoading = isDeliveryAgent ? isLoadingAgentDeliveries : isLoadingUserDeliveries;
+    const error = isDeliveryAgent ? agentDeliveriesError : userDeliveriesError;
+    const refetch = isDeliveryAgent ? refetchAgentDeliveries : refetchUserDeliveries;
+    const isRefetching = isDeliveryAgent ? isRefetchingAgentDeliveries : isRefetchingUserDeliveries;
+
+    // Filter deliveries based on active filter
+    const filteredDeliveries = activeFilter === 'all'
+        ? allDeliveries
+        : allDeliveries.filter(delivery => delivery.state === activeFilter);
 
     // Define filter options
     const filterOptions: FilterOption[] = [
@@ -36,95 +79,71 @@ export default function DeliveriesScreen() {
         { label: 'Annulées', state: 'cancelled', icon: 'close-circle-outline' }
     ];
 
-    const fetchDeliveries = async (showLoading = true) => {
-        try {
-            if (showLoading) {
-                setLoading(true);
-            }
-
-            if (user?.uid) {
-                let userDeliveries: Delivery[] = [];
-                if (user.isDeliveryAgent) {
-                    userDeliveries = await deliveryService.getAgentDeliveries(user.uid);
-                } else {
-                    userDeliveries = await deliveryService.getUserDeliveries(user.uid);
-                }
-                console.log("Agent deliveries:", userDeliveries);
-                setDeliveries(userDeliveries);
-                setFilteredDeliveries(userDeliveries);
-            } else {
-                setError("User ID not found");
-            }
-        } catch (err) {
-            console.error("Error fetching deliveries:", err);
-            setError("Failed to load deliveries");
-        } finally {
-            setLoading(false);
-            setRefreshTriggered(false);
-        }
-    };
-
-    useEffect(() => {
-        if (user?.uid) {
-            fetchDeliveries();
-        }
-    }, [user?.uid]);
-
+    // Handle refresh from navigation params
     useEffect(() => {
         if (params.refresh === "true" && !refreshTriggered) {
             console.log("Refresh triggered from navigation params");
             setRefreshTriggered(true);
-            fetchDeliveries(false);
-
+            refetch();
             router.setParams({});
         }
-    }, [params.refresh]);
+    }, [params.refresh, refreshTriggered, refetch, router]);
 
+    // Reset refresh trigger when refetching completes
     useEffect(() => {
-        if (activeFilter === 'all') {
-            setFilteredDeliveries(deliveries);
-        } else {
-            const filtered = deliveries.filter(delivery => delivery.state === activeFilter);
-            setFilteredDeliveries(filtered);
+        if (refreshTriggered && !isRefetching) {
+            setRefreshTriggered(false);
         }
-    }, [activeFilter, deliveries]);
+    }, [refreshTriggered, isRefetching]);
 
     const handleFilterChange = (filter: DeliveryState | 'all') => {
         setActiveFilter(filter);
     };
 
-    const handleDeliveryPress = (delivery: Delivery) => {
+    const handleDeliveryPress = (delivery: any) => {
         router.push(`/delivery/${delivery.id}`);
     };
 
     const handleRefresh = () => {
-        fetchDeliveries(false);
+        refetch();
     };
 
     const ItemSeparator = () => <View className="h-4" />;
 
-    if (loading) {
+    // Loading State
+    if (isLoading) {
         return (
             <GradientView>
                 <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#6366f1" />
-                    <Text className="mt-4 text-white">Chargement des livraisons...</Text>
+                    <ActivityIndicator size="large" color="#5DD6FF" />
+                    <Text className="mt-4 text-white font-cabin">
+                        Chargement des livraisons...
+                    </Text>
                 </View>
             </GradientView>
         );
     }
 
+    // Error State
     if (error) {
         return (
             <GradientView>
                 <View className="flex-1 justify-center items-center p-4">
                     <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-                    <Text className="mt-4 text-lg text-red-500">{error}</Text>
+                    <Text className="mt-4 text-lg text-red-500 font-cabin">
+                        Erreur lors du chargement
+                    </Text>
+                    <Text className="mt-2 text-gray-300 text-center font-cabin">
+                        {error.message || "Une erreur est survenue"}
+                    </Text>
                     <TouchableOpacity
                         className="mt-6 p-3 bg-primary rounded-lg"
-                        onPress={() => fetchDeliveries()}
+                        onPress={handleRefresh}
+                        disabled={isRefetching}
                     >
-                        <Text className="text-white font-cabin-medium">Réessayer</Text>
+                        <Text className="text-white font-cabin-medium">
+                            {isRefetching ? 'Rechargement...' : 'Réessayer'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </GradientView>
@@ -160,60 +179,98 @@ export default function DeliveriesScreen() {
         </View>
     );
 
-    if (deliveries.length === 0) {
+    // Empty State for no deliveries at all
+    if (allDeliveries.length === 0) {
         return (
             <GradientView>
-                {user?.isDeliveryAgent && renderFilterTabs()}
-                <View className="flex-1 justify-center items-center p-4">
-                    <Ionicons name="document-outline" size={48} color="#6b7280" />
-                    <Text className="mt-4 text-lg text-white">Aucune livraison trouvée</Text>
-                    <Text className="mt-2 text-gray-300 text-center">
-                        Vous n'avez pas encore de livraisons. Elles apparaîtront ici une fois créées.
-                    </Text>
+                <View className="flex-1">
+                    {isDeliveryAgent && renderFilterTabs()}
+                    <View className="flex-1 justify-center items-center p-4">
+                        <Ionicons name="document-outline" size={48} color="#6b7280" />
+                        <Text className="mt-4 text-lg text-white font-cabin-medium">
+                            Aucune livraison trouvée
+                        </Text>
+                        <Text className="mt-2 text-gray-300 text-center font-cabin">
+                            Vous n'avez pas encore de livraisons. Elles apparaîtront ici une fois créées.
+                        </Text>
 
-                    {user?.isDeliveryAgent && (
+                        {isDeliveryAgent && (
+                            <TouchableOpacity
+                                className="mt-6 p-3 bg-primary rounded-lg"
+                                onPress={() => router.push('/(tabs)/available-deliveries')}
+                            >
+                                <Text className="text-darker font-cabin-medium">
+                                    Voir les livraisons disponibles
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
                         <TouchableOpacity
-                            className="mt-6 p-3 bg-primary rounded-lg"
-                            onPress={() => router.push('/(tabs)/available-deliveries')}
+                            className="mt-4 p-2"
+                            onPress={handleRefresh}
+                            disabled={isRefetching}
                         >
-                            <Text className="text-white font-cabin-medium">Voir les livraisons disponibles</Text>
+                            <Text className="text-secondary font-cabin">
+                                {isRefetching ? 'Actualisation...' : 'Actualiser'}
+                            </Text>
                         </TouchableOpacity>
-                    )}
+                    </View>
                 </View>
             </GradientView>
         );
     }
 
+    // Empty State for filtered results
+    if (filteredDeliveries.length === 0) {
+        return (
+            <GradientView>
+                <View className="flex-1">
+                    {isDeliveryAgent && renderFilterTabs()}
+                    <View className="flex-1 justify-center items-center p-4">
+                        <Ionicons name="document-outline" size={48} color="#6b7280" />
+                        <Text className="mt-4 text-lg text-white font-cabin-medium">
+                            Aucune livraison {getFilterLabel(activeFilter)}
+                        </Text>
+                        <Text className="mt-2 text-gray-300 text-center font-cabin">
+                            Essayez de changer de filtre pour voir d'autres livraisons.
+                        </Text>
+                        <TouchableOpacity
+                            className="mt-4 p-2"
+                            onPress={handleRefresh}
+                            disabled={isRefetching}
+                        >
+                            <Text className="text-secondary font-cabin">
+                                {isRefetching ? 'Actualisation...' : 'Actualiser'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </GradientView>
+        );
+    }
+
+    // Success State - List of deliveries
     return (
         <GradientView>
             <View className="flex-1">
-                {user?.isDeliveryAgent && renderFilterTabs()}
+                {isDeliveryAgent && renderFilterTabs()}
 
-                {filteredDeliveries.length === 0 ? (
-                    <View className="flex-1 justify-center items-center p-4">
-                        <Ionicons name="document-outline" size={48} color="#6b7280" />
-                        <Text className="mt-4 text-lg text-white">Aucune livraison {getFilterLabel(activeFilter)}</Text>
-                        <Text className="mt-2 text-gray-300 text-center">
-                            Essayez de changer de filtre pour voir d'autres livraisons.
-                        </Text>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={filteredDeliveries}
-                        keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => (
-                            <DeliveryCard
-                                delivery={item}
-                                variant={user?.isDeliveryAgent ? 'deliveryGuy' : 'user'}
-                                onPress={() => handleDeliveryPress(item)}
-                            />
-                        )}
-                        ItemSeparatorComponent={ItemSeparator}
-                        contentContainerStyle={{ padding: 16, paddingTop: 8 }}
-                        onRefresh={handleRefresh}
-                        refreshing={refreshTriggered}
-                    />
-                )}
+                <FlatList
+                    data={filteredDeliveries}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                        <DeliveryCard
+                            delivery={item}
+                            variant={isDeliveryAgent ? 'deliveryGuy' : 'user'}
+                            onPress={() => handleDeliveryPress(item)}
+                        />
+                    )}
+                    ItemSeparatorComponent={ItemSeparator}
+                    contentContainerStyle={{ padding: 16, paddingTop: 8 }}
+                    onRefresh={handleRefresh}
+                    refreshing={isRefetching || refreshTriggered}
+                    showsVerticalScrollIndicator={false}
+                />
             </View>
         </GradientView>
     );
