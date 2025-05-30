@@ -7,6 +7,7 @@ import { StorageService } from '@/src/services/storage.service';
 import { DeliveryAgent } from '@/src/models/delivery-agent.model';
 import { useAuth } from '@/contexts/authContext';
 import StyledButton from '@/components/ui/StyledButton';
+import { GradientView } from '@/components/ui/GradientView';
 
 interface DocumentItem {
     key: string;
@@ -288,9 +289,9 @@ const DeliveryAgentDocuments: React.FC<DeliveryAgentDocumentsProps> = ({ onClose
         const isUploading = uploadingDocuments.includes(document.key);
 
         return (
-            <View key={document.key} className="bg-gray-800/50 p-4 rounded-lg mb-4">
+            <View key={document.key} className="mb-4">
                 <View className="flex-row items-start justify-between mb-3">
-                    <View className="flex-1 mr-3">
+                    <View className="flex-1 mr-4">
                         <View className="flex-row items-center mb-1">
                             <Text className="text-white font-cabin-medium text-base">
                                 {document.title}
@@ -369,62 +370,92 @@ const DeliveryAgentDocuments: React.FC<DeliveryAgentDocumentsProps> = ({ onClose
         const categoryDocuments = documents.filter(doc => doc.category === categoryKey);
 
         return (
-            <View key={categoryKey} className="mb-6">
-                <Text className="text-white font-cabin-semibold text-lg mb-4">
-                    {categoryTitle}
-                </Text>
+            <View key={categoryKey} className="bg-dark p-5 rounded-xl mb-6 border border-gray-800">
+                <View className="flex-row items-center mb-4">
+                    <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
+                        <Ionicons name={getCategoryIcon(categoryKey)} size={16} color="#0F2026" />
+                    </View>
+                    <Text className="text-white text-lg font-cabin-medium">
+                        {categoryTitle}
+                    </Text>
+                </View>
                 {categoryDocuments.map(renderDocumentItem)}
             </View>
         );
     };
 
+    // Get category icon
+    const getCategoryIcon = (categoryKey: string): string => {
+        switch (categoryKey) {
+            case 'personal':
+                return 'person-outline';
+            case 'vehicle':
+                return 'car-outline';
+            case 'professional':
+                return 'briefcase-outline';
+            case 'certificates':
+                return 'school-outline';
+            default:
+                return 'document-outline';
+        }
+    };
+
+    // Loading state
     if (loading) {
         return (
-            <View className="flex-1 justify-center items-center bg-darker">
-                <ActivityIndicator size="large" color="#5DD6FF" />
-                <Text className="text-white mt-4 font-cabin">
-                    Chargement de vos documents...
-                </Text>
-            </View>
+            <GradientView>
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color="#5DD6FF" />
+                    <Text className="text-white mt-4 font-cabin">
+                        Chargement de vos documents...
+                    </Text>
+                </View>
+            </GradientView>
         );
     }
 
+    // Not authorized state
     if (!user?.isDeliveryAgent) {
         return (
-            <View className="flex-1 justify-center items-center bg-darker p-4">
-                <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-                <Text className="text-white text-lg font-cabin-medium mt-4 text-center">
-                    Accès non autorisé
-                </Text>
-                <Text className="text-gray-300 font-cabin text-center mt-2">
-                    Cette section est réservée aux livreurs professionnels.
-                </Text>
-                <StyledButton
-                    variant="primary"
-                    onPress={onClose}
-                    className="mt-6"
-                >
-                    <Text className="text-white font-cabin-medium">Retour</Text>
-                </StyledButton>
-            </View>
+            <GradientView>
+                <View className="flex-1 justify-center items-center p-4">
+                    <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+                    <Text className="text-white text-lg font-cabin-medium mt-4 text-center">
+                        Accès non autorisé
+                    </Text>
+                    <Text className="text-gray-300 font-cabin text-center mt-2">
+                        Cette section est réservée aux livreurs professionnels.
+                    </Text>
+                    <StyledButton
+                        variant="primary"
+                        onPress={onClose}
+                        className="mt-6"
+                    >
+                        <Text className="text-darker font-cabin-medium">Retour</Text>
+                    </StyledButton>
+                </View>
+            </GradientView>
         );
     }
 
     return (
-        <View className="flex-1 bg-darker">
-            <ScrollView className="flex-1">
+        <GradientView>
+            <ScrollView className="flex-1 p-4">
                 {/* Header */}
-                <View className="flex-row items-center p-4 border-b border-gray-700">
-                    <TouchableOpacity onPress={onClose} className="mr-3">
+                <View className="flex-row items-center mb-6">
+                    <TouchableOpacity
+                        onPress={onClose}
+                        className="mr-4"
+                    >
                         <Ionicons name="close" size={24} color="white" />
                     </TouchableOpacity>
-                    <Text className="text-white text-xl font-cabin-medium flex-1">
+                    <Text className="text-white text-xl font-cabin-medium">
                         Mes documents
                     </Text>
                 </View>
 
                 {/* Info banner */}
-                <View className="bg-blue-600/20 p-4 m-4 rounded-lg border border-blue-600/30">
+                <View className="bg-blue-600/20 p-4 rounded-xl mb-6 border border-blue-600/30">
                     <View className="flex-row items-start">
                         <Ionicons name="information-circle" size={24} color="#3B82F6" className="mr-3 mt-1" />
                         <View className="flex-1">
@@ -440,19 +471,19 @@ const DeliveryAgentDocuments: React.FC<DeliveryAgentDocumentsProps> = ({ onClose
                 </View>
 
                 {/* Document categories */}
-                <View className="p-4">
-                    {renderDocumentCategory('Documents personnels', 'personal')}
-                    {agent?.vehicleInfo.type !== "bicycle" && (
-                        renderDocumentCategory('Documents véhicule', 'vehicle')
-                    )}
-                    {renderDocumentCategory('Documents professionnels', 'professional')}
-                    {renderDocumentCategory('Certificats (optionnels)', 'certificates')}
-                </View>
+                {renderDocumentCategory('Documents personnels', 'personal')}
+
+                {agent?.vehicleInfo.type !== "bicycle" && (
+                    renderDocumentCategory('Documents véhicule', 'vehicle')
+                )}
+
+                {renderDocumentCategory('Documents professionnels', 'professional')}
+                {renderDocumentCategory('Certificats (optionnels)', 'certificates')}
 
                 {/* Bottom spacing */}
                 <View className="h-8" />
             </ScrollView>
-        </View>
+        </GradientView>
     );
 };
 
