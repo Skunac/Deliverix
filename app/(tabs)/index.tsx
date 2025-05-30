@@ -152,7 +152,7 @@ export default function DeliveriesScreen() {
 
     // Render filter tabs
     const renderFilterTabs = () => (
-        <View className="flex-row bg-dark p-2 rounded-lg mb-2">
+        <View className="flex-row bg-dark p-2 mb-2">
             {filterOptions.map((option) => (
                 <TouchableOpacity
                     key={option.state}
