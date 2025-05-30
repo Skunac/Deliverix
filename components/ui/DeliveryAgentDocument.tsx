@@ -323,9 +323,7 @@ const DeliveryAgentDocuments: React.FC<DeliveryAgentDocumentsProps> = ({ onClose
                 <TouchableOpacity
                     onPress={() => uploadDocument(document.key)}
                     disabled={isUploading}
-                    className={`flex-row items-center justify-center p-3 rounded-lg ${
-                        documentUrl ? 'bg-blue-600' : 'bg-primary'
-                    }`}
+                    className={`flex-row items-center justify-center p-3 rounded-lg bg-primary`}
                 >
                     {isUploading ? (
                         <>
@@ -455,11 +453,11 @@ const DeliveryAgentDocuments: React.FC<DeliveryAgentDocumentsProps> = ({ onClose
                 </View>
 
                 {/* Info banner */}
-                <View className="bg-blue-600/20 p-4 rounded-xl mb-6 border border-blue-600/30">
+                <View className="bg-dark p-4 rounded-xl mb-6 border border-gray-800">
                     <View className="flex-row items-start">
-                        <Ionicons name="information-circle" size={24} color="#3B82F6" className="mr-3 mt-1" />
+                        <Ionicons name="information-circle" size={24} color="#5DD6FF" className="mr-3 mt-1" />
                         <View className="flex-1">
-                            <Text className="text-blue-400 font-cabin-medium mb-1">
+                            <Text className="text-primary font-cabin-medium mb-1">
                                 Mise à jour des documents
                             </Text>
                             <Text className="text-blue-200 font-cabin text-sm">
