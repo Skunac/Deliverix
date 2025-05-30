@@ -65,4 +65,8 @@ export interface Delivery extends FirestoreDocument {
 
     deliveryAgentId?: string;
     price: number;
+
+    deleted: boolean;
+    deletedAt?: Date;
+    deletedBy?: string;
 }

@@ -71,7 +71,7 @@ export class EnhancedDeliveryService {
         return () => this.cleanupListener(listenerKey);
     }
 
-    // Real-time subscription for user deliveries
+    // Real-time subscription for user deliveries (with deleted filter)
     subscribeToUserDeliveries(
         userId: string,
         callback: (deliveries: DeliveryWithAgent[]) => void,
@@ -84,6 +84,7 @@ export class EnhancedDeliveryService {
 
         let query = this.deliveriesCollection
             .where('creator', '==', userId)
+            .where('deleted', '==', false) // Filter out deleted deliveries
             .orderBy('createdAt', 'desc');
 
         if (options?.state) {
@@ -126,7 +127,7 @@ export class EnhancedDeliveryService {
         return () => this.cleanupListener(listenerKey);
     }
 
-    // Real-time subscription for agent deliveries
+    // Real-time subscription for agent deliveries (with deleted filter)
     subscribeToAgentDeliveries(
         agentId: string,
         callback: (deliveries: DeliveryWithAgent[]) => void,
@@ -139,6 +140,7 @@ export class EnhancedDeliveryService {
 
         let query = this.deliveriesCollection
             .where('deliveryAgentId', '==', agentId)
+            .where('deleted', '==', false) // Filter out deleted deliveries
             .orderBy('createdAt', 'desc');
 
         if (options?.state) {
@@ -181,7 +183,7 @@ export class EnhancedDeliveryService {
         return () => this.cleanupListener(listenerKey);
     }
 
-    // Real-time subscription for available deliveries
+    // Real-time subscription for available deliveries (with deleted filter)
     subscribeToAvailableDeliveries(
         agentId: string,
         callback: (deliveries: Delivery[]) => void,
@@ -194,6 +196,7 @@ export class EnhancedDeliveryService {
         const query = this.deliveriesCollection
             .where('state', '==', 'prepaid')
             .where('status', '==', 'waiting_for_delivery_guy')
+            .where('deleted', '==', false) // Filter out deleted deliveries
             .orderBy('createdAt', 'desc');
 
         const unsubscribe = query.onSnapshot(
@@ -280,6 +283,7 @@ export class EnhancedDeliveryService {
         try {
             let query = this.deliveriesCollection
                 .where('creator', '==', userId)
+                .where('deleted', '==', false) // Filter out deleted deliveries
                 .orderBy('createdAt', 'desc');
 
             if (options?.state) {
@@ -317,6 +321,7 @@ export class EnhancedDeliveryService {
         try {
             let query = this.deliveriesCollection
                 .where('deliveryAgentId', '==', agentId)
+                .where('deleted', '==', false) // Filter out deleted deliveries
                 .orderBy('createdAt', 'desc');
 
             if (options?.state) {
@@ -365,6 +370,7 @@ export class EnhancedDeliveryService {
             const query = this.deliveriesCollection
                 .where('state', '==', 'prepaid')
                 .where('status', '==', 'waiting_for_delivery_guy')
+                .where('deleted', '==', false) // Filter out deleted deliveries
                 .orderBy('createdAt', 'desc');
 
             const snapshot = await query.get();
@@ -424,6 +430,7 @@ export class EnhancedDeliveryService {
 
             const deliveryWithTimestamps = {
                 ...delivery,
+                deleted: false, // Set default deleted field
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };
@@ -453,6 +460,141 @@ export class EnhancedDeliveryService {
             await this.deliveriesCollection.doc(deliveryId).update(updateData);
         } catch (error) {
             console.error('Error updating delivery:', error);
+            throw error;
+        }
+    }
+
+    async canEditOrDeleteDelivery(deliveryId: string, userId: string): Promise<{ canEdit: boolean; canDelete: boolean; reason?: string }> {
+        try {
+            const delivery = await this.getDeliveryById(deliveryId);
+
+            if (!delivery) {
+                return { canEdit: false, canDelete: false, reason: 'Livraison non trouvée' };
+            }
+
+            // Check if user is the creator
+            if (delivery.creator !== userId) {
+                return { canEdit: false, canDelete: false, reason: 'Vous n\'êtes pas autorisé à modifier cette livraison' };
+            }
+
+            // Check if delivery is soft deleted
+            if (delivery.deleted) {
+                return { canEdit: false, canDelete: false, reason: 'Cette livraison a été supprimée' };
+            }
+
+            // Check if delivery has been accepted by a delivery agent
+            const hasDeliveryAgent = delivery.deliveryAgentId && delivery.status !== 'waiting_for_delivery_guy';
+
+            if (hasDeliveryAgent) {
+                return {
+                    canEdit: false,
+                    canDelete: false,
+                    reason: 'Cette livraison a été acceptée par un livreur. Pour toute modification, veuillez contacter notre support à support@primex.com'
+                };
+            }
+
+            // Can edit if payment is not completed yet
+            const canEdit = delivery.state === 'waiting_for_prepayment' || delivery.state === 'prepaid';
+
+            // Can delete if not yet accepted
+            const canDelete = delivery.status === 'waiting_for_delivery_guy';
+
+            return { canEdit, canDelete };
+        } catch (error) {
+            console.error('Error checking delivery edit permissions:', error);
+            throw error;
+        }
+    }
+
+    async softDeleteDelivery(deliveryId: string, userId: string): Promise<void> {
+        try {
+            const permissions = await this.canEditOrDeleteDelivery(deliveryId, userId);
+
+            if (!permissions.canDelete) {
+                throw new Error(permissions.reason || 'Impossible de supprimer cette livraison');
+            }
+
+            await this.updateDelivery(deliveryId, {
+                deleted: true,
+                deletedAt: new Date(),
+                deletedBy: userId
+            });
+        } catch (error) {
+            console.error('Error soft deleting delivery:', error);
+            throw error;
+        }
+    }
+
+    async editDelivery(
+        deliveryId: string,
+        userId: string,
+        updateData: Partial<Delivery>
+    ): Promise<DeliveryWithAgent> {
+        try {
+            const permissions = await this.canEditOrDeleteDelivery(deliveryId, userId);
+
+            if (!permissions.canEdit) {
+                throw new Error(permissions.reason || 'Impossible de modifier cette livraison');
+            }
+
+            // Remove fields that shouldn't be updated
+            const allowedFields = [
+                'packageDescription',
+                'packageWeight',
+                'packageDimensions',
+                'packageCategory',
+                'isFragile',
+                'comment',
+                'scheduledDate',
+                'timeSlot',
+                'expeditor',
+                'receiver',
+                'pickupAddress',
+                'deliveryAddress',
+                'billingAddress'
+            ];
+
+            const filteredUpdateData: any = {};
+            Object.keys(updateData).forEach(key => {
+                if (allowedFields.includes(key)) {
+                    filteredUpdateData[key] = updateData[key as keyof Delivery];
+                }
+            });
+
+            // If addresses are being updated, recalculate obfuscated coordinates
+            if (filteredUpdateData.pickupAddress) {
+                filteredUpdateData.pickupAddress.formattedAddress = formatAddress(filteredUpdateData.pickupAddress);
+                filteredUpdateData.pickupAddress.obfuscatedCoordinates = getObfuscatedPoint(
+                    filteredUpdateData.pickupAddress.coordinates.latitude,
+                    filteredUpdateData.pickupAddress.coordinates.longitude,
+                    300
+                );
+            }
+
+            if (filteredUpdateData.deliveryAddress) {
+                filteredUpdateData.deliveryAddress.formattedAddress = formatAddress(filteredUpdateData.deliveryAddress);
+                filteredUpdateData.deliveryAddress.obfuscatedCoordinates = getObfuscatedPoint(
+                    filteredUpdateData.deliveryAddress.coordinates.latitude,
+                    filteredUpdateData.deliveryAddress.coordinates.longitude,
+                    300
+                );
+            }
+
+            if (filteredUpdateData.billingAddress) {
+                filteredUpdateData.billingAddress.formattedAddress = formatAddress(filteredUpdateData.billingAddress);
+            }
+
+            await this.updateDelivery(deliveryId, filteredUpdateData);
+
+            // Return updated delivery
+            const updatedDelivery = await this.getDeliveryById(deliveryId);
+            if (!updatedDelivery) {
+                throw new Error('Failed to retrieve updated delivery');
+            }
+
+            return updatedDelivery;
+        } catch (error) {
+            console.error('Error editing delivery:', error);
             throw error;
         }
     }

@@ -60,7 +60,6 @@ export default function DeliveryRecapScreen() {
         }
 
         try {
-            // Prepare delivery data
             const deliveryData: Omit<Delivery, "id"> = {
                 creator: user.uid,
                 status: 'waiting_for_delivery_guy',
@@ -82,6 +81,8 @@ export default function DeliveryRecapScreen() {
                 isFragile: formState.isFragile,
                 comment: formState.comment,
                 price: parseFloat(calculatePrice()),
+                secretCode: '',
+                deleted: false,
             };
 
             // Create delivery using React Query mutation

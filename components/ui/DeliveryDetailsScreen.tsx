@@ -9,7 +9,7 @@ import {
     Alert,
     Image,
     Share,
-    Linking
+    Linking, Modal
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { GradientView } from "@/components/ui/GradientView";
@@ -29,9 +29,10 @@ import StyledButton from "@/components/ui/StyledButton";
 import {
     useDelivery,
     useValidateDelivery,
-    useDeliveryQueryCleanup
+    useDeliveryQueryCleanup, useDeleteDelivery, useDeliveryPermissions
 } from "@/hooks/useDeliveryQueries";
 import { useEffect } from 'react';
+import EditDeliveryScreen from "@/components/ui/DeliveryEditModal";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -46,6 +47,7 @@ export default function DeliveryDetailsScreen() {
     const [agent, setAgent] = useState<DeliveryAgent | null>(null);
     const [agentLoading, setAgentLoading] = useState(false);
     const [secretCode, setSecretCode] = useState<string>('');
+    const [showEditModal, setShowEditModal] = useState(false);
 
     // Ensure query cleanup on auth changes
     useDeliveryQueryCleanup();
@@ -60,6 +62,17 @@ export default function DeliveryDetailsScreen() {
 
     // Use React Query mutation for delivery validation
     const validateDeliveryMutation = useValidateDelivery();
+
+    // Use React Query mutation for delivery deletion
+    const deleteDeliveryMutation = useDeleteDelivery();
+
+    // Fetch permissions for edit/delete buttons
+    const {
+        data: permissions
+    } = useDeliveryPermissions(
+        id as string,
+        user?.uid || ''
+    );
 
     // Fetch agent details when delivery data changes
     useEffect(() => {
@@ -198,6 +211,49 @@ export default function DeliveryDetailsScreen() {
 
     const handleRefresh = () => {
         refetch();
+    };
+
+    const handleDelete = () => {
+        if (!delivery) return;
+
+        Alert.alert(
+            'Supprimer la livraison',
+            'Êtes-vous sûr de vouloir supprimer cette livraison ? Cette action ne peut pas être annulée.',
+            [
+                {
+                    text: 'Annuler',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: () => {
+                        deleteDeliveryMutation.mutate(delivery.id, {
+                            onSuccess: () => {
+                                Alert.alert(
+                                    'Succès',
+                                    'La livraison a été supprimée avec succès.',
+                                    [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => {
+                                                router.back();
+                                            }
+                                        }
+                                    ]
+                                );
+                            },
+                            onError: (error: any) => {
+                                Alert.alert(
+                                    'Erreur',
+                                    error.message || 'Impossible de supprimer la livraison'
+                                );
+                            }
+                        });
+                    }
+                }
+            ]
+        );
     };
 
     // Loading state
@@ -632,8 +688,55 @@ export default function DeliveryDetailsScreen() {
                     </View>
                 </View>
 
-                <View className="h-8" />
+                {!user?.isDeliveryAgent && (permissions?.canEdit || permissions?.canDelete) && (
+                    <View className="h-32"/>
+                )}
             </ScrollView>
+
+            {!user?.isDeliveryAgent && (permissions?.canEdit || permissions?.canDelete) && (
+                <View className="absolute bottom-0 left-0 right-0 bg-dark p-4 border-t border-gray-700">
+                    {permissions?.canEdit && (
+                        <StyledButton
+                            variant="primary"
+                            shadow
+                            onPress={() => setShowEditModal(true)}
+                            className="mb-3"
+                        >
+                            <Text className="text-darker font-cabin-medium">Modifier</Text>
+                        </StyledButton>
+                    )}
+
+                    {permissions?.canDelete && (
+                        <StyledButton
+                            variant="bordered"
+                            onPress={handleDelete}
+                            disabled={deleteDeliveryMutation.isPending}
+                            className="border-red-500"
+                        >
+                            <Text className="text-red-500 font-cabin-medium">
+                                {deleteDeliveryMutation.isPending ? 'Suppression...' : 'Supprimer'}
+                            </Text>
+                        </StyledButton>
+                    )}
+                </View>
+            )}
+
+            <Modal
+                visible={showEditModal}
+                animationType="slide"
+                transparent={false}
+                presentationStyle="fullScreen"
+            >
+                <EditDeliveryScreen
+                    delivery={delivery}
+                    onClose={() => setShowEditModal(false)}
+                    onSuccess={() => {
+                        setShowEditModal(false);
+                        refetch(); // Refresh the delivery data
+                    }}
+                />
+            </Modal>
+
         </GradientView>
     );
 }

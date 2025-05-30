@@ -1,5 +1,3 @@
-// hooks/useDeliveryQueries.ts - Updated with auth awareness
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import {
@@ -30,6 +28,10 @@ export const deliveryKeys = {
 
     // Available deliveries
     available: (agentId: string) => [...deliveryKeys.all, 'available', agentId] as const,
+
+    // Permissions
+    permissions: (deliveryId: string, userId: string) =>
+        [...deliveryKeys.all, 'permissions', deliveryId, userId] as const,
 };
 
 // ==================== AUTH-AWARE QUERY HOOKS ====================
@@ -37,12 +39,12 @@ export const deliveryKeys = {
 // 1. Single Delivery Hook with Auth Awareness
 export function useDelivery(deliveryId: string, enableRealtime = true) {
     const queryClient = useQueryClient();
-    const { user } = useAuth(); // Add auth awareness
+    const { user } = useAuth();
 
     const query = useQuery({
         queryKey: deliveryKeys.detail(deliveryId),
         queryFn: () => enhancedDeliveryService.getDeliveryById(deliveryId),
-        enabled: !!deliveryId && !!user, // Only run if user is authenticated
+        enabled: !!deliveryId && !!user,
     });
 
     // Real-time subscription with auth checks
@@ -62,7 +64,6 @@ export function useDelivery(deliveryId: string, enableRealtime = true) {
             },
             (error) => {
                 console.error('🚨 Real-time delivery error:', error);
-                // Don't throw error if user is logged out
                 if (!user) {
                     console.log('🔒 User logged out, ignoring error');
                     return;
@@ -74,7 +75,7 @@ export function useDelivery(deliveryId: string, enableRealtime = true) {
             console.log('🛑 Cleaning up delivery subscription:', deliveryId);
             unsubscribe();
         };
-    }, [deliveryId, enableRealtime, queryClient, user]); // Add user as dependency
+    }, [deliveryId, enableRealtime, queryClient, user]);
 
     return query;
 }
@@ -85,13 +86,13 @@ export function useUserDeliveries(
     options: DeliveryQueryOptions & { enableRealtime?: boolean } = {}
 ) {
     const queryClient = useQueryClient();
-    const { user } = useAuth(); // Add auth awareness
+    const { user } = useAuth();
     const { enableRealtime = true, ...queryOptions } = options;
 
     const query = useQuery({
         queryKey: deliveryKeys.userFiltered(userId, queryOptions),
         queryFn: () => enhancedDeliveryService.getUserDeliveries(userId, queryOptions),
-        enabled: !!userId && !!user && user.uid === userId, // Only if authenticated and matches
+        enabled: !!userId && !!user && user.uid === userId,
     });
 
     // Real-time subscription with auth checks
@@ -137,13 +138,13 @@ export function useAgentDeliveries(
     options: DeliveryQueryOptions & { enableRealtime?: boolean } = {}
 ) {
     const queryClient = useQueryClient();
-    const { user } = useAuth(); // Add auth awareness
+    const { user } = useAuth();
     const { enableRealtime = true, ...queryOptions } = options;
 
     const query = useQuery({
         queryKey: deliveryKeys.agentFiltered(agentId, queryOptions),
         queryFn: () => enhancedDeliveryService.getAgentDeliveries(agentId, queryOptions),
-        enabled: !!agentId && !!user && user.uid === agentId && user.isDeliveryAgent, // Auth + agent check
+        enabled: !!agentId && !!user && user.uid === agentId && user.isDeliveryAgent,
     });
 
     // Real-time subscription with auth checks
@@ -183,16 +184,16 @@ export function useAgentDeliveries(
     return query;
 }
 
-// 4. Available Deliveries Hook with Auth Awareness - FIXED
+// 4. Available Deliveries Hook with Auth Awareness
 export function useAvailableDeliveries(agentId: string, enableRealtime = false) {
     const queryClient = useQueryClient();
-    const { user } = useAuth(); // Add auth awareness
+    const { user } = useAuth();
 
     const query = useQuery({
         queryKey: deliveryKeys.available(agentId),
         queryFn: () => enhancedDeliveryService.getAvailableDeliveriesForAgent(agentId),
-        enabled: !!agentId && !!user && user.uid === agentId && user.isDeliveryAgent, // Auth + agent check
-        refetchInterval: enableRealtime ? undefined : 30 * 1000, // Poll if not real-time
+        enabled: !!agentId && !!user && user.uid === agentId && user.isDeliveryAgent,
+        refetchInterval: enableRealtime ? undefined : 30 * 1000,
         refetchIntervalInBackground: false,
     });
 
@@ -213,12 +214,10 @@ export function useAvailableDeliveries(agentId: string, enableRealtime = false) 
             },
             (error) => {
                 console.error('🚨 Real-time available deliveries error:', error);
-                // Check if user is still authenticated before showing error
                 if (!user) {
                     console.log('🔒 User logged out, ignoring available deliveries error');
                     return;
                 }
-                // If user is still authenticated, this is a real error
                 console.error('🚨 Real available deliveries error while authenticated:', error);
             }
         );
@@ -230,6 +229,18 @@ export function useAvailableDeliveries(agentId: string, enableRealtime = false) 
     }, [agentId, enableRealtime, queryClient, user]);
 
     return query;
+}
+
+// 5. Delivery Edit/Delete Permissions Hook
+export function useDeliveryPermissions(deliveryId: string, userId: string) {
+    const { user } = useAuth();
+
+    return useQuery({
+        queryKey: deliveryKeys.permissions(deliveryId, userId),
+        queryFn: () => enhancedDeliveryService.canEditOrDeleteDelivery(deliveryId, userId),
+        enabled: !!deliveryId && !!userId && !!user && user.uid === userId,
+        staleTime: 60 * 1000, // Cache for 1 minute
+    });
 }
 
 // ==================== AUTH-AWARE QUERY CLEANUP ====================
@@ -255,7 +266,7 @@ export function useDeliveryQueryCleanup() {
     }, [user, queryClient]);
 }
 
-// ==================== MUTATION HOOKS (unchanged but with better error handling) ====================
+// ==================== MUTATION HOOKS ====================
 
 // 1. Create Delivery Mutation
 export function useCreateDelivery() {
@@ -264,26 +275,21 @@ export function useCreateDelivery() {
 
     return useMutation({
         mutationFn: (delivery: Omit<Delivery, "id">) => {
-            // Check auth before executing
             if (!user) {
                 throw new Error('User not authenticated');
             }
             return enhancedDeliveryService.createDelivery(delivery);
         },
         onSuccess: (newDelivery) => {
-            // Update user deliveries cache
             if (user) {
                 queryClient.invalidateQueries({
                     queryKey: deliveryKeys.user(newDelivery.creator)
                 });
             }
-
-            // Set the new delivery in cache
             queryClient.setQueryData(deliveryKeys.detail(newDelivery.id), newDelivery);
         },
         onError: (error) => {
             console.error('Create delivery failed:', error);
-            // Check if error is due to auth
             if (error.message?.includes('permission-denied') && !user) {
                 console.log('🔒 Create delivery failed - user not authenticated');
             }
@@ -298,7 +304,6 @@ export function useAcceptDelivery() {
 
     return useMutation({
         mutationFn: ({ deliveryId, agentId }: { deliveryId: string; agentId: string }) => {
-            // Check auth before executing
             if (!user || !user.isDeliveryAgent) {
                 throw new Error('User not authenticated or not a delivery agent');
             }
@@ -307,15 +312,12 @@ export function useAcceptDelivery() {
         onMutate: async ({ deliveryId, agentId }) => {
             if (!user) return {};
 
-            // Cancel outgoing refetches
             await queryClient.cancelQueries({ queryKey: deliveryKeys.detail(deliveryId) });
 
-            // Snapshot previous value
             const previousDelivery = queryClient.getQueryData<DeliveryWithAgent>(
                 deliveryKeys.detail(deliveryId)
             );
 
-            // Optimistically update
             if (previousDelivery) {
                 queryClient.setQueryData(deliveryKeys.detail(deliveryId), {
                     ...previousDelivery,
@@ -328,12 +330,10 @@ export function useAcceptDelivery() {
             return { previousDelivery };
         },
         onError: (err, { deliveryId }, context) => {
-            // Rollback on error
             if (context?.previousDelivery) {
                 queryClient.setQueryData(deliveryKeys.detail(deliveryId), context.previousDelivery);
             }
 
-            // Check if error is due to auth
             if (err.message?.includes('permission-denied') && !user) {
                 console.log('🔒 Accept delivery failed - user not authenticated');
             }
@@ -341,7 +341,6 @@ export function useAcceptDelivery() {
         onSettled: (_, __, { deliveryId, agentId }) => {
             if (!user) return;
 
-            // Invalidate related queries
             queryClient.invalidateQueries({ queryKey: deliveryKeys.detail(deliveryId) });
             queryClient.invalidateQueries({ queryKey: deliveryKeys.available(agentId) });
             queryClient.invalidateQueries({ queryKey: deliveryKeys.agent(agentId) });
@@ -356,13 +355,67 @@ export function useValidateDelivery() {
 
     return useMutation({
         mutationFn: (deliveryId: string) => {
-            // Check auth before executing
             if (!user || !user.isDeliveryAgent) {
                 throw new Error('User not authenticated or not a delivery agent');
             }
             return enhancedDeliveryService.validateDelivery(deliveryId);
         },
         onMutate: async (deliveryId) => {
+            if (!user) return {};
+
+            await queryClient.cancelQueries({ queryKey: deliveryKeys.detail(deliveryId) });
+
+            const previousDelivery = queryClient.getQueryData<DeliveryWithAgent>(
+                deliveryKeys.detail(deliveryId)
+            );
+
+            if (previousDelivery) {
+                queryClient.setQueryData(deliveryKeys.detail(deliveryId), {
+                    ...previousDelivery,
+                    status: 'delivered' as DeliveryStatus,
+                    state: 'completed' as DeliveryState,
+                });
+            }
+
+            return { previousDelivery };
+        },
+        onError: (err, deliveryId, context) => {
+            if (context?.previousDelivery) {
+                queryClient.setQueryData(deliveryKeys.detail(deliveryId), context.previousDelivery);
+            }
+
+            if (err.message?.includes('permission-denied') && !user) {
+                console.log('🔒 Validate delivery failed - user not authenticated');
+            }
+        },
+        onSettled: (_, __, deliveryId) => {
+            if (!user) return;
+
+            queryClient.invalidateQueries({ queryKey: deliveryKeys.detail(deliveryId) });
+            queryClient.invalidateQueries({ queryKey: deliveryKeys.lists() });
+        },
+    });
+}
+
+// 4. Edit Delivery Mutation
+export function useEditDelivery() {
+    const queryClient = useQueryClient();
+    const { user } = useAuth();
+
+    return useMutation({
+        mutationFn: ({
+                         deliveryId,
+                         updateData
+                     }: {
+            deliveryId: string;
+            updateData: Partial<Delivery>
+        }) => {
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+            return enhancedDeliveryService.editDelivery(deliveryId, user.uid!, updateData);
+        },
+        onMutate: async ({ deliveryId, updateData }) => {
             if (!user) return {};
 
             // Cancel outgoing refetches
@@ -377,30 +430,84 @@ export function useValidateDelivery() {
             if (previousDelivery) {
                 queryClient.setQueryData(deliveryKeys.detail(deliveryId), {
                     ...previousDelivery,
-                    status: 'delivered' as DeliveryStatus,
-                    state: 'completed' as DeliveryState,
+                    ...updateData,
+                    updatedAt: new Date(),
                 });
             }
 
             return { previousDelivery };
         },
-        onError: (err, deliveryId, context) => {
+        onError: (err, { deliveryId }, context) => {
             // Rollback on error
             if (context?.previousDelivery) {
                 queryClient.setQueryData(deliveryKeys.detail(deliveryId), context.previousDelivery);
             }
-
-            // Check if error is due to auth
-            if (err.message?.includes('permission-denied') && !user) {
-                console.log('🔒 Validate delivery failed - user not authenticated');
-            }
+            console.error('Edit delivery failed:', err);
         },
-        onSettled: (_, __, deliveryId) => {
-            if (!user) return;
+        onSuccess: (updatedDelivery, { deliveryId }) => {
+            // Update the delivery in cache
+            queryClient.setQueryData(deliveryKeys.detail(deliveryId), updatedDelivery);
 
             // Invalidate related queries
-            queryClient.invalidateQueries({ queryKey: deliveryKeys.detail(deliveryId) });
-            queryClient.invalidateQueries({ queryKey: deliveryKeys.lists() });
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid!) });
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.permissions(deliveryId, user.uid!) });
+            }
+        },
+    });
+}
+
+// 5. Delete Delivery Mutation
+export function useDeleteDelivery() {
+    const queryClient = useQueryClient();
+    const { user } = useAuth();
+
+    return useMutation({
+        mutationFn: (deliveryId: string) => {
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+            return enhancedDeliveryService.softDeleteDelivery(deliveryId, user.uid!);
+        },
+        onMutate: async (deliveryId) => {
+            if (!user) return {};
+
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: deliveryKeys.detail(deliveryId) });
+
+            // Snapshot previous value
+            const previousDelivery = queryClient.getQueryData<DeliveryWithAgent>(
+                deliveryKeys.detail(deliveryId)
+            );
+
+            // Optimistically remove from lists
+            queryClient.setQueriesData(
+                { queryKey: deliveryKeys.user(user.uid!) },
+                (old: DeliveryWithAgent[] | undefined) => {
+                    if (!old) return old;
+                    return old.filter(delivery => delivery.id !== deliveryId);
+                }
+            );
+
+            return { previousDelivery };
+        },
+        onError: (err, deliveryId, context) => {
+            console.error('Delete delivery failed:', err);
+
+            // Rollback optimistic updates
+            if (context?.previousDelivery && user) {
+                queryClient.setQueryData(deliveryKeys.detail(deliveryId), context.previousDelivery);
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid!) });
+            }
+        },
+        onSuccess: (_, deliveryId) => {
+            // Remove from cache and invalidate related queries
+            queryClient.removeQueries({ queryKey: deliveryKeys.detail(deliveryId) });
+
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid!) });
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.permissions(deliveryId, user.uid!) });
+            }
         },
     });
 }
