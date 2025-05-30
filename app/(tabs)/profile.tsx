@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import UserProfileInfo from "@/components/ui/UserProfileInfo";
 import {GradientView} from "@/components/ui/GradientView";
 import EditProfileScreen from "@/components/ui/EditProfileScreen";
+import DeliveryAgentDocuments from "@/components/ui/DeliveryAgentDocument";
 
 type IconName =
     | 'person-outline'
@@ -16,19 +17,22 @@ type IconName =
     | 'information-circle-outline'
     | 'document-text-outline'
     | 'chevron-forward'
-    | 'create-outline';
+    | 'create-outline'
+    | 'folder-outline';
 
 interface MenuItem {
     id: string;
     title: string;
     icon: IconName;
     onPress?: () => void;
+    deliveryAgentOnly?: boolean;
 }
 
 export default function ProfileScreen() {
     const { user, signOut } = useAuth();
     const router = useRouter();
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showDocumentsModal, setShowDocumentsModal] = useState(false);
 
     console.log("ProfileScreen rendered, user:", user?.id || "not logged in");
 
@@ -39,6 +43,13 @@ export default function ProfileScreen() {
             title: 'Modifier mon profil',
             icon: 'create-outline',
             onPress: () => setShowEditModal(true)
+        },
+        {
+            id: 'documents',
+            title: 'Documents justificatifs',
+            icon: 'folder-outline',
+            onPress: () => setShowDocumentsModal(true),
+            deliveryAgentOnly: true
         },
         {
             id: 'contact',
@@ -78,19 +89,21 @@ export default function ProfileScreen() {
                 {/* Menu Categories */}
                 {user && (
                     <View className="mt-6 mx-4 mb-6">
-                        {menuItems.map((item) => (
-                            <TouchableOpacity
-                                key={item.id}
-                                className="flex-row items-center mb-3 p-4 bg-dark rounded-xl shadow-sm"
-                                onPress={() => handleMenuItemPress(item)}
-                            >
-                                <View className="w-10 h-10 rounded-full bg-primary/20 items-center justify-center mr-4">
-                                    <Ionicons name={item.icon} size={22} color="#5DD6FF" />
-                                </View>
-                                <Text className="text-base text-white font-cabin-medium flex-1">{item.title}</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#9EAEB4" />
-                            </TouchableOpacity>
-                        ))}
+                        {menuItems
+                            .filter(item => !item.deliveryAgentOnly || user.isDeliveryAgent)
+                            .map((item) => (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    className="flex-row items-center mb-3 p-4 bg-dark rounded-xl shadow-sm"
+                                    onPress={() => handleMenuItemPress(item)}
+                                >
+                                    <View className="w-10 h-10 rounded-full bg-primary/20 items-center justify-center mr-4">
+                                        <Ionicons name={item.icon} size={22} color="#5DD6FF" />
+                                    </View>
+                                    <Text className="text-base text-white font-cabin-medium flex-1">{item.title}</Text>
+                                    <Ionicons name="chevron-forward" size={20} color="#9EAEB4" />
+                                </TouchableOpacity>
+                            ))}
                     </View>
                 )}
 
@@ -120,6 +133,16 @@ export default function ProfileScreen() {
                 onRequestClose={() => setShowEditModal(false)}
             >
                 <EditProfileScreen onClose={() => setShowEditModal(false)} />
+            </Modal>
+
+            {/* Documents Modal */}
+            <Modal
+                visible={showDocumentsModal}
+                animationType="slide"
+                transparent={false}
+                onRequestClose={() => setShowDocumentsModal(false)}
+            >
+                <DeliveryAgentDocuments onClose={() => setShowDocumentsModal(false)} />
             </Modal>
         </GradientView>
     );

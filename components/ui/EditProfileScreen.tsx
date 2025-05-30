@@ -447,26 +447,28 @@ export default function EditProfileScreen({ onClose }: EditProfileScreenProps): 
                 </View>
 
                 {/* Billing Address Section */}
-                <View className="bg-dark p-5 rounded-xl mb-6 border border-gray-800">
-                    <View className="flex-row items-center mb-4">
-                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
-                            <Ionicons name="location-outline" size={16} color="#0F2026" />
+                {!user?.isDeliveryAgent && (
+                    <View className="bg-dark p-5 rounded-xl mb-6 border border-gray-800">
+                        <View className="flex-row items-center mb-4">
+                            <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
+                                <Ionicons name="location-outline" size={16} color="#0F2026" />
+                            </View>
+                            <Text className="text-white text-lg font-cabin-medium">
+                                Adresse de facturation
+                            </Text>
                         </View>
-                        <Text className="text-white text-lg font-cabin-medium">
-                            Adresse de facturation
+
+                        <ModernAddressInput
+                            address={formData.billingAddress}
+                            onAddressSelected={handleAddressSelected}
+                            isDeliveryAddress={false}
+                        />
+
+                        <Text className="text-gray-400 text-sm mt-2 font-cabin">
+                            Cette adresse sera utilisée par défaut pour vos factures
                         </Text>
                     </View>
-
-                    <ModernAddressInput
-                        address={formData.billingAddress}
-                        onAddressSelected={handleAddressSelected}
-                        isDeliveryAddress={false}
-                    />
-
-                    <Text className="text-gray-400 text-sm mt-2 font-cabin">
-                        Cette adresse sera utilisée par défaut pour vos factures
-                    </Text>
-                </View>
+                )}
 
                 {/* Action Buttons */}
                 <View className="mb-8">
