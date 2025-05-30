@@ -11,18 +11,12 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1D333A"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fstck.rapidroyalstaging",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "splash": {
-        "image": "./assets/images/splash-icon.png",
-        "tabletImage": "./assets/images/splash-icon.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
@@ -33,16 +27,7 @@
     },
     "android": {
       "package": "com.fstck.rapidroyalstaging",
-      "googleServicesFile": "./google-services.json",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "splash": {
-        "image": "./assets/images/splash-icon.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
-      }
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -68,7 +53,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#1D333A"
         }
       ],
       [
