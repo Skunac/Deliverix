@@ -47,12 +47,27 @@ export class AuthService {
 
             const user = userCredential.user;
 
-            const baseUserData = {
-                ...userData,
-                email: user.email || '',
-                uid: user.uid,
-                isDeliveryAgent: isDeliveryAgent,
-            };
+            let baseUserData;
+
+            if (isDeliveryAgent){
+                baseUserData = {
+                    ...userData,
+                    email: user.email || '',
+                    uid: user.uid,
+                    isDeliveryAgent: isDeliveryAgent,
+                    isAllowed: false
+                };
+            } else {
+                baseUserData = {
+                    ...userData,
+                    email: user.email || '',
+                    uid: user.uid,
+                    isDeliveryAgent: false,
+                    isAllowed: true // Default to true for non-delivery agents
+                };
+            }
+
+            console.log('Creating user with data:', baseUserData);
 
             await this.userService.createUser(baseUserData, user.uid);
 

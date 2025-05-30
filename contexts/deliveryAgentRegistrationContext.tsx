@@ -130,8 +130,8 @@ export const DeliveryAgentRegistrationProvider: React.FC<{ children: ReactNode }
                     companyName: step1Data.companyName,
                     contactName: step1Data.contactName,
                     phoneNumber: step1Data.phone,
-                    isDeliveryAgent: true
-                }
+                },
+                true
             );
 
             const userId = userCredential.uid;

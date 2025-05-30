@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '@/contexts/languageContext';
 import {useAuth} from "@/contexts/authContext";
 import {useEffect} from "react";
+import { ProfessionalUser } from '@/src/models/user.model';
+import PendingValidationScreen from '@/components/ui/PendingValidationScreen';
 
 export default function TabsLayout() {
     const colorScheme = useColorScheme();
@@ -23,6 +25,14 @@ export default function TabsLayout() {
             return;
         }
     }, [user, loading, registrationStatus, router]);
+
+    // Check if user is a delivery agent and not allowed
+    const isDeliveryAgentNotAllowed = user?.isDeliveryAgent && user?.isAllowed === false;
+
+    // If delivery agent is not allowed, show validation screen
+    if (isDeliveryAgentNotAllowed) {
+        return <PendingValidationScreen />;
+    }
 
     return (
         <Tabs

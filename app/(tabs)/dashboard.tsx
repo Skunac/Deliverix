@@ -168,31 +168,33 @@ export default function Dashboard() {
                             </Text>
 
                             {/* Action button based on user type */}
-                            <TouchableOpacity
-                                className="mt-6 p-3 bg-primary rounded-lg"
-                                onPress={() => {
-                                    if (user?.isDeliveryAgent) {
-                                        router.push('/(tabs)/available-deliveries');
-                                    } else {
-                                        router.push('/create-delivery');
-                                    }
-                                }}
-                            >
-                                <Text className="text-darker font-cabin-medium">
-                                    {user?.isDeliveryAgent
-                                        ? "Voir les livraisons disponibles"
-                                        : "Créer une nouvelle course"
-                                    }
-                                </Text>
-                            </TouchableOpacity>
+                            {user?.isDeliveryAgent && (
+                                <TouchableOpacity
+                                    className="mt-6 p-3 bg-primary rounded-lg"
+                                    onPress={() => {
+                                        if (user?.isDeliveryAgent) {
+                                            router.push('/(tabs)/available-deliveries');
+                                        } else {
+                                            router.push('/create-delivery');
+                                        }
+                                    }}
+                                >
+                                    <Text className="text-darker font-cabin-medium">
+                                        {user?.isDeliveryAgent
+                                            ? "Voir les livraisons disponibles"
+                                            : "Créer une nouvelle course"
+                                        }
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
 
                             {/* Refresh button for empty state */}
                             <TouchableOpacity
-                                className="mt-4 p-2"
+                                className="mt-4 p-2 bg-primary rounded-lg"
                                 onPress={handleRefresh}
                                 disabled={isRefetching}
                             >
-                                <Text className="text-secondary font-cabin">
+                                <Text className="text-darker font-cabin">
                                     {isRefetching ? 'Actualisation...' : 'Actualiser'}
                                 </Text>
                             </TouchableOpacity>
