@@ -55,7 +55,8 @@ export class AuthService {
                     email: user.email || '',
                     uid: user.uid,
                     isDeliveryAgent: isDeliveryAgent,
-                    isAllowed: false
+                    isAllowed: false,
+                    isAdmin: false
                 };
             } else {
                 baseUserData = {
@@ -63,7 +64,8 @@ export class AuthService {
                     email: user.email || '',
                     uid: user.uid,
                     isDeliveryAgent: false,
-                    isAllowed: true // Default to true for non-delivery agents
+                    isAllowed: true, // Default to true for non-delivery agents
+                    isAdmin: false
                 };
             }
 

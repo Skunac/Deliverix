@@ -34,6 +34,8 @@ export default function TabsLayout() {
         return <PendingValidationScreen />;
     }
 
+    const isAdmin = user?.isAdmin || false;
+
     return (
         <Tabs
             screenOptions={{
@@ -89,6 +91,16 @@ export default function TabsLayout() {
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="apps" size={size} color={color} />
                     ),
+                }}
+            />
+            <Tabs.Screen
+                name="admin"
+                options={{
+                    title: "Administration",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="shield" size={size} color={color} />
+                    ),
+                    href: isAdmin ? '/(tabs)/admin' : null,
                 }}
             />
             <Tabs.Screen

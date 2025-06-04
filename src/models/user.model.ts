@@ -9,6 +9,7 @@ export interface BaseUser extends FirestoreDocument {
     userType: UserType;
     isDeliveryAgent: boolean;
     isAllowed?: boolean;
+    isAdmin?: boolean;
 
     billingAddress?: EmbeddedAddress;
 
