@@ -8,7 +8,7 @@ import UserCard from '@/components/ui/UserCard';
 import { useUsers, useUpdateUserStatus, useUserStats } from '@/hooks/useUserQueries';
 
 type UserFilter = 'all' | 'individual' | 'professional' | 'delivery';
-type StatusFilter = 'all' | 'active' | 'disabled';
+type StatusFilter = 'all' | 'active' | 'disabled' | 'banned';
 
 interface FilterOption {
     label: string;
@@ -57,7 +57,8 @@ export default function AdminScreen() {
     const statusFilterOptions: FilterOption[] = [
         { label: 'Tous', value: 'all', icon: 'list-outline' },
         { label: 'Actifs', value: 'active', icon: 'checkmark-circle-outline' },
-        { label: 'Désactivés', value: 'disabled', icon: 'close-circle-outline' }
+        { label: 'Désactivés', value: 'disabled', icon: 'close-circle-outline' },
+        { label: 'Bannis', value: 'banned', icon: 'ban-outline' }
     ];
 
     // Filtered users based on current filters
@@ -73,8 +74,11 @@ export default function AdminScreen() {
             // Status filter
             if (activeStatusFilter !== 'all') {
                 const isActive = user.isAllowed !== false;
+                const isBanned = user.isBanned === true;
+
                 if (activeStatusFilter === 'active' && !isActive) return false;
-                if (activeStatusFilter === 'disabled' && isActive) return false;
+                if (activeStatusFilter === 'disabled' && (isActive || isBanned)) return false;
+                if (activeStatusFilter === 'banned' && !isBanned) return false;
             }
 
             // Search filter

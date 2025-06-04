@@ -1,3 +1,4 @@
+// components/ui/UserCard.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,6 +44,14 @@ const UserCard: React.FC<UserCardProps> = ({
 
     // Get status color and text
     const getStatusInfo = () => {
+        if (user.isBanned) {
+            return {
+                color: '#DC2626', // dark red
+                text: 'Banni',
+                icon: 'ban-outline' as const
+            };
+        }
+
         if (user.isDeliveryAgent) {
             if (isActive) {
                 return {

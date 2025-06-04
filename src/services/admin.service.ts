@@ -61,10 +61,19 @@ export class AdminUserService {
      */
     async updateUserStatus(userId: string, isAllowed: boolean): Promise<void> {
         try {
-            await updateDoc(doc(this.usersCollection, userId), {
-                isAllowed,
+            const updateData: any = {
                 updatedAt: serverTimestamp()
-            });
+            };
+
+            if (isAllowed) {
+                updateData.isAllowed = true;
+                updateData.isBanned = false;
+            } else {
+                updateData.isAllowed = false;
+                updateData.isBanned = true;
+            }
+
+            await updateDoc(doc(this.usersCollection, userId), updateData);
         } catch (error) {
             console.error('Error updating user status:', error);
             throw error;
