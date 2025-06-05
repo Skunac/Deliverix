@@ -100,6 +100,7 @@ export default function TabsLayout() {
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="apps" size={size} color={color} />
                     ),
+                    href: !user?.isDeliveryAgent ? '/(tabs)/dashboard' : null,
                 }}
             />
             <Tabs.Screen

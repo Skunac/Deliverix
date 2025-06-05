@@ -315,117 +315,121 @@ export default function EditDeliveryScreen({
                         </Text>
                     </View>
 
-                    <StyledTextInput
-                        label="Description du colis"
-                        placeholder="Décrivez votre colis"
-                        multiline
-                        numberOfLines={3}
-                        value={formData.packageDescription}
-                        onChangeText={(text) => setFormData(prev => ({ ...prev, packageDescription: text }))}
-                        darkBackground={true}
-                    />
-
-                    <StyledTextInput
-                        label="Poids du colis (kg)"
-                        placeholder="Entrez le poids en kg"
-                        keyboardType="numeric"
-                        value={formData.packageWeight.toString()}
-                        onChangeText={(text) => setFormData(prev => ({
-                            ...prev,
-                            packageWeight: parseFloat(text) || 0
-                        }))}
-                        darkBackground={true}
-                    />
-
-                    {/* Package Dimensions */}
-                    <Text className="text-white mb-2 font-cabin-medium">Dimensions du colis (cm)</Text>
-                    <View className="flex-row justify-between mb-4">
-                        <View className="flex-1 mr-2">
+                    {user?.isAdmin && (
+                        <>
                             <StyledTextInput
-                                placeholder="Longueur"
-                                keyboardType="numeric"
-                                value={formData.packageDimensions.length.toString()}
-                                onChangeText={(text) => setFormData(prev => ({
-                                    ...prev,
-                                    packageDimensions: {
-                                        ...prev.packageDimensions,
-                                        length: parseFloat(text) || 0
-                                    }
-                                }))}
-                                editable={mode === 'edit'}
+                                label="Description du colis"
+                                placeholder="Décrivez votre colis"
+                                multiline
+                                numberOfLines={3}
+                                value={formData.packageDescription}
+                                onChangeText={(text) => setFormData(prev => ({ ...prev, packageDescription: text }))}
                                 darkBackground={true}
                             />
-                        </View>
-                        <View className="flex-1 mx-2">
+
                             <StyledTextInput
-                                placeholder="Largeur"
+                                label="Poids du colis (kg)"
+                                placeholder="Entrez le poids en kg"
                                 keyboardType="numeric"
-                                value={formData.packageDimensions.width.toString()}
+                                value={formData.packageWeight.toString()}
                                 onChangeText={(text) => setFormData(prev => ({
                                     ...prev,
-                                    packageDimensions: {
-                                        ...prev.packageDimensions,
-                                        width: parseFloat(text) || 0
-                                    }
+                                    packageWeight: parseFloat(text) || 0
                                 }))}
-                                editable={mode === 'edit'}
                                 darkBackground={true}
                             />
-                        </View>
-                        <View className="flex-1 ml-2">
-                            <StyledTextInput
-                                placeholder="Hauteur"
-                                keyboardType="numeric"
-                                value={formData.packageDimensions.height.toString()}
-                                onChangeText={(text) => setFormData(prev => ({
-                                    ...prev,
-                                    packageDimensions: {
-                                        ...prev.packageDimensions,
-                                        height: parseFloat(text) || 0
-                                    }
-                                }))}
-                                editable={mode === 'edit'}
-                                darkBackground={true}
-                            />
-                        </View>
-                    </View>
 
-                    {/* Package Category */}
-                    <Text className="text-white mb-2 font-cabin-medium">Catégorie du colis</Text>
-                    <View className="flex-row flex-wrap mb-4">
-                        {categories.map((category) => (
-                            <Pressable
-                                key={category.value}
-                                className={`m-1 p-2 rounded-lg ${
-                                    formData.packageCategory === category.value
-                                        ? 'bg-primary'
-                                        : 'bg-gray-800'
-                                }`}
-                                onPress={() => {
-                                    if (mode === 'edit') {
-                                        setFormData(prev => ({ ...prev, packageCategory: category.value }));
-                                    }
-                                }}
-                                disabled={mode === 'view'}
-                            >
-                                <Text className="text-white">{t(`delivery.packageCategory.${category.value}`)}</Text>
-                            </Pressable>
-                        ))}
-                    </View>
+                            {/* Package Dimensions */}
+                            <Text className="text-white mb-2 font-cabin-medium">Dimensions du colis (cm)</Text>
+                            <View className="flex-row justify-between mb-4">
+                                <View className="flex-1 mr-2">
+                                    <StyledTextInput
+                                        placeholder="Longueur"
+                                        keyboardType="numeric"
+                                        value={formData.packageDimensions.length.toString()}
+                                        onChangeText={(text) => setFormData(prev => ({
+                                            ...prev,
+                                            packageDimensions: {
+                                                ...prev.packageDimensions,
+                                                length: parseFloat(text) || 0
+                                            }
+                                        }))}
+                                        editable={mode === 'edit'}
+                                        darkBackground={true}
+                                    />
+                                </View>
+                                <View className="flex-1 mx-2">
+                                    <StyledTextInput
+                                        placeholder="Largeur"
+                                        keyboardType="numeric"
+                                        value={formData.packageDimensions.width.toString()}
+                                        onChangeText={(text) => setFormData(prev => ({
+                                            ...prev,
+                                            packageDimensions: {
+                                                ...prev.packageDimensions,
+                                                width: parseFloat(text) || 0
+                                            }
+                                        }))}
+                                        editable={mode === 'edit'}
+                                        darkBackground={true}
+                                    />
+                                </View>
+                                <View className="flex-1 ml-2">
+                                    <StyledTextInput
+                                        placeholder="Hauteur"
+                                        keyboardType="numeric"
+                                        value={formData.packageDimensions.height.toString()}
+                                        onChangeText={(text) => setFormData(prev => ({
+                                            ...prev,
+                                            packageDimensions: {
+                                                ...prev.packageDimensions,
+                                                height: parseFloat(text) || 0
+                                            }
+                                        }))}
+                                        editable={mode === 'edit'}
+                                        darkBackground={true}
+                                    />
+                                </View>
+                            </View>
 
-                    {/* Fragile Switch */}
-                    <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
-                        <Text className="text-white font-cabin-medium">Le colis est-il fragile ?</Text>
-                        <Switch
-                            value={formData.isFragile}
-                            onValueChange={(value) => {
-                                setFormData(prev => ({ ...prev, isFragile: value }));
-                            }}
-                            trackColor={{ false: '#576D75', true: '#5DD6FF' }}
-                            thumbColor={formData.isFragile ? '#fff' : '#f4f3f4'}
-                            ios_backgroundColor="#576D75"
-                        />
-                    </View>
+                            {/* Package Category */}
+                            <Text className="text-white mb-2 font-cabin-medium">Catégorie du colis</Text>
+                            <View className="flex-row flex-wrap mb-4">
+                                {categories.map((category) => (
+                                    <Pressable
+                                        key={category.value}
+                                        className={`m-1 p-2 rounded-lg ${
+                                            formData.packageCategory === category.value
+                                                ? 'bg-primary'
+                                                : 'bg-gray-800'
+                                        }`}
+                                        onPress={() => {
+                                            if (mode === 'edit') {
+                                                setFormData(prev => ({ ...prev, packageCategory: category.value }));
+                                            }
+                                        }}
+                                        disabled={mode === 'view'}
+                                    >
+                                        <Text className="text-white">{t(`delivery.packageCategory.${category.value}`)}</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+
+                            {/* Fragile Switch */}
+                            <View className="flex-row items-center justify-between mb-4 bg-darker p-3 rounded-lg">
+                                <Text className="text-white font-cabin-medium">Le colis est-il fragile ?</Text>
+                                <Switch
+                                    value={formData.isFragile}
+                                    onValueChange={(value) => {
+                                        setFormData(prev => ({ ...prev, isFragile: value }));
+                                    }}
+                                    trackColor={{ false: '#576D75', true: '#5DD6FF' }}
+                                    thumbColor={formData.isFragile ? '#fff' : '#f4f3f4'}
+                                    ios_backgroundColor="#576D75"
+                                />
+                            </View>
+                        </>
+                    )}
 
                     <StyledTextInput
                         label="Commentaire"
@@ -439,105 +443,109 @@ export default function EditDeliveryScreen({
                 </View>
 
                 {/* Schedule */}
-                <View className="bg-dark p-5 rounded-xl mb-6 border border-gray-800">
-                    <View className="flex-row items-center mb-4">
-                        <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
-                            <Ionicons name="calendar-outline" size={16} color="#0F2026" />
+                {user?.isAdmin && (
+                    <>
+                        <View className="bg-dark p-5 rounded-xl mb-6 border border-gray-800">
+                            <View className="flex-row items-center mb-4">
+                                <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
+                                    <Ionicons name="calendar-outline" size={16} color="#0F2026" />
+                                </View>
+                                <Text className="text-white text-lg font-cabin-medium">
+                                    Date et heure de livraison
+                                </Text>
+                            </View>
+
+                            {/* Date Picker */}
+                            <TouchableOpacity
+                                onPress={() => {
+                                    if (mode === 'edit') {
+                                        setShowDatePicker(true);
+                                    }
+                                }}
+                                className="bg-darker p-3 rounded-lg mb-6 flex-row items-center justify-between"
+                                disabled={mode === 'view'}
+                            >
+                                <Text className="text-white font-cabin-medium">
+                                    Date : {formData.scheduledDate ? format(formData.scheduledDate, 'dd/MM/yyyy', { locale: fr }) : 'Date invalide'}
+                                </Text>
+                                <Ionicons name="calendar" size={20} color="#5DD6FF" />
+                            </TouchableOpacity>
+
+                            {/* Time Slot */}
+                            <Text className="text-white mb-3 font-cabin-medium">Créneau horaire</Text>
+                            <View className="flex-row mb-2">
+                                <Pressable
+                                    className={`flex-1 p-4 rounded-lg mr-2 items-center justify-center ${
+                                        timeSlot === 'morning' ? 'bg-primary' : 'bg-darker'
+                                    }`}
+                                    onPress={() => {
+                                        if (mode === 'edit') {
+                                            handleTimeSlotChange('morning');
+                                        }
+                                    }}
+                                    disabled={mode === 'view'}
+                                >
+                                    <View className="items-center">
+                                        <Ionicons
+                                            name="sunny-outline"
+                                            size={24}
+                                            color="white"
+                                            style={{ marginBottom: 4 }}
+                                        />
+                                        <Text className="text-white font-cabin-medium">Matin</Text>
+                                        <Text className="text-gray-300 text-xs">8:00 - 12:00</Text>
+                                    </View>
+                                </Pressable>
+
+                                <Pressable
+                                    className={`flex-1 p-4 rounded-lg ml-2 mr-2 items-center justify-center ${
+                                        timeSlot === 'afternoon' ? 'bg-primary' : 'bg-darker'
+                                    }`}
+                                    onPress={() => {
+                                        if (mode === 'edit') {
+                                            handleTimeSlotChange('afternoon');
+                                        }
+                                    }}
+                                    disabled={mode === 'view'}
+                                >
+                                    <View className="items-center">
+                                        <Ionicons
+                                            name="partly-sunny-outline"
+                                            size={24}
+                                            color="white"
+                                            style={{ marginBottom: 4 }}
+                                        />
+                                        <Text className="text-white font-cabin-medium">Après-midi</Text>
+                                        <Text className="text-gray-300 text-xs">12:00 - 18:00</Text>
+                                    </View>
+                                </Pressable>
+
+                                <Pressable
+                                    className={`flex-1 p-4 rounded-lg ml-2 items-center justify-center ${
+                                        timeSlot === 'night' ? 'bg-primary' : 'bg-darker'
+                                    }`}
+                                    onPress={() => {
+                                        if (mode === 'edit') {
+                                            handleTimeSlotChange('night');
+                                        }
+                                    }}
+                                    disabled={mode === 'view'}
+                                >
+                                    <View className="items-center">
+                                        <Ionicons
+                                            name="moon-outline"
+                                            size={24}
+                                            color="white"
+                                            style={{ marginBottom: 4 }}
+                                        />
+                                        <Text className="text-white font-cabin-medium">Soir</Text>
+                                        <Text className="text-gray-300 text-xs">18:00 - 00:00</Text>
+                                    </View>
+                                </Pressable>
+                            </View>
                         </View>
-                        <Text className="text-white text-lg font-cabin-medium">
-                            Date et heure de livraison
-                        </Text>
-                    </View>
-
-                    {/* Date Picker */}
-                    <TouchableOpacity
-                        onPress={() => {
-                            if (mode === 'edit') {
-                                setShowDatePicker(true);
-                            }
-                        }}
-                        className="bg-darker p-3 rounded-lg mb-6 flex-row items-center justify-between"
-                        disabled={mode === 'view'}
-                    >
-                        <Text className="text-white font-cabin-medium">
-                            Date : {formData.scheduledDate ? format(formData.scheduledDate, 'dd/MM/yyyy', { locale: fr }) : 'Date invalide'}
-                        </Text>
-                        <Ionicons name="calendar" size={20} color="#5DD6FF" />
-                    </TouchableOpacity>
-
-                    {/* Time Slot */}
-                    <Text className="text-white mb-3 font-cabin-medium">Créneau horaire</Text>
-                    <View className="flex-row mb-2">
-                        <Pressable
-                            className={`flex-1 p-4 rounded-lg mr-2 items-center justify-center ${
-                                timeSlot === 'morning' ? 'bg-primary' : 'bg-darker'
-                            }`}
-                            onPress={() => {
-                                if (mode === 'edit') {
-                                    handleTimeSlotChange('morning');
-                                }
-                            }}
-                            disabled={mode === 'view'}
-                        >
-                            <View className="items-center">
-                                <Ionicons
-                                    name="sunny-outline"
-                                    size={24}
-                                    color="white"
-                                    style={{ marginBottom: 4 }}
-                                />
-                                <Text className="text-white font-cabin-medium">Matin</Text>
-                                <Text className="text-gray-300 text-xs">8:00 - 12:00</Text>
-                            </View>
-                        </Pressable>
-
-                        <Pressable
-                            className={`flex-1 p-4 rounded-lg ml-2 mr-2 items-center justify-center ${
-                                timeSlot === 'afternoon' ? 'bg-primary' : 'bg-darker'
-                            }`}
-                            onPress={() => {
-                                if (mode === 'edit') {
-                                    handleTimeSlotChange('afternoon');
-                                }
-                            }}
-                            disabled={mode === 'view'}
-                        >
-                            <View className="items-center">
-                                <Ionicons
-                                    name="partly-sunny-outline"
-                                    size={24}
-                                    color="white"
-                                    style={{ marginBottom: 4 }}
-                                />
-                                <Text className="text-white font-cabin-medium">Après-midi</Text>
-                                <Text className="text-gray-300 text-xs">12:00 - 18:00</Text>
-                            </View>
-                        </Pressable>
-
-                        <Pressable
-                            className={`flex-1 p-4 rounded-lg ml-2 items-center justify-center ${
-                                timeSlot === 'night' ? 'bg-primary' : 'bg-darker'
-                            }`}
-                            onPress={() => {
-                                if (mode === 'edit') {
-                                    handleTimeSlotChange('night');
-                                }
-                            }}
-                            disabled={mode === 'view'}
-                        >
-                            <View className="items-center">
-                                <Ionicons
-                                    name="moon-outline"
-                                    size={24}
-                                    color="white"
-                                    style={{ marginBottom: 4 }}
-                                />
-                                <Text className="text-white font-cabin-medium">Soir</Text>
-                                <Text className="text-gray-300 text-xs">18:00 - 00:00</Text>
-                            </View>
-                        </Pressable>
-                    </View>
-                </View>
+                    </>
+                )}
 
                 {/* Addresses and Contacts */}
                 <View className="bg-dark p-5 rounded-xl mb-6 border border-gray-800">
@@ -554,15 +562,19 @@ export default function EditDeliveryScreen({
                     <View className="mb-6">
                         <Text className="text-primary font-cabin-medium mb-3">Point de ramassage</Text>
 
-                        <ModernAddressInput
-                            address={formData.pickupAddress}
-                            onAddressSelected={(address) => {
-                                if (mode === 'edit') {
-                                    setFormData(prev => ({ ...prev, pickupAddress: address }));
-                                }
-                            }}
-                            isDeliveryAddress={false}
-                        />
+                        {user?.isAdmin && (
+                            <>
+                                <ModernAddressInput
+                                    address={formData.pickupAddress}
+                                    onAddressSelected={(address) => {
+                                        if (mode === 'edit') {
+                                            setFormData(prev => ({ ...prev, pickupAddress: address }));
+                                        }
+                                    }}
+                                    isDeliveryAddress={false}
+                                />
+                            </>
+                        )}
 
                         <StyledTextInput
                             label="Nom complet de l'expéditeur"
@@ -596,15 +608,19 @@ export default function EditDeliveryScreen({
                     <View>
                         <Text className="text-primary font-cabin-medium mb-3">Point de livraison</Text>
 
-                        <ModernAddressInput
-                            address={formData.deliveryAddress}
-                            onAddressSelected={(address) => {
-                                if (mode === 'edit') {
-                                    setFormData(prev => ({ ...prev, deliveryAddress: address }));
-                                }
-                            }}
-                            isDeliveryAddress={true}
-                        />
+                        {user?.isAdmin && (
+                            <>
+                                <ModernAddressInput
+                                    address={formData.deliveryAddress}
+                                    onAddressSelected={(address) => {
+                                        if (mode === 'edit') {
+                                            setFormData(prev => ({ ...prev, deliveryAddress: address }));
+                                        }
+                                    }}
+                                    isDeliveryAddress={true}
+                                />
+                            </>
+                        )}
 
                         <StyledTextInput
                             label="Nom complet du destinataire"
