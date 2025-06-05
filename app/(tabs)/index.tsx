@@ -120,8 +120,6 @@ export default function DeliveriesScreen() {
     // Define filter options
     const filterOptions: FilterOption[] = [
         { label: 'Toutes', state: 'all', icon: 'list-outline' },
-        { label: 'En attente', state: 'waiting_for_prepayment', icon: 'time-outline' },
-        { label: 'Prépayées', state: 'prepaid', icon: 'card-outline' },
         { label: 'En cours', state: 'processing', icon: 'refresh-outline' },
         { label: 'Terminées', state: 'completed', icon: 'checkmark-circle-outline' },
         { label: 'Annulées', state: 'cancelled', icon: 'close-circle-outline' }
