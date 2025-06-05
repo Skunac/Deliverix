@@ -289,9 +289,14 @@ export function useDeliveryPermissions(deliveryId: string, userId: string) {
 
     return useQuery({
         queryKey: deliveryKeys.permissions(deliveryId, userId),
-        queryFn: () => enhancedDeliveryService.canEditOrDeleteDelivery(deliveryId, userId),
-        enabled: !!deliveryId && !!userId && !!user && user.uid === userId,
-        staleTime: 60 * 1000, // Cache for 1 minute
+        queryFn: async () => {
+            if (user?.isAdmin) {
+                return { canEdit: true, canDelete: true };
+            }
+            return enhancedDeliveryService.canEditOrDeleteDelivery(deliveryId, userId, user?.isAdmin);
+        },
+        enabled: !!deliveryId && !!userId && !!user,
+        staleTime: 60 * 1000,
     });
 }
 
@@ -465,7 +470,8 @@ export function useEditDelivery() {
             if (!user) {
                 throw new Error('User not authenticated');
             }
-            return enhancedDeliveryService.editDelivery(deliveryId, user.uid!, updateData);
+            // Pass admin status to the service method
+            return enhancedDeliveryService.editDelivery(deliveryId, user.uid!, updateData, user.isAdmin);
         },
         onMutate: async ({ deliveryId, updateData }) => {
             if (!user) return {};
@@ -519,7 +525,13 @@ export function useDeleteDelivery() {
             if (!user) {
                 throw new Error('User not authenticated');
             }
-            return enhancedDeliveryService.softDeleteDelivery(deliveryId, user.uid!);
+
+            // If admin, use permanent delete, otherwise use soft delete
+            if (user.isAdmin) {
+                return enhancedDeliveryService.adminDeleteDelivery(deliveryId, user.uid!);
+            } else {
+                return enhancedDeliveryService.softDeleteDelivery(deliveryId, user.uid!);
+            }
         },
         onMutate: async (deliveryId) => {
             if (!user) return {};
@@ -533,13 +545,26 @@ export function useDeleteDelivery() {
             );
 
             // Optimistically remove from lists
-            queryClient.setQueriesData(
-                { queryKey: deliveryKeys.user(user.uid!) },
-                (old: DeliveryWithAgent[] | undefined) => {
-                    if (!old) return old;
-                    return old.filter(delivery => delivery.id !== deliveryId);
-                }
-            );
+            if (user.uid) {
+                queryClient.setQueriesData(
+                    { queryKey: deliveryKeys.user(user.uid) },
+                    (old: DeliveryWithAgent[] | undefined) => {
+                        if (!old) return old;
+                        return old.filter(delivery => delivery.id !== deliveryId);
+                    }
+                );
+            }
+
+            // For admin, also remove from all deliveries
+            if (user.isAdmin) {
+                queryClient.setQueriesData(
+                    { queryKey: [...deliveryKeys.all, 'admin-all'] },
+                    (old: DeliveryWithAgent[] | undefined) => {
+                        if (!old) return old;
+                        return old.filter(delivery => delivery.id !== deliveryId);
+                    }
+                );
+            }
 
             return { previousDelivery };
         },
@@ -549,16 +574,26 @@ export function useDeleteDelivery() {
             // Rollback optimistic updates
             if (context?.previousDelivery && user) {
                 queryClient.setQueryData(deliveryKeys.detail(deliveryId), context.previousDelivery);
-                queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid!) });
+                if (user.uid) {
+                    queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid) });
+                }
+                if (user.isAdmin) {
+                    queryClient.invalidateQueries({ queryKey: [...deliveryKeys.all, 'admin-all'] });
+                }
             }
         },
         onSuccess: (_, deliveryId) => {
             // Remove from cache and invalidate related queries
             queryClient.removeQueries({ queryKey: deliveryKeys.detail(deliveryId) });
 
-            if (user) {
-                queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid!) });
-                queryClient.invalidateQueries({ queryKey: deliveryKeys.permissions(deliveryId, user.uid!) });
+            if (user && user.uid) {
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.user(user.uid) });
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.permissions(deliveryId, user.uid) });
+            }
+
+            // For admin, also invalidate admin queries
+            if (user?.isAdmin) {
+                queryClient.invalidateQueries({ queryKey: [...deliveryKeys.all, 'admin-all'] });
             }
         },
     });

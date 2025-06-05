@@ -464,8 +464,12 @@ export class EnhancedDeliveryService {
         }
     }
 
-    async canEditOrDeleteDelivery(deliveryId: string, userId: string): Promise<{ canEdit: boolean; canDelete: boolean; reason?: string }> {
+    async canEditOrDeleteDelivery(deliveryId: string, userId: string, isAdmin: boolean = false): Promise<{ canEdit: boolean; canDelete: boolean; reason?: string }> {
         try {
+            console.log(`Checking permissions for user ${userId} on delivery ${deliveryId} (isAdmin: ${isAdmin})`);
+            if (isAdmin) {
+                return { canEdit: true, canDelete: true };
+            }
             const delivery = await this.getDeliveryById(deliveryId);
 
             if (!delivery) {
@@ -528,10 +532,11 @@ export class EnhancedDeliveryService {
     async editDelivery(
         deliveryId: string,
         userId: string,
-        updateData: Partial<Delivery>
+        updateData: Partial<Delivery>,
+        isAdmin: boolean = false
     ): Promise<DeliveryWithAgent> {
         try {
-            const permissions = await this.canEditOrDeleteDelivery(deliveryId, userId);
+            const permissions = await this.canEditOrDeleteDelivery(deliveryId, userId, isAdmin);
 
             if (!permissions.canEdit) {
                 throw new Error(permissions.reason || 'Impossible de modifier cette livraison');

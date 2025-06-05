@@ -693,9 +693,9 @@ export default function DeliveryDetailsScreen() {
                 )}
             </ScrollView>
 
-            {!user?.isDeliveryAgent && (permissions?.canEdit || permissions?.canDelete) && (
+            {!user?.isDeliveryAgent && (permissions?.canEdit || permissions?.canDelete || user?.isAdmin) && (
                 <View className="absolute bottom-0 left-0 right-0 bg-dark p-4 border-t border-gray-700">
-                    {permissions?.canEdit && (
+                    {(permissions?.canEdit || user?.isAdmin) && (
                         <StyledButton
                             variant="primary"
                             shadow
@@ -706,7 +706,7 @@ export default function DeliveryDetailsScreen() {
                         </StyledButton>
                     )}
 
-                    {permissions?.canDelete && (
+                    {(permissions?.canDelete || user?.isAdmin) && (
                         <StyledButton
                             variant="bordered"
                             onPress={handleDelete}
