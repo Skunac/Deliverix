@@ -7,6 +7,7 @@ import {useAuth} from "@/contexts/authContext";
 import {useEffect} from "react";
 import { ProfessionalUser } from '@/src/models/user.model';
 import PendingValidationScreen from '@/components/ui/PendingValidationScreen';
+import BannedUserScreen from '@/components/ui/BannedUserScreen';
 
 export default function TabsLayout() {
     const colorScheme = useColorScheme();
@@ -26,8 +27,16 @@ export default function TabsLayout() {
         }
     }, [user, loading, registrationStatus, router]);
 
-    // Check if user is a delivery agent and not allowed
+    // Check if user is banned
+    const isUserBanned = user?.isBanned === true;
+
+    // Check if user is a delivery agent and not allowed (pending validation)
     const isDeliveryAgentNotAllowed = user?.isDeliveryAgent && user?.isAllowed === false;
+
+    // If user is banned, show banned screen
+    if (isUserBanned) {
+        return <BannedUserScreen />;
+    }
 
     // If delivery agent is not allowed, show validation screen
     if (isDeliveryAgentNotAllowed) {
