@@ -1,14 +1,15 @@
-import { View, FlatList, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, FlatList, Text, ActivityIndicator, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from "@/contexts/authContext";
 import { DeliveryState } from "@/src/models/delivery.model";
 import DeliveryCard from "@/components/ui/DeliveryCard";
 import { GradientView } from "@/components/ui/GradientView";
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
     useUserDeliveries,
     useAgentDeliveries,
+    useAllDeliveries, // New hook for admin to fetch all deliveries
     useDeliveryQueryCleanup
 } from "@/hooks/useDeliveryQueries";
 
@@ -23,12 +24,12 @@ export default function DeliveriesScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const [activeFilter, setActiveFilter] = useState<DeliveryState | 'all'>('all');
-
-    // Track if we just navigated from accepting a delivery
+    const [searchQuery, setSearchQuery] = useState('');
     const [refreshTriggered, setRefreshTriggered] = useState(false);
 
     // Determine user type and ID
     const isDeliveryAgent = user?.isDeliveryAgent;
+    const isAdmin = user?.isAdmin || false;
     const userId = user?.uid || user?.id;
 
     // For regular users: fetch all their deliveries
@@ -59,22 +60,69 @@ export default function DeliveriesScreen() {
         }
     );
 
-    // Determine which data to use
-    const allDeliveries = isDeliveryAgent ? agentDeliveries : userDeliveries;
-    const isLoading = isDeliveryAgent ? isLoadingAgentDeliveries : isLoadingUserDeliveries;
-    const error = isDeliveryAgent ? agentDeliveriesError : userDeliveriesError;
-    const refetch = isDeliveryAgent ? refetchAgentDeliveries : refetchUserDeliveries;
-    const isRefetching = isDeliveryAgent ? isRefetchingAgentDeliveries : isRefetchingUserDeliveries;
+    // For admins: fetch all deliveries in the system
+    const {
+        data: allDeliveries = [],
+        isLoading: isLoadingAllDeliveries,
+        error: allDeliveriesError,
+        refetch: refetchAllDeliveries,
+        isRefetching: isRefetchingAllDeliveries
+    } = useAllDeliveries(
+        {
+            enableRealtime: true
+        },
+        isAdmin // Only fetch if user is admin
+    );
 
-    // Filter deliveries based on active filter
-    const filteredDeliveries = activeFilter === 'all'
-        ? allDeliveries
-        : allDeliveries.filter(delivery => delivery.state === activeFilter);
+    // Determine which data to use based on user type
+    const rawDeliveries = isAdmin ? allDeliveries : (isDeliveryAgent ? agentDeliveries : userDeliveries);
+    const isLoading = isAdmin ? isLoadingAllDeliveries : (isDeliveryAgent ? isLoadingAgentDeliveries : isLoadingUserDeliveries);
+    const error = isAdmin ? allDeliveriesError : (isDeliveryAgent ? agentDeliveriesError : userDeliveriesError);
+    const refetch = isAdmin ? refetchAllDeliveries : (isDeliveryAgent ? refetchAgentDeliveries : refetchUserDeliveries);
+    const isRefetching = isAdmin ? isRefetchingAllDeliveries : (isDeliveryAgent ? isRefetchingAgentDeliveries : isRefetchingUserDeliveries);
+
+    // Filter and search deliveries
+    const filteredDeliveries = useMemo(() => {
+        let deliveries = rawDeliveries;
+
+        // Apply state filter
+        if (activeFilter !== 'all') {
+            deliveries = deliveries.filter(delivery => delivery.state === activeFilter);
+        }
+
+        // Apply search filter (only for admin)
+        if (isAdmin && searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            deliveries = deliveries.filter(delivery => {
+                const searchableFields = [
+                    delivery.id,
+                    delivery.packageDescription,
+                    delivery.expeditor?.firstName,
+                    delivery.receiver?.firstName,
+                    delivery.expeditor?.phoneNumber,
+                    delivery.receiver?.phoneNumber,
+                    delivery.pickupAddress?.formattedAddress,
+                    delivery.deliveryAddress?.formattedAddress,
+                    delivery.pickupAddress?.components?.locality,
+                    delivery.deliveryAddress?.components?.locality,
+                    delivery.agentFirstName,
+                    delivery.agentLastName,
+                    delivery.secretCode
+                ].filter(Boolean).join(' ').toLowerCase();
+
+                return searchableFields.includes(query);
+            });
+        }
+
+        return deliveries;
+    }, [rawDeliveries, activeFilter, searchQuery, isAdmin]);
 
     // Define filter options
     const filterOptions: FilterOption[] = [
         { label: 'Toutes', state: 'all', icon: 'list-outline' },
-        { label: 'En cours', state: 'processing', icon: 'time-outline' },
+        { label: 'En attente', state: 'waiting_for_prepayment', icon: 'time-outline' },
+        { label: 'Prépayées', state: 'prepaid', icon: 'card-outline' },
+        { label: 'En cours', state: 'processing', icon: 'refresh-outline' },
         { label: 'Terminées', state: 'completed', icon: 'checkmark-circle-outline' },
         { label: 'Annulées', state: 'cancelled', icon: 'close-circle-outline' }
     ];
@@ -163,7 +211,7 @@ export default function DeliveriesScreen() {
                 >
                     <Ionicons
                         name={option.icon as any}
-                        size={16}
+                        size={14}
                         color={activeFilter === option.state ? '#0F2026' : 'white'}
                         style={{ marginRight: 4 }}
                     />
@@ -171,6 +219,7 @@ export default function DeliveriesScreen() {
                         className={`text-xs font-cabin-medium ${
                             activeFilter === option.state ? 'text-darker' : 'text-white'
                         }`}
+                        numberOfLines={1}
                     >
                         {option.label}
                     </Text>
@@ -179,22 +228,82 @@ export default function DeliveriesScreen() {
         </View>
     );
 
+    // Render admin search bar
+    const renderAdminSearchBar = () => {
+        if (!isAdmin) return null;
+
+        return (
+            <View className="mx-4 mb-4">
+                <View className="flex-row items-center bg-dark p-3 rounded-lg border border-gray-700">
+                    <Ionicons name="search-outline" size={20} color="#9CA3AF" style={{ marginRight: 8 }} />
+                    <TextInput
+                        className="flex-1 text-white font-cabin"
+                        placeholder="Rechercher par ID, description, nom, téléphone, adresse..."
+                        placeholderTextColor="#9CA3AF"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => setSearchQuery('')}
+                            className="ml-2"
+                        >
+                            <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        );
+    };
+
+    // Header with results count
+    const renderHeader = () => (
+        <View className="mx-4 mb-4">
+            <Text className="text-white text-lg font-cabin-medium">
+                {isAdmin && searchQuery.trim() ? (
+                    `${filteredDeliveries.length} résultat${filteredDeliveries.length > 1 ? 's' : ''} trouvé${filteredDeliveries.length > 1 ? 's' : ''}`
+                ) : (
+                    `${filteredDeliveries.length} livraison${filteredDeliveries.length > 1 ? 's' : ''}`
+                )}
+            </Text>
+            {isAdmin && searchQuery.trim() && (
+                <Text className="text-gray-400 font-cabin text-sm mt-1">
+                    Recherche: "{searchQuery}"
+                </Text>
+            )}
+            {isAdmin && (
+                <View className="flex-row items-center mt-2">
+                    <Ionicons name="shield-checkmark" size={16} color="#5DD6FF" style={{ marginRight: 4 }} />
+                    <Text className="text-primary font-cabin text-sm">
+                        Mode administrateur - Toutes les livraisons
+                    </Text>
+                </View>
+            )}
+        </View>
+    );
+
     // Empty State for no deliveries at all
-    if (allDeliveries.length === 0) {
+    if (rawDeliveries.length === 0) {
         return (
             <GradientView>
                 <View className="flex-1">
-                    {isDeliveryAgent && renderFilterTabs()}
+                    {renderFilterTabs()}
+                    {renderAdminSearchBar()}
                     <View className="flex-1 justify-center items-center p-4">
                         <Ionicons name="document-outline" size={48} color="#6b7280" />
                         <Text className="mt-4 text-lg text-white font-cabin-medium">
-                            Aucune livraison trouvée
+                            {isAdmin ? 'Aucune livraison dans le système' : 'Aucune livraison trouvée'}
                         </Text>
                         <Text className="mt-2 text-gray-300 text-center font-cabin">
-                            Vous n'avez pas encore de livraisons. Elles apparaîtront ici une fois créées.
+                            {isAdmin
+                                ? 'Aucune livraison n\'a encore été créée dans le système.'
+                                : 'Vous n\'avez pas encore de livraisons. Elles apparaîtront ici une fois créées.'
+                            }
                         </Text>
 
-                        {isDeliveryAgent && (
+                        {isDeliveryAgent && !isAdmin && (
                             <TouchableOpacity
                                 className="mt-6 p-3 bg-primary rounded-lg"
                                 onPress={() => router.push('/(tabs)/available-deliveries')}
@@ -225,15 +334,29 @@ export default function DeliveriesScreen() {
         return (
             <GradientView>
                 <View className="flex-1">
-                    {isDeliveryAgent && renderFilterTabs()}
+                    {renderFilterTabs()}
+                    {renderAdminSearchBar()}
                     <View className="flex-1 justify-center items-center p-4">
                         <Ionicons name="document-outline" size={48} color="#6b7280" />
                         <Text className="mt-4 text-lg text-white font-cabin-medium">
                             Aucune livraison {getFilterLabel(activeFilter)}
                         </Text>
                         <Text className="mt-2 text-gray-300 text-center font-cabin">
-                            Essayez de changer de filtre pour voir d'autres livraisons.
+                            {searchQuery.trim()
+                                ? 'Aucun résultat ne correspond à votre recherche.'
+                                : 'Essayez de changer de filtre pour voir d\'autres livraisons.'
+                            }
                         </Text>
+                        {searchQuery.trim() && (
+                            <TouchableOpacity
+                                className="mt-4 p-2 bg-primary rounded-lg"
+                                onPress={() => setSearchQuery('')}
+                            >
+                                <Text className="text-darker font-cabin-medium">
+                                    Effacer la recherche
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                         <TouchableOpacity
                             className="mt-4 p-2"
                             onPress={handleRefresh}
@@ -253,7 +376,9 @@ export default function DeliveriesScreen() {
     return (
         <GradientView>
             <View className="flex-1">
-                {isDeliveryAgent && renderFilterTabs()}
+                {renderFilterTabs()}
+                {renderAdminSearchBar()}
+                {renderHeader()}
 
                 <FlatList
                     data={filteredDeliveries}
@@ -261,12 +386,12 @@ export default function DeliveriesScreen() {
                     renderItem={({ item }) => (
                         <DeliveryCard
                             delivery={item}
-                            variant={isDeliveryAgent ? 'deliveryGuy' : 'user'}
+                            variant={isAdmin ? 'admin' : (isDeliveryAgent ? 'deliveryGuy' : 'user')}
                             onPress={() => handleDeliveryPress(item)}
                         />
                     )}
                     ItemSeparatorComponent={ItemSeparator}
-                    contentContainerStyle={{ padding: 16, paddingTop: 8 }}
+                    contentContainerStyle={{ padding: 16, paddingTop: 0 }}
                     onRefresh={handleRefresh}
                     refreshing={isRefetching || refreshTriggered}
                     showsVerticalScrollIndicator={false}
@@ -279,12 +404,20 @@ export default function DeliveriesScreen() {
 // Helper function to get the label for the current filter in lowercase for messages
 function getFilterLabel(filter: DeliveryState | 'all'): string {
     switch (filter) {
+        case 'waiting_for_prepayment':
+            return 'en attente de prépaiement';
+        case 'prepaid':
+            return 'prépayée';
         case 'processing':
             return 'en cours';
         case 'completed':
             return 'terminée';
         case 'cancelled':
             return 'annulée';
+        case 'waiting_for_payment':
+            return 'en attente de paiement';
+        case 'paid':
+            return 'payée';
         default:
             return '';
     }

@@ -1,3 +1,4 @@
+// components/ui/DeliveryCard.tsx - Updated with admin variant
 import React, { useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Delivery } from "@/src/models/delivery.model";
@@ -11,17 +12,17 @@ import { formatDate, formatTimeSlot } from "@/utils/formatters/date-formatters";
 
 interface DeliveryCardProps {
     delivery: Delivery;
-    variant: 'available' | 'user' | 'deliveryGuy';
+    variant: 'available' | 'user' | 'deliveryGuy' | 'admin';
     onPress?: () => void;
     onAccept?: () => void;
 }
 
 const DeliveryCard: React.FC<DeliveryCardProps> = ({
-                                                             delivery,
-                                                             variant,
-                                                             onPress,
-                                                             onAccept
-                                                         }) => {
+                                                       delivery,
+                                                       variant,
+                                                       onPress,
+                                                       onAccept
+                                                   }) => {
     const { t } = useTranslation();
     const mapRef = useRef<MapView>(null);
     const GOOGLE_MAPS_API_KEY = "AIzaSyBmDRLS39EJf9I54k9lDGfu1hdumFZ7v0c";
@@ -92,22 +93,12 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                                 }}
                                 radius={circleRadius}
                                 fillColor="rgba(0, 255, 0, 0.2)"
-                                strokeColor="rgba(0, 255, 0, 0.5)"
-                                strokeWidth={2}
-                            />
-                            <MapCircle
-                                center={{
-                                    latitude: delivery.deliveryAddress.obfuscatedCoordinates.latitude,
-                                    longitude: delivery.deliveryAddress.obfuscatedCoordinates.longitude,
-                                }}
-                                radius={circleRadius}
-                                fillColor="rgba(255, 0, 0, 0.2)"
                                 strokeColor="rgba(255, 0, 0, 0.5)"
                                 strokeWidth={2}
                             />
                         </>
                     ) : (
-                        // For user and deliveryGuy variants - show exact markers and directions
+                        // For user, deliveryGuy, and admin variants - show exact markers and directions
                         <>
                             {/* Directions between markers */}
                             <MapViewDirections
@@ -158,10 +149,39 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                             </Text>
                         )}
 
-                        {variant === 'user' || variant === 'deliveryGuy' && (
+                        {(variant === 'user' || variant === 'deliveryGuy') && (
                             <Text className="text-gray-300 font-cabin">
                                 {formatTimeSlot(delivery.timeSlot.start, delivery.timeSlot.end, t)}
                             </Text>
+                        )}
+
+                        {/* Admin-specific information */}
+                        {variant === 'admin' && (
+                            <>
+                                <Text className="text-gray-300 font-cabin">
+                                    {formatTimeSlot(delivery.timeSlot.start, delivery.timeSlot.end, t)}
+                                </Text>
+                                <View className="flex-row items-center mt-1">
+                                    <Ionicons name="person-outline" size={14} color="#9CA3AF" />
+                                    <Text className="text-gray-400 font-cabin text-sm ml-1">
+                                        ID: {delivery.id.substring(0, 8)}...
+                                    </Text>
+                                </View>
+                                {(delivery as any).agentFirstName && (delivery as any).agentLastName && (
+                                    <View className="flex-row items-center mt-1">
+                                        <Ionicons name="bicycle-outline" size={14} color="#9CA3AF" />
+                                        <Text className="text-gray-400 font-cabin text-sm ml-1">
+                                            Livreur: {(delivery as any).agentFirstName} {(delivery as any).agentLastName}
+                                        </Text>
+                                    </View>
+                                )}
+                                <View className="flex-row items-center mt-1">
+                                    <Ionicons name="cube-outline" size={14} color="#9CA3AF" />
+                                    <Text className="text-gray-400 font-cabin text-sm ml-1" numberOfLines={1}>
+                                        {delivery.packageDescription}
+                                    </Text>
+                                </View>
+                            </>
                         )}
                     </View>
 
@@ -175,27 +195,32 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                         </TouchableOpacity>
                     )}
 
-                    {/* Status badge for user variant */}
-                    {variant === 'user' && (
-                        <View
-                            className="px-3 py-1 rounded-full"
-                            style={getStatusStyle(delivery.status)}
-                        >
-                            <Text className="text-white font-cabin-medium text-xs">
-                                {t(`delivery.status.${delivery.status}`)}
-                            </Text>
-                        </View>
-                    )}
+                    {/* Status badge for user, deliveryGuy, and admin variants */}
+                    {(variant === 'user' || variant === 'deliveryGuy' || variant === 'admin') && (
+                        <View className="items-end">
+                            <View
+                                className="px-3 py-1 rounded-full"
+                                style={getStatusStyle(delivery.status)}
+                            >
+                                <Text className="text-white font-cabin-medium text-xs">
+                                    {variant === 'deliveryGuy'
+                                        ? t(`delivery.deliveryStatus.${delivery.status}`)
+                                        : t(`delivery.status.${delivery.status}`)
+                                    }
+                                </Text>
+                            </View>
 
-                    {/* Only status badge for deliveryGuy variant */}
-                    {variant === 'deliveryGuy' && (
-                        <View
-                            className="px-3 py-1 rounded-full"
-                            style={getStatusStyle(delivery.status)}
-                        >
-                            <Text className="text-white font-cabin-medium text-xs">
-                                {t(`delivery.deliveryStatus.${delivery.status}`)}
-                            </Text>
+                            {/* Admin-specific state badge */}
+                            {variant === 'admin' && (
+                                <View
+                                    className="px-2 py-1 rounded-full mt-1"
+                                    style={getStateStyle(delivery.state)}
+                                >
+                                    <Text className="text-white font-cabin-medium text-xs">
+                                        {t(`delivery.state.${delivery.state}`)}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     )}
                 </View>
@@ -231,6 +256,28 @@ function getStatusStyle(status: string): object {
         case 'delivered':
             return { backgroundColor: '#22C55E' }; // green
         case 'failed':
+            return { backgroundColor: '#EF4444' }; // red
+        default:
+            return { backgroundColor: '#6B7280' }; // gray
+    }
+}
+
+// Helper function for state styling (admin-specific)
+function getStateStyle(state: string): object {
+    switch (state) {
+        case 'waiting_for_prepayment':
+            return { backgroundColor: '#F59E0B' }; // amber
+        case 'prepaid':
+            return { backgroundColor: '#10B981' }; // emerald
+        case 'processing':
+            return { backgroundColor: '#3B82F6' }; // blue
+        case 'waiting_for_payment':
+            return { backgroundColor: '#F59E0B' }; // amber
+        case 'paid':
+            return { backgroundColor: '#10B981' }; // emerald
+        case 'completed':
+            return { backgroundColor: '#22C55E' }; // green
+        case 'cancelled':
             return { backgroundColor: '#EF4444' }; // red
         default:
             return { backgroundColor: '#6B7280' }; // gray

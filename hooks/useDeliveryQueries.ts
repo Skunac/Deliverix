@@ -231,7 +231,59 @@ export function useAvailableDeliveries(agentId: string, enableRealtime = false) 
     return query;
 }
 
-// 5. Delivery Edit/Delete Permissions Hook
+// 5. All Deliveries Hook for Admin
+export function useAllDeliveries(
+    options: DeliveryQueryOptions & { enableRealtime?: boolean } = {},
+    enabled: boolean = true
+) {
+    const queryClient = useQueryClient();
+    const { user } = useAuth();
+    const { enableRealtime = true, ...queryOptions } = options;
+
+    const query = useQuery({
+        queryKey: [...deliveryKeys.all, 'admin-all', queryOptions],
+        queryFn: () => enhancedDeliveryService.getAllDeliveries(queryOptions),
+        enabled: enabled && !!user && user.isAdmin,
+        staleTime: 5 * 60 * 1000, // 5 minutes for admin queries
+    });
+
+    // Real-time subscription with auth checks
+    useEffect(() => {
+        if (!enableRealtime || !enabled || !user || !user.isAdmin) {
+            console.log('🔒 Skipping admin all deliveries subscription - no auth or not admin');
+            return;
+        }
+
+        console.log('🔄 Starting admin all deliveries subscription');
+
+        const unsubscribe = enhancedDeliveryService.subscribeToAllDeliveries(
+            (deliveries) => {
+                console.log('📡 Admin all deliveries update received:', deliveries.length);
+                queryClient.setQueryData(
+                    [...deliveryKeys.all, 'admin-all', queryOptions],
+                    deliveries
+                );
+            },
+            queryOptions,
+            (error) => {
+                console.error('🚨 Real-time admin all deliveries error:', error);
+                if (!user) {
+                    console.log('🔒 User logged out, ignoring error');
+                    return;
+                }
+            }
+        );
+
+        return () => {
+            console.log('🛑 Cleaning up admin all deliveries subscription');
+            unsubscribe();
+        };
+    }, [JSON.stringify(queryOptions), enableRealtime, queryClient, user, enabled]);
+
+    return query;
+}
+
+// 6. Delivery Edit/Delete Permissions Hook
 export function useDeliveryPermissions(deliveryId: string, userId: string) {
     const { user } = useAuth();
 

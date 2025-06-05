@@ -633,6 +633,124 @@ export class EnhancedDeliveryService {
         }
     }
 
+    // ==================== ADMIN METHODS ====================
+
+    // Real-time subscription for all deliveries (admin only)
+    subscribeToAllDeliveries(
+        callback: (deliveries: DeliveryWithAgent[]) => void,
+        options?: DeliveryQueryOptions,
+        onError?: (error: Error) => void
+    ): () => void {
+        const listenerKey = `admin-all-${JSON.stringify(options || {})}`;
+
+        this.cleanupListener(listenerKey);
+
+        let query = this.deliveriesCollection
+            .where('deleted', '==', false) // Filter out deleted deliveries
+            .orderBy('createdAt', 'desc');
+
+        if (options?.state) {
+            query = query.where('state', '==', options.state);
+        }
+
+        if (options?.status) {
+            query = query.where('status', '==', options.status);
+        }
+
+        if (options?.limit) {
+            query = query.limit(options.limit);
+        }
+
+        const unsubscribe = query.onSnapshot(
+            async (snapshot) => {
+                try {
+                    const deliveries = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as Delivery[];
+
+                    const enrichedDeliveries = await Promise.all(
+                        deliveries.map(delivery => this.enrichDeliveryWithAgentInfo(delivery))
+                    );
+
+                    callback(enrichedDeliveries);
+                } catch (error) {
+                    console.error('Error in admin all deliveries subscription:', error);
+                    onError?.(error as Error);
+                }
+            },
+            (error) => {
+                console.error('Firestore admin all deliveries subscription error:', error);
+                onError?.(error);
+            }
+        );
+
+        this.activeListeners.set(listenerKey, unsubscribe);
+        return () => this.cleanupListener(listenerKey);
+    }
+
+    // One-time fetch for all deliveries (admin only)
+    async getAllDeliveries(options?: DeliveryQueryOptions): Promise<DeliveryWithAgent[]> {
+        try {
+            let query = this.deliveriesCollection
+
+                .where('deleted', '==', false) // Filter out deleted deliveries
+                .orderBy('createdAt', 'desc');
+
+            if (options?.state) {
+                query = query.where('state', '==', options.state);
+            }
+
+            if (options?.status) {
+                query = query.where('status', '==', options.status);
+            }
+
+            if (options?.limit) {
+                query = query.limit(options.limit);
+            }
+
+            const snapshot = await query.get();
+
+            const deliveries = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Delivery[];
+
+            return Promise.all(
+                deliveries.map(delivery => this.enrichDeliveryWithAgentInfo(delivery))
+            );
+        } catch (error) {
+            console.error('Error fetching all deliveries:', error);
+            throw error;
+        }
+    }
+
+    // Admin method to permanently delete a delivery
+    async adminDeleteDelivery(deliveryId: string, adminUserId: string): Promise<void> {
+        try {
+            await this.deliveriesCollection.doc(deliveryId).delete();
+            console.log(`Delivery ${deliveryId} permanently deleted by admin ${adminUserId}`);
+        } catch (error) {
+            console.error('Error permanently deleting delivery:', error);
+            throw error;
+        }
+    }
+
+    // Admin method to restore a soft-deleted delivery
+    async adminRestoreDelivery(deliveryId: string, adminUserId: string): Promise<void> {
+        try {
+            await this.updateDelivery(deliveryId, {
+                deleted: false,
+                deletedAt: null as any,
+                deletedBy: null as any,
+            });
+            console.log(`Delivery ${deliveryId} restored by admin ${adminUserId}`);
+        } catch (error) {
+            console.error('Error restoring delivery:', error);
+            throw error;
+        }
+    }
+
     // ==================== PRIVATE HELPER METHODS ====================
 
     private cleanupListener(listenerKey: string): void {
