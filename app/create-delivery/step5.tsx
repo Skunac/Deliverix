@@ -1,5 +1,6 @@
-import React, {useEffect, useState} from 'react';
-import { View, Text, ScrollView } from 'react-native';
+// app/create-delivery/step5.tsx
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GradientView } from '@/components/ui/GradientView';
 import StyledButton from '@/components/ui/StyledButton';
@@ -8,38 +9,95 @@ import { Alert } from 'react-native';
 import { useAuth } from '@/contexts/authContext';
 import { Delivery } from '@/src/models/delivery.model';
 import { Ionicons } from '@expo/vector-icons';
-import {formatDate, formatTimeSlot} from "@/utils/formatters/date-formatters";
+import { formatDate, formatTimeSlot } from "@/utils/formatters/date-formatters";
 import { db, serverTimestamp } from '@/src/firebase/config';
-import {useTranslation} from "react-i18next";
-import {initPaymentSheet, initStripe, presentPaymentSheet} from "@stripe/stripe-react-native";
+import { useTranslation } from "react-i18next";
+import { initPaymentSheet, initStripe, presentPaymentSheet } from "@stripe/stripe-react-native";
 import { useCreateDelivery } from "@/hooks/useDeliveryQueries";
+import { distancePricingService, PriceCalculationResult } from '@/src/services/distance-pricing.service';
+import { DeliveryAgentService } from '@/src/services/delivery-agent.service';
+import { createGeoPoint } from '@/utils/formatters/address-formatter';
 
 export default function DeliveryRecapScreen() {
     const router = useRouter();
     const { user } = useAuth();
     const { formState, resetForm } = useDeliveryForm();
     const { t } = useTranslation();
+    const [priceCalculation, setPriceCalculation] = useState<PriceCalculationResult | null>(null);
+    const [isCalculatingPrice, setIsCalculatingPrice] = useState(true);
+    const [priceError, setPriceError] = useState<string | null>(null);
+    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
     const createDeliveryMutation = useCreateDelivery();
+    const deliveryAgentService = new DeliveryAgentService();
 
-    const calculatePrice = () => {
-        // Base price
-        let price = 10;
+    // Calculate price when component mounts
+    useEffect(() => {
+        calculateDeliveryPrice();
+    }, []);
 
-        // Add based on weight
-        price += formState.packageWeight * 2;
-
-        // Add based on package category
-        if (['urgent', 'expensive', 'exceptional'].includes(formState.packageCategory)) {
-            price += 15;
+    const calculateDeliveryPrice = async () => {
+        if (!formState.pickupAddress || !formState.deliveryAddress) {
+            setPriceError('Addresses are required for price calculation');
+            setIsCalculatingPrice(false);
+            return;
         }
 
-        // Add for fragile packages
-        if (formState.isFragile) {
-            price += 5;
-        }
+        try {
+            setIsCalculatingPrice(true);
+            setPriceError(null);
 
-        return price.toFixed(2);
+            let agentLocation = createGeoPoint(48.8566, 2.3522);
+
+            console.log('Calculating price with agent location:', agentLocation);
+
+            const pickupLocation = formState.pickupAddress.coordinates;
+            const deliveryLocation = formState.deliveryAddress.coordinates;
+
+            /*const result = await distancePricingService.calculateDeliveryPrice(
+                agentLocation,
+                pickupLocation,
+                deliveryLocation
+            );*/
+
+            setPriceCalculation({
+                basePrice: 5.00,
+                distancePrice: 10.00,
+                finalPrice: 15.00,
+                breakdown: {
+                    trip1Distance: 0,
+                    trip2Distance: 0,
+                    totalBillableDistance: 0,
+                    pricePerKm: 2.00
+                }
+            });
+
+            /*console.log('Price calculation result:', result);
+            setPriceCalculation(result);*/
+
+        } catch (error) {
+            console.error('Error calculating delivery price:', error);
+            setPriceError('Unable to calculate price. Please try again.');
+
+            // Fallback to basic pricing
+            setPriceCalculation({
+                basePrice: 5.00,
+                distancePrice: 10.00,
+                finalPrice: 15.00,
+                breakdown: {
+                    trip1Distance: 0,
+                    trip2Distance: 0,
+                    totalBillableDistance: 0,
+                    pricePerKm: 2.00
+                }
+            });
+        } finally {
+            setIsCalculatingPrice(false);
+        }
+    };
+
+    const handleRetryPriceCalculation = () => {
+        calculateDeliveryPrice();
     };
 
     useEffect(() => {
@@ -54,6 +112,11 @@ export default function DeliveryRecapScreen() {
     const handleSubmit = async () => {
         if (!user?.uid) {
             Alert.alert('Error', 'You must be logged in to create a delivery');
+            return;
+        }
+
+        if (!priceCalculation) {
+            Alert.alert('Error', 'Price calculation is required');
             return;
         }
 
@@ -78,7 +141,7 @@ export default function DeliveryRecapScreen() {
                 packageCategory: formState.packageCategory,
                 isFragile: formState.isFragile,
                 comment: formState.comment,
-                price: parseFloat(calculatePrice()),
+                price: priceCalculation.finalPrice,
                 secretCode: '',
                 deleted: false,
             };
@@ -290,14 +353,10 @@ export default function DeliveryRecapScreen() {
                         </View>
                     </View>
 
-                    {(formState.comment ) && (
+                    {formState.comment && (
                         <View className="border-t border-gray-700 pt-2 mt-2">
-                            {formState.comment && (
-                                <View className="mb-2">
-                                    <Text className="text-gray-400 font-cabin-medium text-sm">Commentaire sur la livraison</Text>
-                                    <Text className="text-white font-cabin">{formState.comment}</Text>
-                                </View>
-                            )}
+                            <Text className="text-gray-400 font-cabin-medium text-sm">Commentaire sur la livraison</Text>
+                            <Text className="text-white font-cabin">{formState.comment}</Text>
                         </View>
                     )}
                 </View>
@@ -345,18 +404,51 @@ export default function DeliveryRecapScreen() {
                     </View>
                 </View>
 
-                {/* Price */}
+                {/* Price Calculation */}
                 <View className="bg-dark p-4 rounded-lg mb-6">
                     <View className="flex-row items-center mb-2">
                         <Ionicons name="cash-outline" size={24} color="#2EC3F5" className="mr-2" />
                         <Text className="text-white font-cabin-medium text-lg">
-                            Prix
+                            Calcul du prix
                         </Text>
                     </View>
 
-                    <Text className="text-white text-3xl font-cabin-bold text-center">
-                        €{calculatePrice()}
-                    </Text>
+                    {isCalculatingPrice ? (
+                        <View className="items-center py-4">
+                            <ActivityIndicator size="large" color="#5DD6FF" />
+                            <Text className="text-white mt-2 font-cabin">
+                                Calcul du prix en cours...
+                            </Text>
+                        </View>
+                    ) : priceError ? (
+                        <View className="items-center py-4">
+                            <Ionicons name="alert-circle-outline" size={32} color="#ef4444" />
+                            <Text className="text-red-400 mt-2 font-cabin text-center">
+                                {priceError}
+                            </Text>
+                            <StyledButton
+                                variant="bordered"
+                                onPress={handleRetryPriceCalculation}
+                                className="mt-3 border-primary"
+                            >
+                                <Text className="text-primary font-cabin-medium">Réessayer</Text>
+                            </StyledButton>
+                        </View>
+                    ) : priceCalculation ? (
+                        <View>
+                            {/* Price Breakdown */}
+                            <View className="mb-4">
+                                <View className="border-t border-gray-700 pt-2">
+                                    <View className="flex-row justify-between">
+                                        <Text className="text-white font-cabin-medium text-lg">Total</Text>
+                                        <Text className="text-white font-cabin-bold text-xl">
+                                            €{priceCalculation.finalPrice.toFixed(2)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    ) : null}
                 </View>
 
                 {/* Payment Information */}
@@ -388,10 +480,12 @@ export default function DeliveryRecapScreen() {
                     shadow
                     className="flex-1 ml-2 mb-4"
                     onPress={handleSubmit}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isCalculatingPrice || !priceCalculation}
                 >
                     <Text className="text-white font-cabin-medium">
-                        {isSubmitting ? 'Traitement en cours...' : 'Procéder au paiement'}
+                        {isSubmitting ? 'Traitement en cours...' :
+                            isCalculatingPrice ? 'Calcul en cours...' :
+                                'Procéder au paiement'}
                     </Text>
                 </StyledButton>
             </ScrollView>
