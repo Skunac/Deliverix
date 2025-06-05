@@ -39,6 +39,12 @@ export interface Person {
     address: EmbeddedAddress;
 }
 
+export interface RescheduleRecord {
+    rescheduleDate: Date;
+    reason?: string;
+    agentId: string;
+}
+
 export interface Delivery extends FirestoreDocument {
     status: DeliveryStatus;
     state: DeliveryState;
@@ -65,6 +71,11 @@ export interface Delivery extends FirestoreDocument {
 
     deliveryAgentId?: string;
     price: number;
+
+    // Reschedule tracking
+    rescheduleCount: number;
+    rescheduleHistory: RescheduleRecord[];
+    maxReschedules: number; // Default to 2
 
     deleted: boolean;
     deletedAt?: Date;

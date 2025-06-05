@@ -29,10 +29,11 @@ import StyledButton from "@/components/ui/StyledButton";
 import {
     useDelivery,
     useValidateDelivery,
-    useDeliveryQueryCleanup, useDeleteDelivery, useDeliveryPermissions
+    useDeliveryQueryCleanup, useDeleteDelivery, useDeliveryPermissions, useRescheduleDelivery
 } from "@/hooks/useDeliveryQueries";
 import { useEffect } from 'react';
 import EditDeliveryScreen from "@/components/ui/DeliveryEditModal";
+import RescheduleModal from "@/components/ui/RescheduleModal";
 
 export default function DeliveryDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -48,6 +49,7 @@ export default function DeliveryDetailsScreen() {
     const [agentLoading, setAgentLoading] = useState(false);
     const [secretCode, setSecretCode] = useState<string>('');
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
     // Ensure query cleanup on auth changes
     useDeliveryQueryCleanup();
@@ -65,6 +67,8 @@ export default function DeliveryDetailsScreen() {
 
     // Use React Query mutation for delivery deletion
     const deleteDeliveryMutation = useDeleteDelivery();
+
+    const rescheduleDeliveryMutation = useRescheduleDelivery();
 
     // Fetch permissions for edit/delete buttons
     const {
@@ -256,6 +260,48 @@ export default function DeliveryDetailsScreen() {
         );
     };
 
+    const handleReschedule = async (reason?: string) => {
+        if (!delivery || !user?.uid) {
+            Alert.alert('Erreur', 'Informations manquantes pour reporter la livraison.');
+            return;
+        }
+
+        try {
+            await rescheduleDeliveryMutation.mutateAsync({
+                deliveryId: delivery.id,
+                agentId: user.uid,
+                reason
+            });
+
+            setShowRescheduleModal(false);
+
+            // Check if delivery will fail after this reschedule
+            const currentCount = delivery.rescheduleCount || 0;
+            const maxReschedules = delivery.maxReschedules || 2;
+            const willFail = (currentCount + 1) >= maxReschedules;
+
+            Alert.alert(
+                willFail ? 'Livraison échouée' : 'Livraison reportée',
+                willFail
+                    ? 'La livraison a été marquée comme échouée après avoir atteint le nombre maximum de reports.'
+                    : 'La livraison a été reportée avec succès.',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            if (willFail) {
+                                router.replace('/dashboard');
+                            }
+                        }
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error('Error rescheduling delivery:', error);
+            Alert.alert('Erreur', 'Impossible de reporter la livraison. Veuillez réessayer.');
+        }
+    };
+
     // Loading state
     if (isLoading) {
         return (
@@ -439,6 +485,27 @@ export default function DeliveryDetailsScreen() {
                             </Text>
                         </View>
 
+                        {/* Show reschedule info if status is rescheduled */}
+                        {delivery.status === 'rescheduled' && (
+                            <View className="bg-yellow-900/30 p-3 rounded-lg mb-3">
+                                <View className="flex-row items-center mb-2">
+                                    <Ionicons name="time" size={16} color="#EAB308" />
+                                    <Text className="text-yellow-400 font-cabin-medium ml-2">
+                                        Livraison reportée
+                                    </Text>
+                                </View>
+                                <Text className="text-yellow-200 font-cabin text-sm">
+                                    Cette livraison a été reportée par le livreur.
+                                    Reports: {delivery.rescheduleCount || 0} / {delivery.maxReschedules || 2}
+                                </Text>
+                                {delivery.rescheduleHistory && delivery.rescheduleHistory.length > 0 && (
+                                    <Text className="text-yellow-200 font-cabin text-sm mt-1">
+                                        Dernier motif: {delivery.rescheduleHistory[delivery.rescheduleHistory.length - 1].reason || 'Aucun motif spécifié'}
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+
                         {/* Information message */}
                         <View className="bg-darker/20 p-3 rounded-lg mb-3">
                             <Text className="text-darker font-cabin text-sm">
@@ -467,9 +534,29 @@ export default function DeliveryDetailsScreen() {
                     </View>
                 )}
 
-                {/* Agent Code Input Section */}
-                {user?.isDeliveryAgent && delivery.status !== 'delivered' && (
+                {user?.isDeliveryAgent && delivery.status !== 'delivered' && delivery.status !== 'failed' && (
                     <View className="bg-dark p-4 rounded-xl mb-4 border border-gray-700/50">
+                        {/* Show reschedule info if delivery was rescheduled */}
+                        {delivery.status === 'rescheduled' && (
+                            <View className="bg-yellow-900/20 p-3 rounded-lg mb-4">
+                                <View className="flex-row items-center mb-2">
+                                    <Ionicons name="time" size={20} color="#EAB308" />
+                                    <Text className="text-yellow-400 font-cabin-medium ml-2">
+                                        Livraison reportée
+                                    </Text>
+                                </View>
+                                <Text className="text-yellow-200 font-cabin text-sm mb-2">
+                                    Reports effectués: {delivery.rescheduleCount || 0} / {delivery.maxReschedules || 2}
+                                </Text>
+                                {delivery.rescheduleHistory && delivery.rescheduleHistory.length > 0 && (
+                                    <Text className="text-yellow-200 font-cabin text-sm">
+                                        Dernier motif: {delivery.rescheduleHistory[delivery.rescheduleHistory.length - 1].reason || 'Aucun motif spécifié'}
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+
+                        {/* Code input section */}
                         <StyledTextInput
                             label="Code secret donné par le destinataire"
                             placeholder="Code secret"
@@ -486,15 +573,46 @@ export default function DeliveryDetailsScreen() {
                             </View>
                         )}
 
-                        <StyledButton
-                            variant="primary"
-                            onPress={handleCodeSubmit}
-                            disabled={validateDeliveryMutation.isPending}
-                        >
-                            <Text className="text-white font-cabin-medium">
-                                {validateDeliveryMutation.isPending ? 'Validation en cours...' : 'Valider la livraison'}
-                            </Text>
-                        </StyledButton>
+                        {/* Show reschedule error if any */}
+                        {rescheduleDeliveryMutation.error && (
+                            <View className="bg-red-500/20 p-3 rounded-lg mb-3">
+                                <Text className="text-red-400 font-cabin text-center">
+                                    {rescheduleDeliveryMutation.error.message || 'Erreur lors du report'}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Action buttons */}
+                        <View className="flex-row space-x-3">
+                            {/* Reschedule button - only show if not at max reschedules */}
+                            {((delivery.rescheduleCount || 0) < (delivery.maxReschedules || 2)) && (
+                                <StyledButton
+                                    variant="bordered"
+                                    onPress={() => setShowRescheduleModal(true)}
+                                    disabled={rescheduleDeliveryMutation.isPending}
+                                    className="flex-1 border-yellow-500 mr-2"
+                                >
+                                    <View className="flex-row items-center">
+                                        <Ionicons name="time-outline" size={18} color="#EAB308" />
+                                        <Text className="text-yellow-500 font-cabin-medium ml-2">
+                                            Reporter
+                                        </Text>
+                                    </View>
+                                </StyledButton>
+                            )}
+
+                            {/* Validate button */}
+                            <StyledButton
+                                variant="primary"
+                                onPress={handleCodeSubmit}
+                                disabled={validateDeliveryMutation.isPending}
+                                className={((delivery.rescheduleCount || 0) < (delivery.maxReschedules || 2)) ? "flex-1" : "w-full"}
+                            >
+                                <Text className="text-white font-cabin-medium">
+                                    {validateDeliveryMutation.isPending ? 'Validation en cours...' : 'Valider la livraison'}
+                                </Text>
+                            </StyledButton>
+                        </View>
                     </View>
                 )}
 
@@ -736,6 +854,15 @@ export default function DeliveryDetailsScreen() {
                     }}
                 />
             </Modal>
+
+            <RescheduleModal
+                visible={showRescheduleModal}
+                onClose={() => setShowRescheduleModal(false)}
+                onConfirm={handleReschedule}
+                isLoading={rescheduleDeliveryMutation.isPending}
+                rescheduleCount={delivery?.rescheduleCount || 0}
+                maxReschedules={delivery?.maxReschedules || 2}
+            />
 
         </GradientView>
     );

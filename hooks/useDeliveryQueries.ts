@@ -598,3 +598,77 @@ export function useDeleteDelivery() {
         },
     });
 }
+
+export function useRescheduleDelivery() {
+    const queryClient = useQueryClient();
+    const { user } = useAuth();
+
+    return useMutation({
+        mutationFn: ({
+                         deliveryId,
+                         agentId,
+                         reason
+                     }: {
+            deliveryId: string;
+            agentId: string;
+            reason?: string
+        }) => {
+            if (!user || !user.isDeliveryAgent) {
+                throw new Error('User not authenticated or not a delivery agent');
+            }
+            return enhancedDeliveryService.rescheduleDelivery(deliveryId, agentId, reason);
+        },
+        onMutate: async ({ deliveryId }) => {
+            if (!user) return {};
+
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: deliveryKeys.detail(deliveryId) });
+
+            // Snapshot previous value
+            const previousDelivery = queryClient.getQueryData<DeliveryWithAgent>(
+                deliveryKeys.detail(deliveryId)
+            );
+
+            // Optimistically update to rescheduled
+            if (previousDelivery) {
+                const currentCount = previousDelivery.rescheduleCount || 0;
+                const maxReschedules = previousDelivery.maxReschedules || 2;
+                const willFail = (currentCount + 1) >= maxReschedules;
+
+                queryClient.setQueryData(deliveryKeys.detail(deliveryId), {
+                    ...previousDelivery,
+                    status: willFail ? 'failed' as DeliveryStatus : 'rescheduled' as DeliveryStatus,
+                    state: willFail ? 'cancelled' as DeliveryState : 'processing' as DeliveryState,
+                    rescheduleCount: currentCount + 1,
+                });
+            }
+
+            return { previousDelivery };
+        },
+        onError: (err, { deliveryId }, context) => {
+            // Rollback on error
+            if (context?.previousDelivery) {
+                queryClient.setQueryData(deliveryKeys.detail(deliveryId), context.previousDelivery);
+            }
+
+            if (err.message?.includes('permission-denied') && !user) {
+                console.log('🔒 Reschedule delivery failed - user not authenticated');
+            }
+        },
+        onSuccess: (updatedDelivery, { deliveryId, agentId }) => {
+            // Update the delivery in cache
+            queryClient.setQueryData(deliveryKeys.detail(deliveryId), updatedDelivery);
+
+            // Invalidate related queries
+            if (user) {
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.agent(agentId) });
+                queryClient.invalidateQueries({ queryKey: deliveryKeys.available(agentId) });
+
+                // If admin, also invalidate admin queries
+                if (user.isAdmin) {
+                    queryClient.invalidateQueries({ queryKey: [...deliveryKeys.all, 'admin-all'] });
+                }
+            }
+        },
+    });
+}

@@ -183,6 +183,15 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                                 </View>
                             </>
                         )}
+
+                        {(variant === 'admin' || variant === 'deliveryGuy') && delivery.status === 'rescheduled' && (
+                            <View className="flex-row items-center mt-1">
+                                <Ionicons name="time-outline" size={14} color="#F59E0B" />
+                                <Text className="text-amber-400 font-cabin text-sm ml-1">
+                                    Reportée {delivery.rescheduleCount || 0}/{delivery.maxReschedules || 2}
+                                </Text>
+                            </View>
+                        )}
                     </View>
 
                     {/* Accept button for available deliveries */}
@@ -255,6 +264,8 @@ function getStatusStyle(status: string): object {
             return { backgroundColor: '#8B5CF6' }; // purple
         case 'delivered':
             return { backgroundColor: '#22C55E' }; // green
+        case 'rescheduled':
+            return { backgroundColor: '#F59E0B' }; // amber/orange
         case 'failed':
             return { backgroundColor: '#EF4444' }; // red
         default:

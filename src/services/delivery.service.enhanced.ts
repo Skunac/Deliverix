@@ -3,7 +3,7 @@ import {
     Delivery,
     DeliveryState,
     DeliveryStatus,
-    EmbeddedAddress
+    EmbeddedAddress, RescheduleRecord
 } from '@/src/models/delivery.model';
 import { DeliveryAgentService } from './delivery-agent.service';
 import { formatAddress } from "@/utils/formatters/address-formatter";
@@ -431,6 +431,9 @@ export class EnhancedDeliveryService {
             const deliveryWithTimestamps = {
                 ...delivery,
                 deleted: false, // Set default deleted field
+                rescheduleCount: 0,
+                rescheduleHistory: [],
+                maxReschedules: 2, // Default maximum reschedules
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };
@@ -634,6 +637,89 @@ export class EnhancedDeliveryService {
             await this.deliveriesCollection.doc(deliveryId).delete();
         } catch (error) {
             console.error('Error deleting delivery:', error);
+            throw error;
+        }
+    }
+
+    async rescheduleDelivery(
+        deliveryId: string,
+        agentId: string,
+        reason?: string
+    ): Promise<DeliveryWithAgent> {
+        try {
+            // Get current delivery
+            const delivery = await this.getDeliveryById(deliveryId);
+
+            if (!delivery) {
+                throw new Error('Delivery not found');
+            }
+
+            // Verify agent is assigned to this delivery
+            if (delivery.deliveryAgentId !== agentId) {
+                throw new Error('Agent not authorized to reschedule this delivery');
+            }
+
+            // Check if delivery can be rescheduled
+            if (delivery.status === 'delivered' || delivery.status === 'failed') {
+                throw new Error('Cannot reschedule completed or failed delivery');
+            }
+
+            // Check reschedule limit
+            const maxReschedules = delivery.maxReschedules || 2;
+            const currentCount = delivery.rescheduleCount || 0;
+
+            if (currentCount >= maxReschedules) {
+                // Set to failed if max reschedules reached
+                await this.updateDelivery(deliveryId, {
+                    status: 'failed',
+                    state: 'cancelled',
+                    rescheduleCount: currentCount + 1,
+                    rescheduleHistory: [
+                        ...(delivery.rescheduleHistory || []),
+                        {
+                            rescheduleDate: new Date(),
+                            reason: reason || 'Maximum reschedules exceeded',
+                            agentId
+                        }
+                    ]
+                });
+
+                const updatedDelivery = await this.getDeliveryById(deliveryId);
+                if (!updatedDelivery) {
+                    throw new Error('Failed to retrieve updated delivery');
+                }
+                return updatedDelivery;
+            }
+
+            // Update delivery with reschedule
+            const newRescheduleRecord: RescheduleRecord = {
+                rescheduleDate: new Date(),
+                reason: reason || 'Delivery rescheduled by agent',
+                agentId
+            };
+
+            const updatedRescheduleCount = currentCount + 1;
+            const willFail = updatedRescheduleCount >= maxReschedules;
+
+            await this.updateDelivery(deliveryId, {
+                status: willFail ? 'failed' : 'rescheduled',
+                state: willFail ? 'cancelled' : 'processing',
+                rescheduleCount: updatedRescheduleCount,
+                rescheduleHistory: [
+                    ...(delivery.rescheduleHistory || []),
+                    newRescheduleRecord
+                ]
+            });
+
+            // Return updated delivery
+            const updatedDelivery = await this.getDeliveryById(deliveryId);
+            if (!updatedDelivery) {
+                throw new Error('Failed to retrieve updated delivery');
+            }
+
+            return updatedDelivery;
+        } catch (error) {
+            console.error('Error rescheduling delivery:', error);
             throw error;
         }
     }
