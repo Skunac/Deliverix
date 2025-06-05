@@ -503,7 +503,6 @@ export class EmailService {
 
             const data = emailDoc.data();
 
-            // Fixed: Remove reference to non-existent attachments property
             return {
                 id: emailDoc.id,
                 status: data?.delivery?.state || 'PENDING',
@@ -512,7 +511,6 @@ export class EmailService {
                 createdAt: data?.createdAt,
                 processedAt: data?.processedAt,
                 errorMessage: data?.delivery?.error?.message,
-                // Include delivery info if it exists (for email delivery status, not the Delivery model)
                 ...(data?.delivery && {
                     deliveryState: data.delivery.state,
                     deliveryInfo: data.delivery.info
