@@ -385,12 +385,6 @@ export default function DeliveryDetailsScreen() {
                                             {agent.personalInfo.firstName} {agent.personalInfo.lastName}
                                         </Text>
 
-                                        {/* Rating */}
-                                        <View className="flex-row items-center mt-1">
-                                            <Ionicons name="star" size={16} color="#f59e0b" />
-                                            <Text className="ml-1 text-white font-cabin">{agent.rating.toFixed(1)} / 5</Text>
-                                        </View>
-
                                         {/* Vehicle Info */}
                                         <View className="flex-row items-center mt-1">
                                             <Ionicons name="car-outline" size={16} color="#ffffff" />

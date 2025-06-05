@@ -119,11 +119,6 @@ export class DeliveryAgentService {
             companyInfo,
             vehicleInfo,
             driverInfo,
-
-            rating: 5,
-            completedDeliveries: 0,
-            canceledDeliveries: 0,
-            totalEarnings: 0,
             vatApplicable: false,
             notificationPreferences: {
                 email: true,

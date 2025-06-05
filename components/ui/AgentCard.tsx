@@ -58,12 +58,6 @@ const AgentCard = ({ agent }: AgentCardProps) => {
                 <View className="flex-1 justify-center">
                     <Text className="text-white font-cabin-semibold text-lg">{`${agent.personalInfo.firstName} ${agent.personalInfo.lastName}`}</Text>
 
-                    {/* Rating */}
-                    <View className="flex-row items-center mt-1">
-                        <Ionicons name="star" size={16} color="#f59e0b" />
-                        <Text className="ml-1 text-white font-cabin">{agent.rating.toFixed(1)} / 5</Text>
-                    </View>
-
                     {/* Vehicle Info */}
                     <View className="flex-row items-center mt-1">
                         <Ionicons name="car-outline" size={16} color="#ffffff" />

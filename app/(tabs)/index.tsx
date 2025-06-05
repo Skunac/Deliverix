@@ -12,6 +12,7 @@ import {
     useAllDeliveries, // New hook for admin to fetch all deliveries
     useDeliveryQueryCleanup
 } from "@/hooks/useDeliveryQueries";
+import TestEmailButton from "@/components/test/emailTest";
 
 type FilterOption = {
     label: string;
@@ -374,6 +375,7 @@ export default function DeliveriesScreen() {
     return (
         <GradientView>
             <View className="flex-1">
+                <TestEmailButton />
                 {renderFilterTabs()}
                 {renderAdminSearchBar()}
                 {renderHeader()}

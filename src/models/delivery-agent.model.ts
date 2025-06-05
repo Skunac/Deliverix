@@ -66,12 +66,6 @@ export interface DeliveryAgent extends FirestoreDocument {
     // Delivery range in kilometers
     deliveryRange?: number;
 
-    // Performance metrics
-    rating: number;
-    completedDeliveries: number;
-    canceledDeliveries: number;
-    totalEarnings: number;
-
     // Payment and financial
     vatApplicable: boolean;
     vatNumber?: string | null; // Changé pour accepter null
