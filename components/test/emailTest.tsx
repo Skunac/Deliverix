@@ -100,8 +100,6 @@ const TestEmailButton = () => {
         currentLocation: createGeoPoint(48.8677, 2.3736),
         lastLocationUpdate: new Date('2025-06-05T10:30:00Z'),
         deliveryRange: 25,
-        canceledDeliveries: 3,
-        totalEarnings: 12450.75,
         vatApplicable: true,
         vatNumber: 'FR12345678901',
         notificationPreferences: {
