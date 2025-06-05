@@ -2,7 +2,7 @@ import { FirestoreDocument } from './common.model';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 export type DeliveryState = 'waiting_for_prepayment' | 'prepaid'  | 'processing' | 'waiting_for_payment' | 'paid' | 'completed' | 'cancelled'; // financial state
-export type DeliveryStatus = 'waiting_for_delivery_guy' | 'delivery_guy_accepted' | 'picked_up' | 'delivered' | 'failed'; // delivery state
+export type DeliveryStatus = 'waiting_for_delivery_guy' | 'delivery_guy_accepted' | 'picked_up' | 'delivered' | 'rescheduled' | 'failed'; // delivery state
 export type PackageCategory = 'exceptional' | 'urgent' | 'expensive' | 'sensitive' | 'urgent_mechanical_parts' | 'aeronotics' | 'rare' | 'sentimental_value' | 'products' | 'it_equipment' | 'gift';
 
 export interface DeliveryTimeSlot {

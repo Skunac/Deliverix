@@ -20,10 +20,8 @@ export default function DeliveryRecapScreen() {
     const { formState, resetForm } = useDeliveryForm();
     const { t } = useTranslation();
 
-    // React Query mutation for creating delivery
     const createDeliveryMutation = useCreateDelivery();
 
-    // Simple price calculation function - matches the one in ContactInformationScreen
     const calculatePrice = () => {
         // Base price
         let price = 10;
