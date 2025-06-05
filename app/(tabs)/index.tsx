@@ -375,7 +375,6 @@ export default function DeliveriesScreen() {
     return (
         <GradientView>
             <View className="flex-1">
-                <TestEmailButton />
                 {renderFilterTabs()}
                 {renderAdminSearchBar()}
                 {renderHeader()}

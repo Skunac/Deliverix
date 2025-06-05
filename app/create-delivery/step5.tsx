@@ -54,26 +54,14 @@ export default function DeliveryRecapScreen() {
             const pickupLocation = formState.pickupAddress.coordinates;
             const deliveryLocation = formState.deliveryAddress.coordinates;
 
-            /*const result = await distancePricingService.calculateDeliveryPrice(
+            const result = await distancePricingService.calculateDeliveryPrice(
                 agentLocation,
                 pickupLocation,
                 deliveryLocation
-            );*/
+            );
 
-            setPriceCalculation({
-                basePrice: 5.00,
-                distancePrice: 10.00,
-                finalPrice: 15.00,
-                breakdown: {
-                    trip1Distance: 0,
-                    trip2Distance: 0,
-                    totalBillableDistance: 0,
-                    pricePerKm: 2.00
-                }
-            });
-
-            /*console.log('Price calculation result:', result);
-            setPriceCalculation(result);*/
+            console.log('Price calculation result:', result);
+            setPriceCalculation(result);
 
         } catch (error) {
             console.error('Error calculating delivery price:', error);

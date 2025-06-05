@@ -96,7 +96,7 @@ export class DistancePricingService {
             const trip2Distance = element2.distance.value / 1000; // Pickup to Delivery
 
             // Calculate total billable distance: (trip1 * 2) + (trip2 * 2)
-            const totalBillableDistance = (trip1Distance * 2) + (trip2Distance * 2);
+            const totalBillableDistance = trip1Distance + trip2Distance;
 
             // Extract durations (in seconds, convert to minutes)
             const duration1 = element1.duration.value / 60;
