@@ -132,6 +132,9 @@ export default function DeliveryRecapScreen() {
                 price: priceCalculation.finalPrice,
                 secretCode: '',
                 deleted: false,
+                rescheduleCount: 0,
+                rescheduleHistory: [],
+                maxReschedules: 0
             };
 
             // Create delivery using React Query mutation
