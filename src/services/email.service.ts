@@ -422,7 +422,6 @@ export class EmailService {
             fullName: `${agent.personalInfo.firstName} ${agent.personalInfo.lastName}`,
             email: agent.personalInfo.email,
             phoneNumber: agent.personalInfo.phoneNumber,
-            rating: agent.rating,
             vehicleType: agent.vehicleInfo.type,
             vehicleModel: agent.vehicleInfo.model,
             companyName: agent.companyInfo.name
