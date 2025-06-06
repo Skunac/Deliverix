@@ -11,23 +11,21 @@ export type EmailTemplate =
     | 'delivery_completed'
     | 'delivery_failed'
     | 'delivery_reminder'
+    | 'delivery_rescheduled'
     // Agent emails
     | 'new_delivery_available'
     | 'delivery_assignment'
     | 'agent_approved'
     | 'agent_rejected'
+    | 'incoming_package'
     // User management
     | 'welcome_user'
     | 'agent_application_received'
     // Admin alerts
     | 'new_agent_application'
     | 'delivery_failure_alert'
-    | 'high_value_package_alert'
     // Financial
-    | 'payment_confirmation'
     | 'refund_notification'
-    // Automated
-    | 'rating_request';
 
 export interface EmailData {
     // User data
