@@ -9,6 +9,7 @@ import { DeliveryAgentService } from './delivery-agent.service';
 import { formatAddress } from "@/utils/formatters/address-formatter";
 import { getObfuscatedPoint } from "@/utils/obfuscate/address-obfuscation";
 import { calculateDistance } from "@/utils/geo-helper/distance-calculator";
+import {emailService} from "@/src/services/email.service";
 
 export interface DeliveryWithAgent extends Delivery {
     agentFirstName?: string;
@@ -446,7 +447,35 @@ export class EnhancedDeliveryService {
             }
 
             const createdDelivery = { id: doc.id, ...doc.data() } as Delivery;
-            return this.enrichDeliveryWithAgentInfo(createdDelivery);
+            const enrichedDelivery = await this.enrichDeliveryWithAgentInfo(createdDelivery);
+
+            try {
+                await emailService.sendEmailToUser(
+                    'order_confirmation',
+                    delivery.creator,
+                    {
+                        delivery: enrichedDelivery
+                    }
+                );
+                console.log(`Order confirmation email sent for delivery ${enrichedDelivery.id}`);
+            } catch (emailError) {
+                console.error('Failed to send order confirmation email:', emailError);
+            }
+
+            try {
+                await emailService.sendEmailToEligibleAgents(
+                    'new_delivery_available',
+                    enrichedDelivery,
+                    {
+                        delivery: enrichedDelivery
+                    }
+                );
+                console.log(`New delivery notification sent to eligible agents for delivery ${enrichedDelivery.id}`);
+            } catch (emailError) {
+                console.error('Failed to send new delivery notification to agents:', emailError);
+            }
+
+            return enrichedDelivery;
         } catch (error) {
             console.error('Error creating delivery:', error);
             throw error;
@@ -614,6 +643,43 @@ export class EnhancedDeliveryService {
                 status: 'delivery_guy_accepted',
                 state: 'processing'
             });
+            const delivery = await this.getDeliveryById(deliveryId);
+            if (!delivery) {
+                throw new Error('Delivery not found after acceptance');
+            }
+
+            const agent = await this.deliveryAgentService.getAgentProfile(agentId);
+            if (!agent) {
+                throw new Error('Agent not found');
+            }
+
+            try {
+                await emailService.sendEmailToUser(
+                    'delivery_assignment',
+                    delivery.creator,
+                    {
+                        delivery: delivery,
+                        agent: agent
+                    }
+                );
+                console.log(`Delivery assignment email sent to customer for delivery ${deliveryId}`);
+            } catch (emailError) {
+                console.error('Failed to send delivery assignment email to customer:', emailError);
+            }
+
+            try {
+                await emailService.sendEmailToUser(
+                    'incoming_package',
+                    agentId,
+                    {
+                        delivery: delivery,
+                        agent: agent
+                    }
+                );
+                console.log(`Incoming package email sent to agent ${agentId} for delivery ${deliveryId}`);
+            } catch (emailError) {
+                console.error('Failed to send incoming package email to agent:', emailError);
+            }
         } catch (error) {
             console.error('Error accepting delivery:', error);
             throw error;

@@ -2,6 +2,7 @@ import { firebaseAuth } from '@/src/firebase/config';
 import { User, UserDataWithType } from '@/src/models/user.model';
 import { handleAuthError } from '@/src/utils/error-handler';
 import { UserService } from './user.service';
+import {emailService} from "@/src/services/email.service";
 
 export class AuthService {
     private userService: UserService;
@@ -74,6 +75,20 @@ export class AuthService {
             await this.userService.createUser(baseUserData, user.uid);
 
             const userProfile = await this.userService.getUserById(user.uid);
+
+            try {
+                await emailService.sendEmailToUser(
+                    'welcome_user',
+                    user.uid,
+                    {
+                        user: userProfile
+                    }
+                );
+                console.log(`Welcome email sent to new user ${user.uid}`);
+            } catch (emailError) {
+                console.error('Failed to send welcome email:', emailError);
+                // Don't throw - user was created successfully
+            }
 
             if (!userProfile) {
                 throw new Error('Failed to create user profile');

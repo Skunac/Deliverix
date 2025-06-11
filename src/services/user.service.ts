@@ -4,12 +4,12 @@ import { User } from '@/src/models/user.model';
 export class UserService {
     private usersCollection = db.collection('users');
 
-    async getUserById(userId: string): Promise<User | null> {
+    async getUserById(userId: string): Promise<User | undefined> {
         try {
             const doc = await this.usersCollection.doc(userId).get();
 
             if (!doc.exists) {
-                return null;
+                return undefined;
             }
 
             return { id: doc.id, ...doc.data() } as User;

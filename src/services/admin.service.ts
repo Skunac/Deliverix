@@ -1,5 +1,6 @@
 import { db, serverTimestamp, query, where, orderBy, getDocs, getDoc, doc, updateDoc } from '@/src/firebase/config';
 import { User, UserType } from '@/src/models/user.model';
+import {emailService} from "@/src/services/email.service";
 
 export interface UserStats {
     totalUsers: number;
@@ -141,6 +142,20 @@ export class AdminUserService {
                 isAllowed,
                 updatedAt: serverTimestamp()
             });
+
+            try {
+                const emailTemplate = isAllowed ? 'agent_approved' : 'agent_rejected';
+                await emailService.sendEmailToUser(
+                    emailTemplate,
+                    agentId,
+                    {
+                        approvalStatus: isAllowed ? 'approved' : 'rejected'
+                    }
+                );
+                console.log(`Agent ${isAllowed ? 'approval' : 'rejection'} email sent to agent ${agentId}`);
+            } catch (emailError) {
+                console.error(`Failed to send agent ${isAllowed ? 'approval' : 'rejection'} email:`, emailError);
+            }
         } catch (error) {
             console.error('Error updating delivery agent status:', error);
             throw error;

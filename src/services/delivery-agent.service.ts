@@ -10,6 +10,7 @@ import {
 } from '@/src/models/delivery-agent.model';
 import { EmbeddedAddress } from '@/src/models/delivery.model';
 import { createGeoPoint } from '@/utils/formatters/address-formatter';
+import {emailService} from "@/src/services/email.service";
 
 export class DeliveryAgentService {
     private userCollection = db.collection('users');
@@ -141,6 +142,21 @@ export class DeliveryAgentService {
         try {
             await this.getAgentDocRef(userId).set(defaultAgentData);
             console.log(`Successfully created delivery agent profile for user ${userId}`);
+
+            try {
+                await emailService.sendEmailToUser(
+                    'agent_application_received',
+                    userId,
+                    {
+                        // Include application data for the email
+                        applicationDate: new Date().toISOString(),
+                        companyInfo: agentData.companyInfo
+                    }
+                );
+                console.log(`Agent application received email sent to user ${userId}`);
+            } catch (emailError) {
+                console.error('Failed to send agent application received email:', emailError);
+            }
         } catch (error) {
             console.error(`Error creating delivery agent profile for user ${userId}:`, error);
             throw error;
